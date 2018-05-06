@@ -1,2 +1,2 @@
-# iclx-graphite
-Push BIG-IP stats to Graphite DB
+# f5-statsd
+Push BIG-IP stats to a Graphite DB, using StatsD

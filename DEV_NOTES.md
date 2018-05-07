@@ -42,3 +42,36 @@ curl -u user:pass -X POST http://localhost:8100/mgmt/shared/iapp/package-managem
     ]
 }
 ```
+
+### VIPS
+
+GET /mgmt/tm/ltm/virtual/~Sample_01~A1~serviceMain/stats
+{
+    "entries": {
+        "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A1~serviceMain/~Sample_01~A1~serviceMain/stats": {
+            "nestedStats": {
+                "entries": {
+                    "clientside.curConns": {
+                        "value": "0"
+                    }
+                }
+            }
+        }
+    }
+}
+
+### Pools
+
+GET /mgmt/tm/ltm/pool/~Sample_01~A1~web_pool/stats
+{
+    "entries": {
+        "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A1~web_pool/~Sample_01~A1~web_pool/stats": {
+            "nestedStats": {
+                "entries":  {
+
+                }
+            }
+        }
+    }
+}
+

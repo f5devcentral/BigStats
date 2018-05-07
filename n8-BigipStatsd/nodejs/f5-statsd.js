@@ -13,7 +13,28 @@ const http = require('http');
 var SDC = require('statsd-client');
 var os = require('os');
 const statsdSettingsPath = 'shared/n8/statsd_settings';
+const theVips = '/mgmt/tm/ltm/virtual/';
+const theVipStats = [
+  "clientside.curConns",
+  "clientside.maxConns",
+  "clientside.bitsIn",
+  "clientside.bitsOut",
+  "clientside.pktsIn",
+  "clientside.pktsout"
+];
+const thePoolStats = [
+  "serverside.curConns",
+  "serverside.maxConns",
+  "serverside.pktsIn",
+  "serverside.pktsOut",
+  "serverside.bitsIn",
+  "serverside.bitsOut"
+];
 var DEBUG = true;
+
+
+// TODO: pull this list as part of the poll.  
+// /mgmt/tm/ltm/virtual/?$select=partition,subPath,fullPath,pool
 
 function Statsd() {
   this.options = {};
@@ -52,41 +73,37 @@ Statsd.prototype.onStart = function(success, error) {
 
 };
 
-Statsd.prototype.onStartCompleted = function(error, success) {
+Statsd.prototype.onStartCompleted = function (error, success) {
 
   logger.info("[Statsd] Started.");
 
-  setTimeout( function () {
-
-    try {
-      logger.info('[Statsd] Sending stats...');
-
-      // Replace this with 'options'
-      var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
-      var val = getRandomArbitrary(20, 300);
-      // Iterate through the list of interesting stats...
-      sdc.gauge('myApp1.bigip1.vip1', val);
-
-      logger.info('[Statsd] Sent stats val: ' +val);
-
-        
-    } catch (error) {
-      logger.info('[Statsd] Error: ' +error);
-      error();
-    }  
-  
-  }, 3000);
-
-  success();
+  success(this.pullStats());
 
 };
 
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min;
-}
 
-Statsd.prototype.pullStats = function (theStats) {
+Statsd.prototype.pullStats = function () {
 
+  var that = this;
+  var poller = setTimeout( function () {
+
+    logger.info('[Statsd] Calling pullStats...');
+    // Replace this with 'options'
+    var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
+    var val = getRandomArbitrary(20, 300);
+    // Iterate through the list of interesting stats...
+    sdc.gauge('myApp1.bigip1.vip1', val);
+
+    logger.info('[Statsd] Sent stats val: ' +val);
+    that.pullStats();
+
+  }, 2000);
+
+  function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+  
+/*
   theStats.map(stat => {
     // Replace this with 'options'
     var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
@@ -94,6 +111,7 @@ Statsd.prototype.pullStats = function (theStats) {
     sdc.gauge('myApp1.bigip1.vip1', 120);
 
   });
+  */
   
 };
 

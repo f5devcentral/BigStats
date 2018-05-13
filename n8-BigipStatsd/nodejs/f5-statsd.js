@@ -12,9 +12,11 @@ const logger = require('f5-logger').getInstance();
 const http = require('http');
 var SDC = require('statsd-client');
 var os = require('os');
+const host = 'localhost';
 const statsdSettingsPath = 'shared/n8/statsd_settings';
-const theVips = '/mgmt/tm/ltm/virtual/';
-const theVipStats = [
+const vipUri = '/mgmt/tm/ltm/virtual/';
+const poolUri = '/mgmt/tm/ltm/pool/';
+const vipStatKeys = [
   "clientside.curConns",
   "clientside.maxConns",
   "clientside.bitsIn",
@@ -22,7 +24,7 @@ const theVipStats = [
   "clientside.pktsIn",
   "clientside.pktsout"
 ];
-const thePoolStats = [
+const poolStatKeys = [
   "serverside.curConns",
   "serverside.maxConns",
   "serverside.pktsIn",
@@ -31,18 +33,15 @@ const thePoolStats = [
   "serverside.bitsOut"
 ];
 var DEBUG = true;
+var vipStatValues = [];
+var poolStatValues = [];
 
-
-// TODO: pull this list as part of the poll.  
-// /mgmt/tm/ltm/virtual/?$select=partition,subPath,fullPath,pool
 
 function Statsd() {
-  this.options = {};
 }
 
 Statsd.prototype.WORKER_URI_PATH = "shared/n8/statsd";
 Statsd.prototype.isPublic = true;
-Statsd.prototype.isPersisted = true;
 Statsd.prototype.isSingleton = true;
 
 /**
@@ -53,72 +52,114 @@ Statsd.prototype.onStart = function(success, error) {
   logger.info("[Statsd] Starting...");
 
   //Load state (configuration data) from persisted storage.
-  var that = this;  
-  this.loadState(null, function (err, options) {
-    if (err) {
-      error('[Statsd] Error loading state: ' +err);
-    }
-    else {
-      if (typeof options !== 'undefined' && options !== null) {
-        logger.info('options: ' +options);
-        that.options = options;
-        if (typeof that.options.debug !== 'undefined' && that.options.debug !== null) {
-          logger.info('[Statsd] DEBUG enabled...');
-          DEBUG = true;
-        }
-      }
-      success('[Statsd] State loaded...');  
-    }
-  });
+  success('[Statsd] State loaded...');  
 
-};
-
-Statsd.prototype.onStartCompleted = function (error, success) {
-
-  logger.info("[Statsd] Started.");
-
-  success(this.pullStats());
-
-};
-
-
-Statsd.prototype.pullStats = function () {
-
-  var that = this;
-  var poller = setTimeout( function () {
-
-    logger.info('[Statsd] Calling pullStats...');
-    // Replace this with 'options'
-    var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
-    var val = getRandomArbitrary(20, 300);
-    // Iterate through the list of interesting stats...
-    sdc.gauge('myApp1.bigip1.vip1', val);
-
-    logger.info('[Statsd] Sent stats val: ' +val);
-    that.pullStats();
-
-  }, 2000);
-
-  function getRandomArbitrary(min, max) {
-    return Math.random() * (max - min) + min;
-  }
-  
-/*
-  theStats.map(stat => {
-    // Replace this with 'options'
-    var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
-    // Iterate through the list of interesting stats...
-    sdc.gauge('myApp1.bigip1.vip1', 120);
-
-  });
-  */
-  
 };
 
 /**
  * handle HTTP POST request
  */
 Statsd.prototype.onPost = function (restOperation) {
+
+  var data = restOperation.getBody();
+  logger.info("data: " +JSON.stringify(data));
+
+  if (data.stats.enable === true) {
+//    this.pullStats.call(this);
+    var that = this;
+    var path = '/mgmt/tm/ltm/virtual/';
+    var query = '$select=partition,subPath,fullPath,selfLink,pool';
+//    var query = '';
+
+    logger.info('path: '+path);
+
+//    var uri = that.restHelper.makeRestjavadUri(path, query);
+    var uri = that.restHelper.makeRestnodedUri(path, query);
+//    logger.info('uri: '+JSON.stringify(uri, '', '\t'));
+    var restOp = that.createRestOperation(uri);
+    logger.info('uri: '+JSON.stringify(restOp, '', '\t'));
+
+    that.restRequestSender.sendGet(restOp)
+    .then((resp) => {
+      logger.info('resp.statusCode: ' +JSON.stringify(resp.statusCode));
+      logger.info('resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+
+    })
+    .catch((error) => {
+      logger.info('error: ' +JSON.stringify(error));
+    });
+
+  }
+
+  restOperation.setBody(data);
+  this.completeRestOperation(restOperation);
+
+};
+
+Statsd.prototype.pullStats = function () {
+
+  var that = this;
+  var path = '/mgmt/tm/ltm/virtual/';
+  var query = '$select=partition,subPath,fullPath,selfLink,pool';
+//  var query = '';
+
+  logger.info('path: '+path);
+
+  var uri = that.restHelper.makeRestjavadUri(path, query);
+  logger.info('uri: '+JSON.stringify(uri, '', '\t'));
+  var restOp = that.createRestOperation(uri);
+
+  that.restRequestSender.sendGet(restOp)
+  .then((data) => {
+    logger.info('data: ' +JSON.stringify(data));
+  })
+  .catch((error) => {
+    logger.info('error: ' +JSON.stringify(error));
+  });
+
+//    .then(function (values) {
+//      logger.info('values: ' +values);      
+//      logger.info('values: ' +JSON.stringify(values));
+      // Replace this with 'options'
+//      var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
+//      var val = getRandomArbitrary(20, 300);
+/*
+      values.map(stat => {
+        // Replace this with 'options'
+        var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
+        // Iterate through the list of interesting stats...
+        sdc.gauge('myApp1.bigip1.vip1', 120);
+
+      });
+      
+*/
+
+//    });
+    //    sdc.gauge('myApp1.bigip1.vip1', val);
+//    logger.info('[Statsd] Sent stats val: ' +val);
+//    that.pullStats();
+
+
+};
+
+
+/**
+* Creates a new rest operation instance. Sets the target uri and body
+*
+* @param {url} uri Target URI
+* @param {Object} body Request body
+*
+* @returns {RestOperation}
+*/
+Statsd.prototype.createRestOperation = function (uri) {
+
+  var restOp = this.restOperationFactory.createRestOperationInstance()
+      .setUri(uri)
+      .setContentType("application/json")
+      .setIdentifiedDeviceRequest(true);
+//      .setBody();
+
+return restOp;
 
 };
 

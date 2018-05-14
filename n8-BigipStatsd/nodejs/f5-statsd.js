@@ -131,7 +131,7 @@ Statsd.prototype.pullStats = function () {
         apps: []
       };
 
-      logger.info('IN getResourceStats wit resource_list: ' +JSON.stringify(resource_list));
+      logger.info('IN getVipStats with resource_list: ' +JSON.stringify(resource_list));
 
       resource_list.items.forEach(element => {
         logger.info('[Statsd] - element.subPath: ' +element.subPath);
@@ -200,7 +200,7 @@ Statsd.prototype.pullStats = function () {
         apps: []
       };
 
-      logger.info('IN getResourceStats wit resource_list: ' +JSON.stringify(resource_list));
+      logger.info('IN getPoolStats with resource_list: ' +JSON.stringify(resource_list));
 
       resource_list.items.forEach(element => {
         logger.info('[Statsd] - element.subPath: ' +element.subPath);
@@ -224,6 +224,37 @@ Statsd.prototype.pullStats = function () {
       
         that.restRequestSender.sendGet(restOp)
         .then((resp) => {
+
+          let name = path.split("/").slice(-1)[0];
+          let entry_uri = path+'/'+name+'/stats';
+          let entry_url ="https://localhost" +entry_uri;
+
+          //Assign the values to something sane... 
+          let serverside_curConns = resp.body.entries[entry_url].nestedStats.entries["serverside.curConns"].value;
+          let serverside_maxConns = resp.body.entries[entry_url].nestedStats.entries["serverside.maxConns"].value;
+          let serverside_bitsIn = resp.body.entries[entry_url].nestedStats.entries["serverside.bitsIn"].value;
+          let serverside_bitsOut = resp.body.entries[entry_url].nestedStats.entries["serverside.bitsOut"].value;
+          let serverside_pktsIn = resp.body.entries[entry_url].nestedStats.entries["serverside.pktsIn"].value;
+          let serverside_pktsOut = resp.body.entries[entry_url].nestedStats.entries["serverside.pktsOut"].value;
+                  
+          let app_name = element.subPath;
+          let obj = { 
+            [app_name]: {
+              serverside_curConns: serverside_curConns,
+              serverside_maxConns: serverside_maxConns,
+              serverside_bitsIn: serverside_bitsIn,
+              serverside_bitsOut: serverside_bitsOut,
+              serverside_pktsIn: serverside_pktsIn,
+              serverside_pktsOut: serverside_pktsOut  
+            }
+          };
+
+          stats.apps.push(obj);
+          logger.info('stats.apps: ' +JSON.stringify(stats.apps, '', '\t') );
+
+          resolve(stats);
+
+
           logger.info('Pool Stats resp.body: ' +JSON.stringify(resp.body));
         })
         .catch((error) => {
@@ -243,14 +274,19 @@ Statsd.prototype.pullStats = function () {
   })
   .then((resource_list) => {
 
+//    logger.info('[Statsd] - AGAIN config: ' +config);
     logger.info('[Statsd] - resource_list: ' +JSON.stringify(resource_list));
     return getVipStats(resource_list);
 
   })
-  .then((vipStats, resource_list) => {
-    logger.info('vipStats: '+JSON.stringify(theStats));
-    logger.info('resource_list: '+JSON.stringify(resource_list));
-    return getPoolList(resource_list);
+  .then((vipStats) => {
+
+    logger.info('vipStats: '+JSON.stringify(vipStats));
+//    logger.info('resource_list: '+JSON.stringify(resource_list));
+    getResourceList()   //FIXME: need 'config' but out of scope... Do we call getSettings again??
+    .then((resource_list) => {
+      return getPoolStats(resource_list);
+    });
 
   })
   .catch((error) => {

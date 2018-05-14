@@ -13,7 +13,7 @@ const http = require('http');
 var SDC = require('statsd-client');
 var os = require('os');
 const host = 'localhost';
-const statsdSettingsPath = 'shared/n8/statsd_settings';
+const statsdSettingsPath = '/shared/n8/statsd_settings';
 const vipUri = '/mgmt/tm/ltm/virtual/';
 const poolUri = '/mgmt/tm/ltm/pool/';
 const vipStatKeys = [
@@ -64,30 +64,8 @@ Statsd.prototype.onPost = function (restOperation) {
   var data = restOperation.getBody();
   logger.info("data: " +JSON.stringify(data));
 
-  if (data.stats.enable === true) {
-//    this.pullStats.call(this);
-    var that = this;
-    var path = '/mgmt/tm/ltm/virtual/';
-    var query = '$select=partition,subPath,fullPath,selfLink,pool';
-//    var query = '';
-
-    logger.info('path: '+path);
-
-//    var uri = that.restHelper.makeRestjavadUri(path, query);
-    var uri = that.restHelper.makeRestnodedUri(path, query);
-//    logger.info('uri: '+JSON.stringify(uri, '', '\t'));
-    var restOp = that.createRestOperation(uri);
-    logger.info('uri: '+JSON.stringify(restOp, '', '\t'));
-
-    that.restRequestSender.sendGet(restOp)
-    .then((resp) => {
-      logger.info('resp.statusCode: ' +JSON.stringify(resp.statusCode));
-      logger.info('resp.body: ' +JSON.stringify(resp.body, '', '\t'));
-
-    })
-    .catch((error) => {
-      logger.info('error: ' +JSON.stringify(error));
-    });
+  if (typeof data.enable !== 'undefined' && data.enable === true) {
+    this.pullStats.call(this);
 
   }
 
@@ -99,23 +77,186 @@ Statsd.prototype.onPost = function (restOperation) {
 Statsd.prototype.pullStats = function () {
 
   var that = this;
-  var path = '/mgmt/tm/ltm/virtual/';
-  var query = '$select=partition,subPath,fullPath,selfLink,pool';
-//  var query = '';
 
-  logger.info('path: '+path);
+  var getSettings = new Promise((resolve, reject) => {
 
-  var uri = that.restHelper.makeRestjavadUri(path, query);
-  logger.info('uri: '+JSON.stringify(uri, '', '\t'));
-  var restOp = that.createRestOperation(uri);
+    let uri = that.generateURI('127.0.0.1', '/mgmt' +statsdSettingsPath);
+    let restOp = that.createRestOperation(uri);
 
-  that.restRequestSender.sendGet(restOp)
-  .then((data) => {
-    logger.info('data: ' +JSON.stringify(data));
+    if (DEBUG === true) { logger.info('[Statsd - DEBUG] - getSettings() Attemtped to fetch config...'); }
+
+    that.restRequestSender.sendGet(restOp)
+    .then (function (resp) {
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t')); }
+      resolve(resp.body.config);
+    })
+    .catch (function (error) {
+      logger.info('[Statsd] - Error retrieving settings: ' +error);
+      reject(error);
+    });
+
+  });
+
+  var getResourceList = ((config) => {
+    return new Promise((resolve,reject) => {
+
+      logger.info('IN getResourceList with config: ' +JSON.stringify(config));
+
+      var path = '/mgmt/tm/ltm/virtual/';
+      var query = '$select=subPath,fullPath,selfLink,pool';
+      
+      var uri = that.restHelper.makeRestnodedUri(path, query);
+      var restOp = that.createRestOperation(uri);
+    
+      that.restRequestSender.sendGet(restOp)
+      .then((resp) => {
+  //      TODO: Make this 'debug mode' logger.info('[Statsd] - resp.statusCode: ' +JSON.stringify(resp.statusCode));
+  //      TODO: Make this 'debug mode' logger.info('[Statsd] - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+        resolve(resp.body);
+  
+      })
+      .catch((error) => {
+        logger.info('[Statsd] - Error: ' +JSON.stringify(error));
+        reject(error);
+      });
+  
+    });
+  }); 
+  
+  var getVipStats = ((resource_list) => {
+    return new Promise((resolve,reject) => {
+
+      var that = this;
+      var stats = {
+        apps: []
+      };
+
+      logger.info('IN getResourceStats wit resource_list: ' +JSON.stringify(resource_list));
+
+      resource_list.items.forEach(element => {
+        logger.info('[Statsd] - element.subPath: ' +element.subPath);
+        logger.info('[Statsd] - element.fullPath: ' +element.fullPath);
+        logger.info('[Statsd] - element.selfLink: ' +element.selfLink);
+        logger.info('[Statsd] - element.poolReference.link: ' +element.poolReference.link);
+
+        var path = ""; 
+        var PREFIX = "https://localhost";
+        if (element.selfLink.indexOf(PREFIX) === 0) {
+          // PREFIX is exactly at the beginning
+          path = element.selfLink.slice(PREFIX.length).split("?").shift();
+        }
+        logger.info('[Statsd] - Sliced Path: '+path);
+        var uri = path+'/stats';
+        logger.info('[Statsd] - Stats URI: '+uri);
+
+        var url = that.restHelper.makeRestnodedUri(uri);
+        var restOp = that.createRestOperation(url);
+      
+        that.restRequestSender.sendGet(restOp)
+        .then((resp) => {
+
+          let name = path.split("/").slice(-1)[0];
+          let entry_uri = path+'/'+name+'/stats';
+          let entry_url ="https://localhost" +entry_uri;
+
+          //Assign the values to something sane... 
+          let clientside_curConns = resp.body.entries[entry_url].nestedStats.entries["clientside.curConns"].value;
+          let clientside_maxConns = resp.body.entries[entry_url].nestedStats.entries["clientside.maxConns"].value;
+          let clientside_bitsIn = resp.body.entries[entry_url].nestedStats.entries["clientside.bitsIn"].value;
+          let clientside_bitsOut = resp.body.entries[entry_url].nestedStats.entries["clientside.bitsOut"].value;
+          let clientside_pktsIn = resp.body.entries[entry_url].nestedStats.entries["clientside.pktsIn"].value;
+          let clientside_pktsOut = resp.body.entries[entry_url].nestedStats.entries["clientside.pktsOut"].value;
+          
+          let app_name = element.subPath;
+          let obj = { 
+            [app_name]: {
+              clientside_curConns: clientside_curConns,
+              clientside_maxConns: clientside_maxConns,
+              clientside_bitsIn: clientside_bitsIn,
+              clientside_bitsOut: clientside_bitsOut,
+              clientside_pktsIn: clientside_pktsIn,
+              clientside_pktsOut: clientside_pktsOut  
+            }
+          };
+
+          stats.apps.push(obj);
+          logger.info('stats.apps: ' +JSON.stringify(stats.apps, '', '\t') );
+
+          resolve(stats);
+        })
+        .catch((error) => {
+          logger.info('[Statsd] - Error: ' +JSON.stringify(error));
+          reject(error);
+        });
+      });
+    });
+  });
+
+  var getPoolStats = ((resource_list) => {
+    return new Promise((resolve,reject) => {
+
+      var that = this;
+      var stats = {
+        apps: []
+      };
+
+      logger.info('IN getResourceStats wit resource_list: ' +JSON.stringify(resource_list));
+
+      resource_list.items.forEach(element => {
+        logger.info('[Statsd] - element.subPath: ' +element.subPath);
+        logger.info('[Statsd] - element.fullPath: ' +element.fullPath);
+        logger.info('[Statsd] - element.selfLink: ' +element.selfLink);
+        logger.info('[Statsd] - element.poolReference.link: ' +element.poolReference.link);
+
+        var path = ""; 
+        var PREFIX = "https://localhost";
+
+        if (element.poolReference.link.indexOf(PREFIX) === 0) {
+          // PREFIX is exactly at the beginning
+          path = element.poolReference.link.slice(PREFIX.length).split("?").shift();
+        }
+        logger.info('[Statsd] - Sliced Path: '+path);
+        var uri = path+'/stats';
+        logger.info('[Statsd] - Stats URI: '+uri);
+
+        var url = that.restHelper.makeRestnodedUri(uri);
+        var restOp = that.createRestOperation(url);
+      
+        that.restRequestSender.sendGet(restOp)
+        .then((resp) => {
+          logger.info('Pool Stats resp.body: ' +JSON.stringify(resp.body));
+        })
+        .catch((error) => {
+          logger.info('pool_stats error: '+error);
+        });
+
+      });
+    });
+  });
+
+
+  getSettings.then((config) => {
+
+    logger.info('[Statsd] - config.statsd: ' +config.statsd);
+    return getResourceList(config);
+
+  })
+  .then((resource_list) => {
+
+    logger.info('[Statsd] - resource_list: ' +JSON.stringify(resource_list));
+    return getVipStats(resource_list);
+
+  })
+  .then((vipStats, resource_list) => {
+    logger.info('vipStats: '+JSON.stringify(theStats));
+    logger.info('resource_list: '+JSON.stringify(resource_list));
+    return getPoolList(resource_list);
+
   })
   .catch((error) => {
-    logger.info('error: ' +JSON.stringify(error));
+    logger.info('Promise Chain Error: ' +error);
   });
+
 
 //    .then(function (values) {
 //      logger.info('values: ' +values);      
@@ -161,6 +302,24 @@ Statsd.prototype.createRestOperation = function (uri) {
 
 return restOp;
 
+};
+
+/**
+ * Generate URI based on individual elements (host, path).
+ *
+ * @param {string} host IP address or FQDN of a target host
+ * @param {string} path Path on a target host
+ *
+ * @returns {url} Object representing resulting URI.
+ */
+Statsd.prototype.generateURI = function (host, path) {
+
+  return this.restHelper.buildUri({
+      protocol: 'http',
+      port: '8100',
+      hostname: host,
+      path: path
+  });
 };
 
 /**

@@ -89,7 +89,9 @@ BigStatsSettings.prototype.getExampleState = function () {
     return {
       "config": {
         "interval":"[seconds]",
-        "destination": "[url]",
+        "destination": {
+            "[ip|url]": "[Refer to documentation]"
+        },
         "debug": "[true|false]"
       }
     };

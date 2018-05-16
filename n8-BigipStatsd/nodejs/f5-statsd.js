@@ -36,8 +36,9 @@ var DEBUG = true;
 var vipStatValues = [];
 var poolStatValues = [];
 
-
 function Statsd() {
+  this.config = {};
+  this.stats = {};
 }
 
 Statsd.prototype.WORKER_URI_PATH = "shared/n8/statsd";
@@ -80,6 +81,8 @@ Statsd.prototype.pullStats = function () {
 
   var getSettings = new Promise((resolve, reject) => {
 
+    if (DEBUG === true) { logger.info('[Statsd - DEBUG] - ***************IN getSettings()'); }
+
     let uri = that.generateURI('127.0.0.1', '/mgmt' +statsdSettingsPath);
     let restOp = that.createRestOperation(uri);
 
@@ -88,6 +91,7 @@ Statsd.prototype.pullStats = function () {
     that.restRequestSender.sendGet(restOp)
     .then (function (resp) {
       if (DEBUG === true) { logger.info('[Statsd - DEBUG] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t')); }
+      that.config = resp.body.config;
       resolve(resp.body.config);
     })
     .catch (function (error) {
@@ -100,7 +104,7 @@ Statsd.prototype.pullStats = function () {
   var getResourceList = ((config) => {
     return new Promise((resolve,reject) => {
 
-      logger.info('IN getResourceList with config: ' +JSON.stringify(config));
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
 
       var path = '/mgmt/tm/ltm/virtual/';
       var query = '$select=subPath,fullPath,selfLink,pool';
@@ -110,8 +114,10 @@ Statsd.prototype.pullStats = function () {
     
       that.restRequestSender.sendGet(restOp)
       .then((resp) => {
-  //      TODO: Make this 'debug mode' logger.info('[Statsd] - resp.statusCode: ' +JSON.stringify(resp.statusCode));
-  //      TODO: Make this 'debug mode' logger.info('[Statsd] - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+        if (DEBUG === true) {
+          logger.info('[Statsd - DEBUG] - getResourceList - resp.statusCode: ' +JSON.stringify(resp.statusCode));
+          logger.info('[Statsd - DEBUG] - getResourceList - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+        }
         resolve(resp.body);
   
       })
@@ -122,149 +128,126 @@ Statsd.prototype.pullStats = function () {
   
     });
   }); 
+
+  var parseResources = ((list) => {
+    return new Promise((resolve,reject) => {
+
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - ***************IN parseResources() with list: ' +JSON.stringify(list)); }
+
+      list.items.map((element, index) => {
+
+        Promise.all([getVipStats(element), getPoolStats(element)])
+        .then((values) => {
+          if (DEBUG === true) { 
+            logger.info('[Statsd - DEBUG] - Index:' +index+ ', values[0]: ' +JSON.stringify(values[0],'','\t'));
+            logger.info('[Statsd - DEBUG] - Index:' +index+ ', values[1]: ' +JSON.stringify(values[1],'','\t'));
+          }
+
+          if (typeof that.stats[element.subPath] === 'undefined') {
+            that.stats[element.subPath] = {};
+          }
+          that.stats[element.subPath].vip = values[0];
+          that.stats[element.subPath].pool = values[1];
+
+          if (DEBUG === true) { logger.info('[Statsd - DEBUG] - list.items.length - 1: ' +(list.items.length - 1)+ '  index: ' +index); }
+          if (index === (list.items.length - 1)) {
+            if (DEBUG === true) { logger.info('[Statsd - DEBUG] - End of resource list (index === (list.items.length - 1))'); }
+            resolve(that.stats);
+          }          
+        });
+      });
+    });
+  });
   
-  var getVipStats = ((resource_list) => {
+  var getVipStats = ((resource) => {
     return new Promise((resolve,reject) => {
 
       var that = this;
-      var stats = {
-        apps: []
-      };
+    
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - ***************IN getVipStats with resource_list: ' +JSON.stringify(resource)); }
 
-      logger.info('IN getVipStats with resource_list: ' +JSON.stringify(resource_list));
+      var path = ""; 
+      var PREFIX = "https://localhost";
+      if (resource.selfLink.indexOf(PREFIX) === 0) {
+        path = resource.selfLink.slice(PREFIX.length).split("?").shift();
+      }
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - Sliced Path: '+path); }
+      var uri = path+'/stats';
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - Stats URI: '+uri); }
 
-      resource_list.items.forEach(element => {
-        logger.info('[Statsd] - element.subPath: ' +element.subPath);
-        logger.info('[Statsd] - element.fullPath: ' +element.fullPath);
-        logger.info('[Statsd] - element.selfLink: ' +element.selfLink);
-        logger.info('[Statsd] - element.poolReference.link: ' +element.poolReference.link);
+      var url = that.restHelper.makeRestnodedUri(uri);
+      var restOp = that.createRestOperation(url);
+    
+      that.restRequestSender.sendGet(restOp)
+      .then((resp) => {
 
-        var path = ""; 
-        var PREFIX = "https://localhost";
-        if (element.selfLink.indexOf(PREFIX) === 0) {
-          // PREFIX is exactly at the beginning
-          path = element.selfLink.slice(PREFIX.length).split("?").shift();
-        }
-        logger.info('[Statsd] - Sliced Path: '+path);
-        var uri = path+'/stats';
-        logger.info('[Statsd] - Stats URI: '+uri);
+        let name = path.split("/").slice(-1)[0];
+        let entry_uri = path+'/'+name+'/stats';
+        let entry_url ="https://localhost" +entry_uri;
 
-        var url = that.restHelper.makeRestnodedUri(uri);
-        var restOp = that.createRestOperation(url);
-      
-        that.restRequestSender.sendGet(restOp)
-        .then((resp) => {
+        let vipStats = { 
+          clientside_curConns: resp.body.entries[entry_url].nestedStats.entries["clientside.curConns"].value,
+          clientside_maxConns: resp.body.entries[entry_url].nestedStats.entries["clientside.maxConns"].value,
+          clientside_bitsIn: resp.body.entries[entry_url].nestedStats.entries["clientside.bitsIn"].value,
+          clientside_bitsOut: resp.body.entries[entry_url].nestedStats.entries["clientside.bitsOut"].value,
+          clientside_pktsIn: resp.body.entries[entry_url].nestedStats.entries["clientside.pktsIn"].value,
+          clientside_pktsOut: resp.body.entries[entry_url].nestedStats.entries["clientside.pktsOut"].value  
+        };
 
-          let name = path.split("/").slice(-1)[0];
-          let entry_uri = path+'/'+name+'/stats';
-          let entry_url ="https://localhost" +entry_uri;
+        resolve(vipStats);
 
-          //Assign the values to something sane... 
-          let clientside_curConns = resp.body.entries[entry_url].nestedStats.entries["clientside.curConns"].value;
-          let clientside_maxConns = resp.body.entries[entry_url].nestedStats.entries["clientside.maxConns"].value;
-          let clientside_bitsIn = resp.body.entries[entry_url].nestedStats.entries["clientside.bitsIn"].value;
-          let clientside_bitsOut = resp.body.entries[entry_url].nestedStats.entries["clientside.bitsOut"].value;
-          let clientside_pktsIn = resp.body.entries[entry_url].nestedStats.entries["clientside.pktsIn"].value;
-          let clientside_pktsOut = resp.body.entries[entry_url].nestedStats.entries["clientside.pktsOut"].value;
-          
-          let app_name = element.subPath;
-          let obj = { 
-            [app_name]: {
-              clientside_curConns: clientside_curConns,
-              clientside_maxConns: clientside_maxConns,
-              clientside_bitsIn: clientside_bitsIn,
-              clientside_bitsOut: clientside_bitsOut,
-              clientside_pktsIn: clientside_pktsIn,
-              clientside_pktsOut: clientside_pktsOut  
-            }
-          };
-
-          stats.apps.push(obj);
-          logger.info('stats.apps: ' +JSON.stringify(stats.apps, '', '\t') );
-
-          resolve(stats);
-        })
-        .catch((error) => {
-          logger.info('[Statsd] - Error: ' +JSON.stringify(error));
-          reject(error);
-        });
+      })
+      .catch((error) => {
+        logger.info('[Statsd] - Error: ' +error);
+        reject(error);
       });
     });
   });
 
-  var getPoolStats = ((resource_list) => {
+  var getPoolStats = ((resource) => {
     return new Promise((resolve,reject) => {
 
       var that = this;
-      var stats = {
-        apps: []
-      };
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - ***************IN getPoolStats with resource_list: ' +JSON.stringify(resource)); }
 
-      logger.info('IN getPoolStats with resource_list: ' +JSON.stringify(resource_list));
+      var path = ""; 
+      var PREFIX = "https://localhost";
 
-      resource_list.items.forEach(element => {
-        logger.info('[Statsd] - element.subPath: ' +element.subPath);
-        logger.info('[Statsd] - element.fullPath: ' +element.fullPath);
-        logger.info('[Statsd] - element.selfLink: ' +element.selfLink);
-        logger.info('[Statsd] - element.poolReference.link: ' +element.poolReference.link);
+      if (resource.poolReference.link.indexOf(PREFIX) === 0) {
+        // PREFIX is exactly at the beginning
+        path = resource.poolReference.link.slice(PREFIX.length).split("?").shift();
+      }
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - Sliced Path: '+path); }
+      var uri = path+'/stats';
+      if (DEBUG === true) { logger.info('[Statsd - DEBUG] - Stats URI: '+uri); }
 
-        var path = ""; 
-        var PREFIX = "https://localhost";
+      var url = that.restHelper.makeRestnodedUri(uri);
+      var restOp = that.createRestOperation(url);
+    
+      that.restRequestSender.sendGet(restOp)
+      .then((resp) => {
 
-        if (element.poolReference.link.indexOf(PREFIX) === 0) {
-          // PREFIX is exactly at the beginning
-          path = element.poolReference.link.slice(PREFIX.length).split("?").shift();
-        }
-        logger.info('[Statsd] - Sliced Path: '+path);
-        var uri = path+'/stats';
-        logger.info('[Statsd] - Stats URI: '+uri);
+        let name = path.split("/").slice(-1)[0];
+        let entry_uri = path+'/'+name+'/stats';
+        let entry_url ="https://localhost" +entry_uri;
 
-        var url = that.restHelper.makeRestnodedUri(uri);
-        var restOp = that.createRestOperation(url);
-      
-        that.restRequestSender.sendGet(restOp)
-        .then((resp) => {
+        let poolStats = { 
+          serverside_curConns: resp.body.entries[entry_url].nestedStats.entries["serverside.curConns"].value,
+          serverside_maxConns: resp.body.entries[entry_url].nestedStats.entries["serverside.maxConns"].value,
+          serverside_bitsIn: resp.body.entries[entry_url].nestedStats.entries["serverside.bitsIn"].value,
+          serverside_bitsOut: resp.body.entries[entry_url].nestedStats.entries["serverside.bitsOut"].value,
+          serverside_pktsIn: resp.body.entries[entry_url].nestedStats.entries["serverside.pktsIn"].value,
+          serverside_pktsOut: resp.body.entries[entry_url].nestedStats.entries["serverside.pktsOut"].value  
+        };
 
-          let name = path.split("/").slice(-1)[0];
-          let entry_uri = path+'/'+name+'/stats';
-          let entry_url ="https://localhost" +entry_uri;
+        resolve(poolStats);
 
-          //Assign the values to something sane... 
-          let serverside_curConns = resp.body.entries[entry_url].nestedStats.entries["serverside.curConns"].value;
-          let serverside_maxConns = resp.body.entries[entry_url].nestedStats.entries["serverside.maxConns"].value;
-          let serverside_bitsIn = resp.body.entries[entry_url].nestedStats.entries["serverside.bitsIn"].value;
-          let serverside_bitsOut = resp.body.entries[entry_url].nestedStats.entries["serverside.bitsOut"].value;
-          let serverside_pktsIn = resp.body.entries[entry_url].nestedStats.entries["serverside.pktsIn"].value;
-          let serverside_pktsOut = resp.body.entries[entry_url].nestedStats.entries["serverside.pktsOut"].value;
-                  
-          let app_name = element.subPath;
-          let obj = { 
-            [app_name]: {
-              serverside_curConns: serverside_curConns,
-              serverside_maxConns: serverside_maxConns,
-              serverside_bitsIn: serverside_bitsIn,
-              serverside_bitsOut: serverside_bitsOut,
-              serverside_pktsIn: serverside_pktsIn,
-              serverside_pktsOut: serverside_pktsOut  
-            }
-          };
-
-          stats.apps.push(obj);
-          logger.info('stats.apps: ' +JSON.stringify(stats.apps, '', '\t') );
-
-          resolve(stats);
-
-
-          logger.info('Pool Stats resp.body: ' +JSON.stringify(resp.body));
-        })
-        .catch((error) => {
-          logger.info('pool_stats error: '+error);
-        });
-
+      })
+      .catch((error) => {
+        logger.info('pool_stats error: '+error);
       });
     });
   });
-
 
   getSettings.then((config) => {
 
@@ -274,19 +257,13 @@ Statsd.prototype.pullStats = function () {
   })
   .then((resource_list) => {
 
-//    logger.info('[Statsd] - AGAIN config: ' +config);
-    logger.info('[Statsd] - resource_list: ' +JSON.stringify(resource_list));
-    return getVipStats(resource_list);
+    return parseResources(resource_list);
 
   })
-  .then((vipStats) => {
+  .then((stats) => {
+    logger.info('All the stats: ' +JSON.stringify(stats, '', '\t'));
 
-    logger.info('vipStats: '+JSON.stringify(vipStats));
-//    logger.info('resource_list: '+JSON.stringify(resource_list));
-    getResourceList()   //FIXME: need 'config' but out of scope... Do we call getSettings again??
-    .then((resource_list) => {
-      return getPoolStats(resource_list);
-    });
+    //TODO: return fireWebhook(stats);
 
   })
   .catch((error) => {
@@ -311,12 +288,6 @@ Statsd.prototype.pullStats = function () {
       
 */
 
-//    });
-    //    sdc.gauge('myApp1.bigip1.vip1', val);
-//    logger.info('[Statsd] Sent stats val: ' +val);
-//    that.pullStats();
-
-
 };
 
 
@@ -334,7 +305,6 @@ Statsd.prototype.createRestOperation = function (uri) {
       .setUri(uri)
       .setContentType("application/json")
       .setIdentifiedDeviceRequest(true);
-//      .setBody();
 
 return restOp;
 

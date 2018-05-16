@@ -11,7 +11,7 @@
 const logger = require('f5-logger').getInstance();
 const http = require('http');
 const host = 'localhost';
-const BigStatsSettingsPath = '/shared/n8/BigStats_settings';
+const BigStatsSettingsPath = '/shared/n8/bigstats_settings';
 const vipUri = '/mgmt/tm/ltm/virtual/';
 const poolUri = '/mgmt/tm/ltm/pool/';
 const vipStatKeys = [
@@ -90,7 +90,9 @@ BigStats.prototype.pullStats = function () {
     .then (function (resp) {
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t')); }
       that.config = resp.body.config;
+
       resolve(resp.body.config);
+
     })
     .catch (function (error) {
       logger.info('[BigStats] - Error retrieving settings: ' +error);
@@ -116,6 +118,7 @@ BigStats.prototype.pullStats = function () {
           logger.info('[BigStats - DEBUG] - getResourceList - resp.statusCode: ' +JSON.stringify(resp.statusCode));
           logger.info('[BigStats - DEBUG] - getResourceList - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
         }
+
         resolve(resp.body);
   
       })
@@ -242,14 +245,15 @@ BigStats.prototype.pullStats = function () {
 
       })
       .catch((error) => {
-        logger.info('pool_stats error: '+error);
+        logger.info('[BigStats - Error] pool_stats error: '+error);
       });
     });
   });
 
+  //The promise chain....
   getSettings.then((config) => {
 
-    logger.info('[BigStats] - config.BigStats: ' +config.BigStats);
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - config.BigStats: ' +config.destination); }
     return getResourceList(config);
 
   })

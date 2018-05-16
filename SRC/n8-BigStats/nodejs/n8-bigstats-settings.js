@@ -81,4 +81,19 @@ BigStatsSettings.prototype.onPost = function(restOperation) {
       
 };
 
+/**
+ * handle /example HTTP request
+ */
+BigStatsSettings.prototype.getExampleState = function () {
+  
+    return {
+      "config": {
+        "interval":"[seconds]",
+        "destination": "[url]",
+        "debug": "[true|false]"
+      }
+    };
+  
+  };
+
 module.exports = BigStatsSettings;

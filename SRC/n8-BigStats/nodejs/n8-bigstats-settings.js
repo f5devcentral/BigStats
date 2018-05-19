@@ -24,7 +24,7 @@ BigStatsSettings.prototype.isPersisted = true;
  */
 BigStatsSettings.prototype.onStart = function(success, error) {
 
-    var me = this;
+    var that = this;
     this.loadState(null,
 
         function (err, state) {
@@ -36,7 +36,7 @@ BigStatsSettings.prototype.onStart = function(success, error) {
             }
 
             logger.info('[BigStatsSettings] - State loaded.');
-            me.state = state;
+            that.state = state;
         }
 
     );

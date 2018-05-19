@@ -14,22 +14,7 @@ const host = 'localhost';
 const BigStatsSettingsPath = '/shared/n8/bigstats_settings';
 const vipUri = '/mgmt/tm/ltm/virtual/';
 const poolUri = '/mgmt/tm/ltm/pool/';
-const vipStatKeys = [
-  "clientside.curConns",
-  "clientside.maxConns",
-  "clientside.bitsIn",
-  "clientside.bitsOut",
-  "clientside.pktsIn",
-  "clientside.pktsout"
-];
-const poolStatKeys = [
-  "serverside.curConns",
-  "serverside.maxConns",
-  "serverside.pktsIn",
-  "serverside.pktsOut",
-  "serverside.bitsIn",
-  "serverside.bitsOut"
-];
+
 var DEBUG = true;
 var vipStatValues = [];
 var poolStatValues = [];
@@ -51,7 +36,12 @@ BigStats.prototype.onStart = function(success, error) {
   logger.info("[BigStats] Starting...");
 
   //Load state (configuration data) from persisted storage.
-  success('[BigStats] State loaded...');  
+  this.statScheduler()
+  .then((res) => {
+    logger.info('res: '+JSON.stringify(res,'','\t'));
+    success('[BigStats] Scheduler started...');
+
+  });  
 
 };
 
@@ -63,15 +53,74 @@ BigStats.prototype.onPost = function (restOperation) {
   var data = restOperation.getBody();
   logger.info("data: " +JSON.stringify(data));
 
-  if (typeof data.enable !== 'undefined' && data.enable === true) {
+  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - this.config: ' +JSON.stringify(this.config)); }
+  
+  if (typeof data.enabled !== 'undefined' && data.enabled === true) {
+    logger.info('calling pullStats');
     this.pullStats.call(this);
-
   }
 
   restOperation.setBody(data);
   this.completeRestOperation(restOperation);
 
 };
+
+BigStats.prototype.statScheduler = function () {
+
+  var that = this;
+  return new Promise((resolve,reject) => {
+
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
+
+    var body = {
+      "interval":10,
+      "intervalUnit":"SECOND",
+      "scheduleType":"BASIC_WITH_INTERVAL",
+      "deviceGroupName":"tm-shared-all-big-ips",
+      "taskReferenceToRun":"http://localhost:8100/mgmt/shared/n8/bigstats",
+      "name":"n8-BigStats",
+      "taskBodyToRun":{
+        "enabled": true
+      },
+      "taskRestMethodToRun":"POST"
+    };
+
+    var path = '/mgmt/shared/task-scheduler/scheduler'; 
+
+    var uri = that.restHelper.makeRestnodedUri(path);
+    var restOp = that.createRestOperation(uri, body);
+  
+    logger.info('statScheduler.restOp: ' +JSON.stringify(restOp));
+    that.restRequestSender.sendPost(restOp)
+    .then((resp) => {
+      if (DEBUG === true) {
+        logger.info('[BigStats - DEBUG] - statScheduler - resp.statusCode: ' +JSON.stringify(resp.statusCode));
+        logger.info('[BigStats - DEBUG] - statScheduler - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+      }
+
+      resolve(resp.body);
+
+    })
+    .catch((error) => {
+      let errorStatusCode = error.getResponseOperation().getStatusCode();
+      var errorBody = error.getResponseOperation().getBody();
+      logger.info('[BigStats] - Error: ' +error);
+      logger.info('[BigStats] - Error: resp status code ' +errorStatusCode);
+      logger.info('[BigStats] - Error: resp body message' +errorBody.message);
+
+      if (errorBody.message.startsWith("Duplicate item")) {
+        logger.info('Scheduler entry exists.');
+        resolve('Scheduler entry exists.');
+      }
+      else{
+        reject(errorBody);
+      }
+    });
+
+  });
+
+};
+
 
 BigStats.prototype.pullStats = function () {
 
@@ -81,7 +130,7 @@ BigStats.prototype.pullStats = function () {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getSettings()'); }
 
-    let uri = that.generateURI('127.0.0.1', '/mgmt' +BigStatsSettingsPath);
+    let uri = that.generateURI(host, '/mgmt' +BigStatsSettingsPath);
     let restOp = that.createRestOperation(uri);
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Attemtped to fetch config...'); }
@@ -101,7 +150,7 @@ BigStats.prototype.pullStats = function () {
 
   });
 
-  var getResourceList = ((config) => {
+  var getResourceList = (() => {
     return new Promise((resolve,reject) => {
 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
@@ -154,7 +203,7 @@ BigStats.prototype.pullStats = function () {
           if (index === (list.items.length - 1)) {
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of resource list (index === (list.items.length - 1))'); }
             resolve(that.stats);
-          }          
+          }
         });
       });
     });
@@ -250,13 +299,12 @@ BigStats.prototype.pullStats = function () {
     });
   });
 
-  //The promise chain....
   getSettings.then((config) => {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - config.BigStats: ' +config.destination); }
-    return getResourceList(config);
+    return getResourceList();
 
-  })
+  })    
   .then((resource_list) => {
 
     return parseResources(resource_list);
@@ -301,12 +349,16 @@ BigStats.prototype.pullStats = function () {
 *
 * @returns {RestOperation}
 */
-BigStats.prototype.createRestOperation = function (uri) {
+BigStats.prototype.createRestOperation = function (uri, body) {
 
   var restOp = this.restOperationFactory.createRestOperationInstance()
       .setUri(uri)
       .setContentType("application/json")
       .setIdentifiedDeviceRequest(true);
+
+      if (body) {
+        restOp.setBody(body);
+      }
 
 return restOp;
 

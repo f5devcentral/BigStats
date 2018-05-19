@@ -418,7 +418,7 @@ BigStats.prototype.generateURI = function (host, path) {
 BigStats.prototype.getExampleState = function () {
   
   return {
-// whats this now?
+    // redirce to /bigstats_settings
   };
 
 };

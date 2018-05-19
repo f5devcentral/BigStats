@@ -87,13 +87,16 @@ BigStatsSettings.prototype.onPost = function(restOperation) {
 BigStatsSettings.prototype.getExampleState = function () {
   
     return {
-      "config": {
-        "interval":"[seconds]",
-        "destination": {
-            "[ip|url]": "[Refer to documentation]"
-        },
-        "debug": "[true|false]"
-      }
+        "config": {
+            "desintation": {
+              "proto": "[tcp|http|https]",
+              "address": "[ip_address]",
+              "port": "[tcp_port]",
+              "uri": "[uri]"
+            },
+            "interval": "[seconds]",
+            "debug": "[true|false]"
+          }
     };
   
   };

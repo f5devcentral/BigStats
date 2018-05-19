@@ -11,7 +11,7 @@
 const logger = require('f5-logger').getInstance();
 const http = require('http');
 const host = 'localhost';
-const BigStatsSettingsPath = '/shared/n8/bigstats_settings';
+const bigStatsSettingsPath = '/shared/n8/bigstats_settings';
 const vipUri = '/mgmt/tm/ltm/virtual/';
 const poolUri = '/mgmt/tm/ltm/pool/';
 
@@ -35,13 +35,29 @@ BigStats.prototype.onStart = function(success, error) {
 
   logger.info("[BigStats] Starting...");
 
-  //Load state (configuration data) from persisted storage.
-  this.statScheduler()
+  // Make BigStats_Settings worker a dependency.
+  var bigStatsSettingsUrl = this.restHelper.makeRestnodedUri(bigStatsSettingsPath);
+  this.dependencies.push(bigStatsSettingsUrl);
+  success();
+
+};
+
+/**
+ * handle onStartCompleted
+ */
+BigStats.prototype.onStartCompleted = function(success, error) {
+
+  //Fetch state (configuration data) from persisted worker /bigstats_settings
+  this.getSettings()
+  .then(()=> {
+    //Setup Task-Scheduler to poll this worker via onPost()
+    return this.statScheduler();
+  })
   .then((res) => {
     logger.info('[BigStats] Scheduler response: '+JSON.stringify(res,'','\t'));
-    success('[BigStats] Scheduler started...');
+    success();
 
-  });  
+  });
 
 };
 
@@ -52,16 +68,18 @@ BigStats.prototype.onPost = function (restOperation) {
 
   var data = restOperation.getBody();
   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - onPost receved data: ' +JSON.stringify(data)); }
-
-  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - IN onPost with this.config: ' +JSON.stringify(this.config)); }
   
   if (typeof data.enabled !== 'undefined' && data.enabled === true) {
     logger.info('calling pullStats');
-    this.pullStats();
+
+    this.getSettings()
+    .then(()=> {
+      return this.pullStats();
+    })
+
   }
 
-  restOperation.setBody(data);
-  logger.info('\n\nResponding to scheduler now\n\n');
+  restOperation.setBody("BigStats says, Thanks!!");
   this.completeRestOperation(restOperation);
 
 };
@@ -75,7 +93,7 @@ BigStats.prototype.statScheduler = function () {
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
 
     var body = {
-      "interval":10,
+      "interval": 10,
       "intervalUnit":"SECOND",
       "scheduleType":"BASIC_WITH_INTERVAL",
       "deviceGroupName":"tm-shared-all-big-ips",
@@ -90,13 +108,12 @@ BigStats.prototype.statScheduler = function () {
     var path = '/mgmt/shared/task-scheduler/scheduler'; 
     var uri = that.restHelper.makeRestnodedUri(path);
     var restOp = that.createRestOperation(uri, body);
-  
-    logger.info('statScheduler.restOp: ' +JSON.stringify(restOp));
+    
     that.restRequestSender.sendPost(restOp)
     .then((resp) => {
       if (DEBUG === true) {
-        logger.info('[BigStats - DEBUG] - statScheduler - resp.statusCode: ' +JSON.stringify(resp.statusCode));
-        logger.info('[BigStats - DEBUG] - statScheduler - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+        logger.info('[BigStats - DEBUG] - statScheduler() - resp.statusCode: ' +JSON.stringify(resp.statusCode));
+        logger.info('[BigStats - DEBUG] - statScheduler() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
       }
 
       resolve(resp.body);
@@ -106,8 +123,7 @@ BigStats.prototype.statScheduler = function () {
       let errorStatusCode = error.getResponseOperation().getStatusCode();
       var errorBody = error.getResponseOperation().getBody();
 
-      logger.info('[BigStats] - Error: Status Code ' +errorStatusCode);
-      logger.info('[BigStats] - Error: Message' +errorBody.message);
+      logger.info('[BigStats] - Error: Status Code: ' +errorStatusCode+ ' Message: ' +errorBody.message);
 
       if (errorBody.message.startsWith("Duplicate item")) {
         resolve('Scheduler entry exists.');
@@ -121,22 +137,22 @@ BigStats.prototype.statScheduler = function () {
 
 };
 
-
-BigStats.prototype.pullStats = function () {
+BigStats.prototype.getSettings = function () {
 
   var that = this;
-
-  var getSettings = new Promise((resolve, reject) => {
+  
+  return new Promise((resolve, reject) => {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getSettings()'); }
 
-    let uri = that.generateURI(host, '/mgmt' +BigStatsSettingsPath);
+    let uri = that.generateURI(host, '/mgmt' +bigStatsSettingsPath);
     let restOp = that.createRestOperation(uri);
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Attemtped to fetch config...'); }
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Attemtping to fetch config...'); }
 
     that.restRequestSender.sendGet(restOp)
     .then (function (resp) {
+      
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t')); }
       that.config = resp.body.config;
 
@@ -144,11 +160,18 @@ BigStats.prototype.pullStats = function () {
 
     })
     .catch (function (error) {
+
       logger.info('[BigStats] - Error retrieving settings: ' +error);
       reject(error);
+
     });
 
   });
+};
+
+BigStats.prototype.pullStats = function () {
+
+  var that = this;
 
   var getResourceList = (() => {
     return new Promise((resolve,reject) => {
@@ -328,7 +351,7 @@ BigStats.prototype.pullStats = function () {
     
       res.on('end', function () {
         var body = Buffer.concat(chunks);
-        logger.info(body.toString());
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats(): ' +body.toString()); }
       });
 
     });
@@ -339,15 +362,11 @@ BigStats.prototype.pullStats = function () {
     }));
     req.end();
 
-    if (DEBUG === true) {
-//      logger.info('[BigStats - DEBUG] - statScheduler - resp.statusCode: ' +JSON.stringify(resp.statusCode));
-//      logger.info('[BigStats - DEBUG] - statScheduler - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
-    }
-
   });
 
 
-  getSettings.then((config) => {
+  this.getSettings()
+  .then((config) => {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - config.BigStats: ' +config.destination); }
     return getResourceList();

@@ -1,2 +1,3 @@
-# f5-statsd
-Push BIG-IP stats to a Graphite DB, using StatsD
+# f5-BigStats
+Push BIG-IP stats to remote service.
+

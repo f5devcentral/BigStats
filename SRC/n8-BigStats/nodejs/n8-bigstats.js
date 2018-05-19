@@ -86,7 +86,6 @@ BigStats.prototype.statScheduler = function () {
     };
 
     var path = '/mgmt/shared/task-scheduler/scheduler'; 
-
     var uri = that.restHelper.makeRestnodedUri(path);
     var restOp = that.createRestOperation(uri, body);
   

@@ -38,7 +38,7 @@ BigStats.prototype.onStart = function(success, error) {
   //Load state (configuration data) from persisted storage.
   this.statScheduler()
   .then((res) => {
-    logger.info('res: '+JSON.stringify(res,'','\t'));
+    logger.info('[BigStats] Scheduler response: '+JSON.stringify(res,'','\t'));
     success('[BigStats] Scheduler started...');
 
   });  
@@ -51,16 +51,17 @@ BigStats.prototype.onStart = function(success, error) {
 BigStats.prototype.onPost = function (restOperation) {
 
   var data = restOperation.getBody();
-  logger.info("data: " +JSON.stringify(data));
+  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - onPost receved data: ' +JSON.stringify(data)); }
 
-  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - this.config: ' +JSON.stringify(this.config)); }
+  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - IN onPost with this.config: ' +JSON.stringify(this.config)); }
   
   if (typeof data.enabled !== 'undefined' && data.enabled === true) {
     logger.info('calling pullStats');
-    this.pullStats.call(this);
+    this.pullStats();
   }
 
   restOperation.setBody(data);
+  logger.info('\n\nResponding to scheduler now\n\n');
   this.completeRestOperation(restOperation);
 
 };
@@ -68,6 +69,7 @@ BigStats.prototype.onPost = function (restOperation) {
 BigStats.prototype.statScheduler = function () {
 
   var that = this;
+
   return new Promise((resolve,reject) => {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
@@ -103,12 +105,11 @@ BigStats.prototype.statScheduler = function () {
     .catch((error) => {
       let errorStatusCode = error.getResponseOperation().getStatusCode();
       var errorBody = error.getResponseOperation().getBody();
-      logger.info('[BigStats] - Error: ' +error);
-      logger.info('[BigStats] - Error: resp status code ' +errorStatusCode);
-      logger.info('[BigStats] - Error: resp body message' +errorBody.message);
+
+      logger.info('[BigStats] - Error: Status Code ' +errorStatusCode);
+      logger.info('[BigStats] - Error: Message' +errorBody.message);
 
       if (errorBody.message.startsWith("Duplicate item")) {
-        logger.info('Scheduler entry exists.');
         resolve('Scheduler entry exists.');
       }
       else{
@@ -298,6 +299,54 @@ BigStats.prototype.pullStats = function () {
     });
   });
 
+  var pushStats = ((stats) => {
+
+    var path = '/somepath'; 
+  
+    var http = require("http");
+
+    logger.info('IN pushStats w/ config: '+JSON.stringify(this.config));
+
+    var options = {
+      "method": "POST",
+      "hostname": "172.31.1.79",
+      "port": "8080",
+      "path": path,
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+      }
+    };
+    
+    var req = http.request(options, function (res) {
+      var chunks = [];
+    
+      res.on('data', function (chunk) {
+        chunks.push(chunk);
+      });
+    
+      res.on('end', function () {
+        var body = Buffer.concat(chunks);
+        logger.info(body.toString());
+      });
+
+    });
+    
+    req.write(JSON.stringify(stats));
+    req.on('error', ((e) => {
+      logger.info('[BigStats] - ***************Error pushing stats): ' +e);
+    }));
+    req.end();
+
+    if (DEBUG === true) {
+//      logger.info('[BigStats - DEBUG] - statScheduler - resp.statusCode: ' +JSON.stringify(resp.statusCode));
+//      logger.info('[BigStats - DEBUG] - statScheduler - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+    }
+
+  });
+
+
   getSettings.then((config) => {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - config.BigStats: ' +config.destination); }
@@ -310,32 +359,14 @@ BigStats.prototype.pullStats = function () {
 
   })
   .then((stats) => {
-    logger.info('All the stats: ' +JSON.stringify(stats, '', '\t'));
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Pushing stats: ' +JSON.stringify(stats, '', '\t')); }
 
-    //TODO: return fireWebhook(stats);
+    pushStats(stats);
 
   })
   .catch((error) => {
     logger.info('Promise Chain Error: ' +error);
   });
-
-
-//    .then(function (values) {
-//      logger.info('values: ' +values);      
-//      logger.info('values: ' +JSON.stringify(values));
-      // Replace this with 'options'
-//      var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
-//      var val = getRandomArbitrary(20, 300);
-/*
-      values.map(stat => {
-        // Replace this with 'options'
-        var sdc = new SDC({host: '172.31.1.79', port: 8125, debug: true});
-        // Iterate through the list of interesting stats...
-        sdc.gauge('myApp1.bigip1.vip1', 120);
-
-      });
-      
-*/
 
 };
 

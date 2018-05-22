@@ -3,7 +3,7 @@
 Push BIG-IP stats to remote logging services. Support http, https, and statsd destinations.
 
 1. Install the RPM in /DIST to your BIG-IP.
-2. Configure the logging destination:
+2. Configure the destination
 
 ## Install
 
@@ -69,6 +69,8 @@ Your response should be without error, e.g.:
 ```
 
 **StatsD destination:**
+
+NOTE: This functionality uses https://github.com/sivy/node-statsd 
 
 `POST https://{{mgmt_ip_address}}/mgmt/shared/n8/bigstats_settings`
 

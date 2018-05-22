@@ -504,6 +504,7 @@ BigStats.prototype.pushStats = function (body) {
 
   } else if (this.config.destination.proto === "kafka") {
     //TODO: publish to Kafka Topic
+    logger.info('[BigStats] Proto not yet implemented: \'kafka\'');
   }
   else {
     logger.info('[BigStats] - Unrecognized \'proto\'');

@@ -89,7 +89,7 @@ BigStatsSettings.prototype.getExampleState = function () {
     return {
         "config": {
             "desintation": {
-              "proto": "[http|https]",
+              "proto": "[http|https|statsd]",
               "address": "[ip_address]",
               "port": "[tcp_port]",
               "uri": "[uri]"

@@ -4,6 +4,10 @@ Push BIG-IP stats to remote logging services.
 1. Install the RPM in /DIST to your BIG-IP.
 2. Configure the logging destination:
 
+**EXAMPLEs**
+
+HTTP destination:
+
 ```
 POST https://172.31.1.20/mgmt/shared/n8/bigstats_settings
 {
@@ -20,11 +24,29 @@ POST https://172.31.1.20/mgmt/shared/n8/bigstats_settings
 }
 ```
 
-* **proto:** [http|https]
+StatsD destination:
+
+```
+POST https://172.31.1.20/mgmt/shared/n8/bigstats_settings
+{
+    "config": {
+        "destination": {
+          "proto": "statsd",
+          "address": "172.31.1.79",
+          "port": "8125",
+          "uri": ""
+        },
+        "interval": "10",
+        "debug": false
+      }
+}
+```
+
+* **proto:** [http|https|statsd]
 * **address** ip address or resolvable domain name
 * **port** destination tcp port
 * **uri** [OPTINAL] End-point to post data to. Can be blank.
-* **interval** - how often to send the stats. Default is 5 seconds.
+* **interval** - how often, in seconds, to send the stats. Default: 5 seconds.
 * **debug** - this will put a LOT of data into the BIG-IPs `/var/log/restnoded/restnoded.log`. Remember to turn this off when done.
 
 ## Example http output:

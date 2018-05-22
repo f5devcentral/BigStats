@@ -15,8 +15,6 @@ const vipUri = '/mgmt/tm/ltm/virtual/';
 const poolUri = '/mgmt/tm/ltm/pool/';
 
 var DEBUG = false;
-var vipStatValues = [];
-var poolStatValues = [];
 
 function BigStats() {
   this.config = {};
@@ -50,7 +48,7 @@ BigStats.prototype.onStartCompleted = function(success, error) {
   this.getSettings()
   .then(()=> {
     //Setup Task-Scheduler to poll this worker via onPost()
-    this.createScheduler();
+    return this.createScheduler();
   })
   .then((res) => {
     if (DEBUG === true) { logger.info('[BigStats] Scheduler response: '+JSON.stringify(res,'','\t')); }
@@ -435,49 +433,83 @@ BigStats.prototype.pullStats = function () {
 };
 
 
+//Push stats to a remote destination
 BigStats.prototype.pushStats = function (body) {
-      
-  var http = require("http");
 
-  if (this.config.destination.proto === 'https') {
-    logger.info('this.config.destination.proto === \'https\'');
-    http = require("https");
+  //If the destination is 'http' or 'https'
+  if (typeof this.config.adapter !== 'undefined' && this.config.adapter.startsWith('http')) {
+
+    if (this.config.destination.proto === 'https') {
+      var http = require("https");
+    }
+    else {
+      var http = require("http");
+    }
+  
+    var options = {
+      "method": "POST",
+      "hostname": this.config.destination.address,
+      "port": this.config.destination.port,
+      "path": this.config.destination.uri,
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache"
+      }
+    };
+    
+    var req = http.request(options, function (res) {
+      var chunks = [];
+    
+      res.on('data', function (chunk) {
+        chunks.push(chunk);
+      });
+    
+      res.on('end', function () {
+        var body = Buffer.concat(chunks);
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats(): ' +body.toString()); }
+      });
+  
+    });
+    
+    req.write(JSON.stringify(body));
+    req.on('error', ((error) => {
+      logger.info('[BigStats] - ***************Error pushing stats): ' +error);
+    }));
+    req.end();
   }
 
-  var options = {
-    "method": "POST",
-    "hostname": this.config.destination.address,
-    "port": this.config.destination.port,
-    "path": this.config.destination.uri,
-    "headers": {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-cache"
-    }
-  };
-  
-  var req = http.request(options, function (res) {
-    var chunks = [];
-  
-    res.on('data', function (chunk) {
-      chunks.push(chunk);
-    });
-  
-    res.on('end', function () {
-      var body = Buffer.concat(chunks);
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats(): ' +body.toString()); }
+  //If the proto is statsd
+  else if (this.config.destination.proto === "statsd") {
+
+    //we're using the statsd client
+    var StatsD = require('node-statsd'),
+    sdc = new StatsD(this.config.destination.address, 8125);
+
+    Object.keys(body).map((level1) => {
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd: level1: ' +level1); }
+      Object.keys(body[level1]).map((level2) => {
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - level1+2: ' +level1+'.'+level2); }
+        Object.keys(body[level1][level2]).map((level3) => {
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - level1+2+3: ' +level1+'.'+level2+'.'+level3); }
+
+          let namespace = level1+'.'+level2+'.'+level3;
+          let value = body[level1][level2][level3]
+
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - namespace: ' +namespace+ ' value: ' +value); }
+          sdc.gauge(namespace, value);
+
+        });
+      });      
     });
 
-  });
-  
-  req.write(JSON.stringify(body));
-  req.on('error', ((error) => {
-    logger.info('[BigStats] - ***************Error pushing stats): ' +error);
-  }));
-  req.end();
+  } else if (this.config.destination.proto === "kafka") {
+    //TODO: publish to Kafka Topic
+  }
+  else {
+    logger.info('[BigStats] - Unrecognized \'proto\'');
+  }
 
 };
-
-
 
 
 /**

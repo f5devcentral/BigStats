@@ -53,7 +53,7 @@ BigStats.prototype.onStartCompleted = function(success, error) {
     this.createScheduler();
   })
   .then((res) => {
-    logger.info('[BigStats] Scheduler response: '+JSON.stringify(res,'','\t'));
+    if (DEBUG === true) { logger.info('[BigStats] Scheduler response: '+JSON.stringify(res,'','\t')); }
     success();
 
   });
@@ -84,11 +84,9 @@ BigStats.prototype.onPost = function (restOperation) {
 
 BigStats.prototype.updateScheduler = function (interval) {
   
-  logger.info('New interval: ' +interval);
-  //update scheduler interval
-
   var that = this;
 
+  // Get the unique identifier for the scheduler task
   var getSchedulerId = (() => {
     return new Promise((resolve,reject) => {
 
@@ -111,7 +109,6 @@ BigStats.prototype.updateScheduler = function (interval) {
           }
         }); 
 
-
       })
       .catch((error) => {
 
@@ -124,6 +121,7 @@ BigStats.prototype.updateScheduler = function (interval) {
     });
   });
 
+  //Patch the "interval" of the scheduler task with the new value.
   var patchScheduler = ((id) => {
     return new Promise((resolve,reject) => {
 
@@ -151,11 +149,11 @@ BigStats.prototype.updateScheduler = function (interval) {
 
   getSchedulerId()
   .then((id) => {
-    logger.info('id: ' +id);
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Scheduler Task id: ' +id); }
     return patchScheduler(id);
   })
   .then((results) => {
-    logger.info('results: ' +JSON.stringify(results));
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Patch Scheduler results: ' +JSON.stringify(results)); }
   });
 
 };
@@ -228,7 +226,6 @@ BigStats.prototype.getSettings = function () {
 
     that.restRequestSender.sendGet(restOp)
     .then (function (resp) {
-      logger.info('[BigStats] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t'));
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t')); }
       if (resp.body.config.debug === true) {
         logger.info('debug is true');

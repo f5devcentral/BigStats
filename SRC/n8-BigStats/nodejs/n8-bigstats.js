@@ -9,13 +9,12 @@
 "use strict";
 
 const logger = require('f5-logger').getInstance();
-const http = require('http');
 const host = 'localhost';
 const bigStatsSettingsPath = '/shared/n8/bigstats_settings';
 const vipUri = '/mgmt/tm/ltm/virtual/';
 const poolUri = '/mgmt/tm/ltm/pool/';
 
-var DEBUG = true;
+var DEBUG = false;
 var vipStatValues = [];
 var poolStatValues = [];
 
@@ -51,7 +50,7 @@ BigStats.prototype.onStartCompleted = function(success, error) {
   this.getSettings()
   .then(()=> {
     //Setup Task-Scheduler to poll this worker via onPost()
-    return this.statScheduler();
+    this.createScheduler();
   })
   .then((res) => {
     logger.info('[BigStats] Scheduler response: '+JSON.stringify(res,'','\t'));
@@ -70,12 +69,11 @@ BigStats.prototype.onPost = function (restOperation) {
   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - onPost receved data: ' +JSON.stringify(data)); }
   
   if (typeof data.enabled !== 'undefined' && data.enabled === true) {
-    logger.info('calling pullStats');
 
     this.getSettings()
-    .then(()=> {
-      return this.pullStats();
-    })
+    .then(() => {
+      this.pullStats();
+    });
 
   }
 
@@ -84,7 +82,85 @@ BigStats.prototype.onPost = function (restOperation) {
 
 };
 
-BigStats.prototype.statScheduler = function () {
+BigStats.prototype.updateScheduler = function (interval) {
+  
+  logger.info('New interval: ' +interval);
+  //update scheduler interval
+
+  var that = this;
+
+  var getSchedulerId = (() => {
+    return new Promise((resolve,reject) => {
+
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN updateScheduler() with config: ' +JSON.stringify(this.config)); }
+
+      var path = '/mgmt/shared/task-scheduler/scheduler'; 
+      let uri = that.generateURI(host, path);
+      let restOp = that.createRestOperation(uri);
+  
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Attemtping to fetch config...'); }
+  
+      that.restRequestSender.sendGet(restOp)
+      .then (function (resp) {
+        
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
+
+        resp.body.items.map((element, index) => {
+          if (element.name === "n8-BigStats") {
+            resolve(element.id);
+          }
+        }); 
+
+
+      })
+      .catch((error) => {
+
+        //TODO: handle this error
+        reject(error);
+
+      });
+  
+
+    });
+  });
+
+  var patchScheduler = ((id) => {
+    return new Promise((resolve,reject) => {
+
+      var body = {
+        "interval": interval
+      };
+
+      var path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
+      let uri = that.generateURI(host, path);
+      let restOp = that.createRestOperation(uri, body);
+
+ 
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() restOp...' +restOp); }
+      
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Attemtping to patch interval...'); }
+  
+      that.restRequestSender.sendPatch(restOp)
+      .then (function (resp) {
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
+        resolve(resp.body);
+      });
+
+    });
+  });
+
+  getSchedulerId()
+  .then((id) => {
+    logger.info('id: ' +id);
+    return patchScheduler(id);
+  })
+  .then((results) => {
+    logger.info('results: ' +JSON.stringify(results));
+  });
+
+};
+
+BigStats.prototype.createScheduler = function () {
 
   var that = this;
 
@@ -93,7 +169,7 @@ BigStats.prototype.statScheduler = function () {
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
 
     var body = {
-      "interval": 10,
+      "interval": this.config.interval,
       "intervalUnit":"SECOND",
       "scheduleType":"BASIC_WITH_INTERVAL",
       "deviceGroupName":"tm-shared-all-big-ips",
@@ -112,8 +188,8 @@ BigStats.prototype.statScheduler = function () {
     that.restRequestSender.sendPost(restOp)
     .then((resp) => {
       if (DEBUG === true) {
-        logger.info('[BigStats - DEBUG] - statScheduler() - resp.statusCode: ' +JSON.stringify(resp.statusCode));
-        logger.info('[BigStats - DEBUG] - statScheduler() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+        logger.info('[BigStats - DEBUG] - createScheduler() - resp.statusCode: ' +JSON.stringify(resp.statusCode));
+        logger.info('[BigStats - DEBUG] - createScheduler() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
       }
 
       resolve(resp.body);
@@ -152,8 +228,21 @@ BigStats.prototype.getSettings = function () {
 
     that.restRequestSender.sendGet(restOp)
     .then (function (resp) {
-      
+      logger.info('[BigStats] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t'));
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t')); }
+      if (resp.body.config.debug === true) {
+        logger.info('debug is true');
+        DEBUG = true;
+      }
+      else {
+        DEBUG = false;
+      }
+
+      if (resp.body.config.interval !== that.config.interval) {
+        logger.info('Interval changed... ' +resp.body.config.interval);
+        that.updateScheduler(resp.body.config.interval);
+      }
+      
       that.config = resp.body.config;
 
       resolve(resp.body.config);
@@ -322,53 +411,10 @@ BigStats.prototype.pullStats = function () {
     });
   });
 
-  var pushStats = ((stats) => {
-
-    var path = '/somepath'; 
-  
-    var http = require("http");
-
-    logger.info('IN pushStats w/ config: '+JSON.stringify(this.config));
-
-    var options = {
-      "method": "POST",
-      "hostname": "172.31.1.79",
-      "port": "8080",
-      "path": path,
-      "headers": {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive"
-      }
-    };
-    
-    var req = http.request(options, function (res) {
-      var chunks = [];
-    
-      res.on('data', function (chunk) {
-        chunks.push(chunk);
-      });
-    
-      res.on('end', function () {
-        var body = Buffer.concat(chunks);
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats(): ' +body.toString()); }
-      });
-
-    });
-    
-    req.write(JSON.stringify(stats));
-    req.on('error', ((e) => {
-      logger.info('[BigStats] - ***************Error pushing stats): ' +e);
-    }));
-    req.end();
-
-  });
-
-
   this.getSettings()
   .then((config) => {
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - config.BigStats: ' +config.destination); }
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - config.destination: ' +JSON.stringify(config.destination)); }
     return getResourceList();
 
   })    
@@ -378,16 +424,63 @@ BigStats.prototype.pullStats = function () {
 
   })
   .then((stats) => {
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Pushing stats: ' +JSON.stringify(stats, '', '\t')); }
 
-    pushStats(stats);
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Pushing stats: ' +JSON.stringify(stats, '', '\t')); }
+    that.pushStats(stats);
 
   })
   .catch((error) => {
+
     logger.info('Promise Chain Error: ' +error);
+
   });
 
 };
+
+
+BigStats.prototype.pushStats = function (body) {
+      
+  var http = require("http");
+
+  if (this.config.destination.proto === 'https') {
+    logger.info('this.config.destination.proto === \'https\'');
+    http = require("https");
+  }
+
+  var options = {
+    "method": "POST",
+    "hostname": this.config.destination.address,
+    "port": this.config.destination.port,
+    "path": this.config.destination.uri,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache"
+    }
+  };
+  
+  var req = http.request(options, function (res) {
+    var chunks = [];
+  
+    res.on('data', function (chunk) {
+      chunks.push(chunk);
+    });
+  
+    res.on('end', function () {
+      var body = Buffer.concat(chunks);
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats(): ' +body.toString()); }
+    });
+
+  });
+  
+  req.write(JSON.stringify(body));
+  req.on('error', ((error) => {
+    logger.info('[BigStats] - ***************Error pushing stats): ' +error);
+  }));
+  req.end();
+
+};
+
+
 
 
 /**

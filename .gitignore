@@ -1,4 +1,4 @@
 test.json
 DEV_NOTES.md
-.vscode/*
 package-lock.json
+.vscode/settings.json

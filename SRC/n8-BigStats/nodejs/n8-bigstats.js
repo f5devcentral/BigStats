@@ -437,7 +437,7 @@ BigStats.prototype.pullStats = function () {
 BigStats.prototype.pushStats = function (body) {
 
   //If the destination is 'http' or 'https'
-  if (typeof this.config.adapter !== 'undefined' && this.config.adapter.startsWith('http')) {
+  if (typeof this.config.destination.proto !== 'undefined' && this.config.destination.proto.startsWith('http')) {
 
     if (this.config.destination.proto === 'https') {
       var http = require("https");

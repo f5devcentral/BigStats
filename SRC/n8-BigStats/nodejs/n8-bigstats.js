@@ -2,7 +2,7 @@
 *   BigStats:
 *     iControl LX Stats Exporter for BIG-IP 
 *
-*   N. Pearce, May 2018
+*   N. Pearce, June 2018
 *   http://github.com/npearce
 *
 */
@@ -11,8 +11,9 @@
 const logger = require('f5-logger').getInstance();
 const host = 'localhost';
 const bigStatsSettingsPath = '/shared/n8/bigstats_settings';
-const vipUri = '/mgmt/tm/ltm/virtual/';
-const poolUri = '/mgmt/tm/ltm/pool/';
+var StatsD = require('node-statsd');
+var kafka = require('kafka-node');
+var Producer = kafka.Producer;
 
 var DEBUG = false;
 
@@ -439,11 +440,13 @@ BigStats.prototype.pushStats = function (body) {
   //If the destination is 'http' or 'https'
   if (typeof this.config.destination.proto !== 'undefined' && this.config.destination.proto.startsWith('http')) {
 
+    var http;
+
     if (this.config.destination.proto === 'https') {
-      var http = require("https");
+      http = require("https");
     }
     else {
-      var http = require("http");
+      http = require("http");
     }
   
     var options = {
@@ -479,11 +482,10 @@ BigStats.prototype.pushStats = function (body) {
   }
 
   //If the proto is statsd
-  else if (this.config.destination.proto === "statsd") {
+  else if (typeof this.config.destination.proto !== 'undefined' && this.config.destination.proto === "statsd") {
 
     //we're using the statsd client
-    var StatsD = require('node-statsd'),
-    sdc = new StatsD(this.config.destination.address, 8125);
+    var sdc = new StatsD(this.config.destination.address, 8125);
 
     Object.keys(body).map((level1) => {
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd: level1: ' +level1); }
@@ -493,7 +495,7 @@ BigStats.prototype.pushStats = function (body) {
           if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - level1+2+3: ' +level1+'.'+level2+'.'+level3); }
 
           let namespace = level1+'.'+level2+'.'+level3;
-          let value = body[level1][level2][level3]
+          let value = body[level1][level2][level3];
 
           if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - namespace: ' +namespace+ ' value: ' +value); }
           sdc.gauge(namespace, value);
@@ -502,9 +504,37 @@ BigStats.prototype.pushStats = function (body) {
       });      
     });
 
-  } else if (this.config.destination.proto === "kafka") {
-    //TODO: publish to Kafka Topic
-    logger.info('[BigStats] Proto not yet implemented: \'kafka\'');
+  } 
+  
+  else if (typeof this.config.destination.proto !== 'undefined' && this.config.destination.proto === "kafka") {
+
+    const client = new kafka.KafkaClient ( 
+      {
+        kafkaHost: this.config.destination.address+':'+this.config.destination.port
+      } 
+    );
+    var producer = new Producer(client);
+
+    producer.on('ready', function () {
+
+      Object.keys(body).map((level1) => {
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - kafka: topic: ' +level1); }
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - kafka: message: ' +JSON.stringify(body[level1])); }
+
+        var payload = [
+                { topic: level1, messages: JSON.stringify(body[level1]) }
+        ];
+        producer.send(payload, function (err, data) {
+          if (DEBUG === true) { logger.info('kafka producer response: ' +JSON.stringify(data)); }
+        });
+      });
+                    
+    });
+
+    producer.on('error', function (err) {
+      logger.info('Kafka Producer error: ' +err);
+    });
+
   }
   else {
     logger.info('[BigStats] - Unrecognized \'proto\'');

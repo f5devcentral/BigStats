@@ -49,7 +49,7 @@ Your response should be without error, e.g.:
 
 ## Configure
 
-To configiure, POST your settings to `/mgmt/shared/n8/bigstats_settings`:
+To configiure, POST settings to `/mgmt/shared/n8/bigstats_settings`:
 
 * **proto:** [http|https|statsd|kafka]
 * **address** ip address or resolvable domain name
@@ -101,7 +101,7 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
 
 **Kafka Message Bus Destination:**
 
-NOTE: This functionality uses 
+NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
 
 `POST https://{{mgmt_ip_address}}/mgmt/shared/n8/bigstats_settings`
 
@@ -119,7 +119,7 @@ NOTE: This functionality uses
 }
 ```
 
-An new Kafka topic is created for each application found on the BIG-IP. A Kafka message looks like:
+BigStats creates a new Kafka Topic for each AS3 application found on the BIG-IP. 
 
 ```sh
 / # kafka-topics.sh --list --zookeeper zookeeper
@@ -127,6 +127,8 @@ App1a
 App1b
 App2
 ```
+
+A Kafka message for sample application (topic) `App1a` looks like:
 
 ```sh
 / # kafka-simple-consumer-shell.sh --broker-list localhost:9092 --topic App1a

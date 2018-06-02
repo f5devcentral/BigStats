@@ -1,19 +1,39 @@
-# v0.1.1-release
+# RELEASE NOTES
 
-## Features
+## v0.2.0-release
+
+### Features
+
+* Added Kafka Producer to support posting stats to an Apache Kafka Message Bus.
+
+### Fixes
+
+None
+
+### Known Issues
+
+Kafka Producer implementation doesnt support message bus discovery. Should add Zookeeper support to facilitate this.
+
+---
+
+## v0.1.1-release
+
+### Features
 
 No new features
 
-## Fixes
+### Fixes
 
 **Legacy 'config' object model breaking 'http' destination**
 
-## Known Issues
+### Known Issues
 none
 
-# v0.1.0-release
+---
 
-## Features
+## v0.1.0-release
+
+### Features
 
 Supported destinations:
 
@@ -21,7 +41,7 @@ Supported destinations:
 * HTTPS
 * StatsD
 
-## Known Issues
+### Known Issues
 
 1. Legacy 'config' object model breaking 'http' destination
 

@@ -49,6 +49,17 @@ Your response should be without error, e.g.:
 
 ## Configure
 
+To configiure, POST your settings to `/mgmt/shared/n8/bigstats_settings`:
+
+* **proto:** [http|https|statsd|kafka]
+* **address** ip address or resolvable domain name
+* **port** destination tcp port
+* **uri** [OPTINAL] End-point to post data to. Can be blank.
+* **interval** - how often, in seconds, to send the stats. Default: 5 seconds.
+* **debug** - this will put a LOT of data into the BIG-IPs `/var/log/restnoded/restnoded.log`. Remember to turn this off when done.
+
+### Example comnfigurations:
+
 **HTTP destination:**
 
 `POST https://{{mgmt_ip_address}}/mgmt/shared/n8/bigstats_settings`
@@ -88,12 +99,39 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
 }
 ```
 
-* **proto:** [http|https|statsd]
-* **address** ip address or resolvable domain name
-* **port** destination tcp port
-* **uri** [OPTINAL] End-point to post data to. Can be blank.
-* **interval** - how often, in seconds, to send the stats. Default: 5 seconds.
-* **debug** - this will put a LOT of data into the BIG-IPs `/var/log/restnoded/restnoded.log`. Remember to turn this off when done.
+**Kafka Message Bus Destination:**
+
+NOTE: This functionality uses 
+
+`POST https://{{mgmt_ip_address}}/mgmt/shared/n8/bigstats_settings`
+
+```json
+{
+    "config": {
+        "destination": {
+          "proto": "kafka",
+          "address": "172.31.1.78",
+          "port": "9092"
+        },
+        "interval": "10",
+        "debug": false
+      }
+}
+```
+
+An new Kafka topic is created for each application found on the BIG-IP. A Kafka message looks like:
+
+```sh
+/ # kafka-topics.sh --list --zookeeper zookeeper
+App1a
+App1b
+App2
+```
+
+```sh
+/ # kafka-simple-consumer-shell.sh --broker-list localhost:9092 --topic App1a
+{"vip":{"clientside_curConns":0,"clientside_maxConns":6,"clientside_bitsIn":668184240,"clientside_bitsOut":37371977200,"clientside_pktsIn":1500027,"clientside_pktsOut":2031911},"pool":{"serverside_curConns":0,"serverside_maxConns":9,"serverside_bitsIn":537711552,"serverside_bitsOut":36314664160,"serverside_pktsIn":1270792,"serverside_pktsOut":2353845}}
+```
 
 **Example BigStats http output:**
 

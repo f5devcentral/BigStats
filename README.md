@@ -49,7 +49,7 @@ Your response should be without error, e.g.:
 
 ## Configure
 
-To configiure, POST settings to `/mgmt/shared/n8/bigstats_settings`:
+To configure, POST settings to `/mgmt/shared/n8/bigstats_settings`:
 
 * **proto:** [http|https|statsd|kafka]
 * **address** ip address or resolvable domain name

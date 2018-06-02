@@ -1,13 +1,13 @@
 # n8-BigStats
 
-Push BIG-IP stats to remote logging services. Support http, https, and statsd destinations.
+Push BIG-IP stats to remote logging services. Supports http, https, statsd, and Apache Kafka destinations.
 
 1. Install the RPM in /DIST to your BIG-IP.
 2. Configure the destination
 
 ## Install
 
-To implement this solution you must install with the AS3 worker and the BigStats worker. This document will cover BigStats only. Details on AS3 cn be found here: http://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/3/
+To implement this solution you must install with the AS3 worker and the BigStats worker. This document will cover BigStats only. Details on AS3 can be found here: http://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/3/
 
 1. Download the latest BigStats RPM from the here: https://github.com/npearce/n8-BigStats It's name will be something like (numbers may differ): `n8-BigStats-0.1.0-0002.noarch.rpm`
 2. Copy the BigStats RPM into the following directory on your BIG-IP: `/var/config/rest/downloads/`
@@ -54,8 +54,8 @@ To configiure, POST settings to `/mgmt/shared/n8/bigstats_settings`:
 * **proto:** [http|https|statsd|kafka]
 * **address** ip address or resolvable domain name
 * **port** destination tcp port
-* **uri** [OPTINAL] End-point to post data to. Can be blank.
-* **interval** - how often, in seconds, to send the stats. Default: 5 seconds.
+* **uri** [OPTIONAL] End-point to post data to. Can be blank. Used only for http or https destinations.
+* **interval** - how often, in seconds, to send the stats. Default: 10 seconds.
 * **debug** - this will put a LOT of data into the BIG-IPs `/var/log/restnoded/restnoded.log`. Remember to turn this off when done.
 
 ### Example comnfigurations:

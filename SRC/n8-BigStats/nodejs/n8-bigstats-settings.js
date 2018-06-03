@@ -72,7 +72,14 @@ BigStatsSettings.prototype.onPost = function(restOperation) {
     else {
 
         logger.info('[BigStatsSettings] - Settings updated.');
+
+        //Check if interval is less that minimum
         this.state = newState;
+
+        if (this.state.config.interval < 10) {
+            //Enforcing minimum interval
+            this.state.config.interval = 10;
+        }
 
     }
 

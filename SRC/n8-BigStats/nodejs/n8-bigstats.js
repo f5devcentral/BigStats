@@ -127,7 +127,7 @@ BigStats.prototype.updateScheduler = function (interval) {
       var body = {
         "interval": interval
       };
-
+  
       var path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
       let uri = that.generateURI(host, path);
       let restOp = that.createRestOperation(uri, body);
@@ -142,7 +142,7 @@ BigStats.prototype.updateScheduler = function (interval) {
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
         resolve(resp.body);
       });
-
+      //TODO: catch error
     });
   });
 
@@ -196,7 +196,7 @@ BigStats.prototype.createScheduler = function () {
       let errorStatusCode = error.getResponseOperation().getStatusCode();
       var errorBody = error.getResponseOperation().getBody();
 
-      logger.info('[BigStats] - Error: Status Code: ' +errorStatusCode+ ' Message: ' +errorBody.message);
+      logger.info('[BigStats] Scheduler - Error: Status Code: ' +errorStatusCode+ ' Message: ' +errorBody.message);
 
       if (errorBody.message.startsWith("Duplicate item")) {
         resolve('Scheduler entry exists.');
@@ -234,14 +234,16 @@ BigStats.prototype.getSettings = function () {
         DEBUG = false;
       }
 
-      if (resp.body.config.interval !== that.config.interval) {
-        logger.info('Interval changed... ' +resp.body.config.interval);
-        that.updateScheduler(resp.body.config.interval);
-      }
-      
-      that.config = resp.body.config;
+      //Check if interval changed
+      if (typeof that.config.interval !== 'undefined' && that.config.interval !== resp.body.config.interval) {
 
-      resolve(resp.body.config);
+        that.updateScheduler(resp.body.config.interval);
+
+      }
+
+      that.config = resp.body.config;      
+
+      resolve(that.config);
 
     })
     .catch (function (error) {

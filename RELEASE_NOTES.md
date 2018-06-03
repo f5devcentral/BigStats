@@ -5,6 +5,7 @@
 ### Features
 
 * Added Kafka Producer to support posting stats to an Apache Kafka Message Bus.
+* Added minimum polling interval of 10 seconds, for safes...
 
 ### Fixes
 

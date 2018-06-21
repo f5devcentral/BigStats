@@ -261,7 +261,7 @@ BigStats.prototype.pullStats = function () {
   var that = this;
 
   var getResourceList = (() => {
-    return new Promise((resolve,reject) => {
+    return new Promise((resolve, reject) => {
 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
 
@@ -288,9 +288,9 @@ BigStats.prototype.pullStats = function () {
   
     });
   }); 
-
+//TODO: implement sizing: 
   var parseResources = ((list) => {
-    return new Promise((resolve,reject) => {
+    return new Promise((resolve, reject) => {
 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN parseResources() with list: ' +JSON.stringify(list)); }
 
@@ -311,9 +311,16 @@ BigStats.prototype.pullStats = function () {
 
           if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(list.items.length - 1)+ '  index: ' +index); }
           if (index === (list.items.length - 1)) {
+
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of resource list (index === (list.items.length - 1))'); }
             resolve(that.stats);
           }
+
+        })
+        .catch((error) => {
+
+          logger.info('[BigStats] - Error: ' +JSON.stringify(error));
+          reject(error);
         });
       });
     });
@@ -440,11 +447,11 @@ BigStats.prototype.pullStats = function () {
 BigStats.prototype.pushStats = function (body) {
 
   //If the destination is 'http' or 'https'
-  if (typeof this.config.destination.proto !== 'undefined' && this.config.destination.proto.startsWith('http')) {
+  if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol.startsWith('http')) {
 
     var http;
 
-    if (this.config.destination.proto === 'https') {
+    if (this.config.destination.protocol === 'https') {
       http = require("https");
     }
     else {
@@ -483,8 +490,8 @@ BigStats.prototype.pushStats = function (body) {
     req.end();
   }
 
-  //If the proto is statsd
-  else if (typeof this.config.destination.proto !== 'undefined' && this.config.destination.proto === "statsd") {
+  //If the protocol is statsd
+  else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "statsd") {
 
     //we're using the statsd client
     var sdc = new StatsD(this.config.destination.address, 8125);
@@ -508,7 +515,7 @@ BigStats.prototype.pushStats = function (body) {
 
   } 
   
-  else if (typeof this.config.destination.proto !== 'undefined' && this.config.destination.proto === "kafka") {
+  else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "kafka") {
 
     const client = new kafka.KafkaClient ( 
       {
@@ -539,7 +546,7 @@ BigStats.prototype.pushStats = function (body) {
 
   }
   else {
-    logger.info('[BigStats] - Unrecognized \'proto\'');
+    logger.info('[BigStats] - Unrecognized \'protocol\'');
   }
 
 };

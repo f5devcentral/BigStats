@@ -17,10 +17,10 @@
                         "description": "Protocol used to export statistics",
                         "default": "",
                         "enum": [
-                        "http",
-                        "https",
-                        "statsd",
-                        "kafka"
+                            "http",
+                            "https",
+                            "statsd",
+                            "kafka"
                         ]
                     },
                     "address": {
@@ -29,7 +29,7 @@
                         "title": "The Address Schema ",
                         "default": "",
                         "examples": [
-                        "[ip_address]"
+                            "1.1.1.1"
                         ]
                     },
                     "port": {
@@ -38,16 +38,16 @@
                         "title": "The Port Schema ",
                         "default": "",
                         "examples": [
-                        "[tcp_port]"
+                            8080
                         ]
                     },
                     "uri": {
                         "$id": "/properties/config/properties/destitation/properties/uri",
                         "type": "string",
                         "title": "The Uri Schema ",
-                        "default": "",
+                        "default": "/",
                         "examples": [
-                        "[uri]"
+                            "/stats"
                         ]
                     }
                     }
@@ -56,9 +56,9 @@
                     "$id": "/properties/config/properties/interval",
                     "type": "string",
                     "title": "The Interval Schema ",
-                    "default": "",
+                    "default": 10,
                     "examples": [
-                    "[seconds]"
+                        42
                     ]
                 },
                 "debug": {
@@ -67,7 +67,8 @@
                     "title": "The Debug Schema ",
                     "default": false,
                     "examples": [
-                    false
+                        true,
+                        false
                     ]
                 }
             }

@@ -364,7 +364,7 @@ BigStats.prototype.pullStats = function () {
         */ 
         else if (this.config.size === 'medium') {
 
-          Promise.all([getVipStats(element), getPoolMemberList(element)])  //TODO: add getPoolMemberStats(element)
+          Promise.all([getVipStats(element), getPoolMemberList(element)])
           .then((values) => {
             if (DEBUG === true) { 
               logger.info('[BigStats - DEBUG] - Index:' +index+ ', getVipStats() values[0]: ' +JSON.stringify(values[0],'','\t'));
@@ -386,7 +386,6 @@ BigStats.prototype.pullStats = function () {
                 logger.info('getPoolMemberStats(values[1]) returned:' +JSON.stringify(stats));
                 that.stats[element.subPath][element.pool].push(stats);
                 logger.info('getPoolMemberStats(values[1]) that.stats:' +JSON.stringify(that.stats, '', '\t'));
-
 
                 if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(values[1].length - 1)+ '  index: ' +index); }
                 if (index === (values[1].length - 1)) {

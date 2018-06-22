@@ -33,10 +33,15 @@ BigStats.prototype.onStart = function(success, error) {
 
   logger.info("[BigStats] Starting...");
 
-  // Make BigStats_Settings worker a dependency.
-  var bigStatsSettingsUrl = this.restHelper.makeRestnodedUri(bigStatsSettingsPath);
-  this.dependencies.push(bigStatsSettingsUrl);
-  success();
+  try {
+    // Make BigStats_Settings worker a dependency.
+    var bigStatsSettingsUrl = this.restHelper.makeRestnodedUri(bigStatsSettingsPath);
+    this.dependencies.push(bigStatsSettingsUrl);
+    success();
+    
+  } catch (err) {
+    error(err);    
+  }
 
 };
 
@@ -52,8 +57,14 @@ BigStats.prototype.onStartCompleted = function(success, error) {
     return this.createScheduler();
   })
   .then((res) => {
-    if (DEBUG === true) { logger.info('[BigStats] Scheduler response: '+JSON.stringify(res,'','\t')); }
+
+    if (DEBUG === true) { logger.info('[BigStats] Scheduler response: ' +JSON.stringify(res,'','\t')); }
     success();
+
+  })
+  .catch((err) => {
+
+    error(err);
 
   });
 
@@ -81,82 +92,11 @@ BigStats.prototype.onPost = function (restOperation) {
 
 };
 
-BigStats.prototype.updateScheduler = function (interval) {
-  
-  var that = this;
-
-  // Get the unique identifier for the scheduler task
-  var getSchedulerId = (() => {
-    return new Promise((resolve,reject) => {
-
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN updateScheduler() with config: ' +JSON.stringify(this.config)); }
-
-      var path = '/mgmt/shared/task-scheduler/scheduler'; 
-      let uri = that.generateURI(host, path);
-      let restOp = that.createRestOperation(uri);
-  
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Attemtping to fetch config...'); }
-  
-      that.restRequestSender.sendGet(restOp)
-      .then (function (resp) {
-        
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
-
-        resp.body.items.map((element, index) => {
-          if (element.name === "n8-BigStats") {
-            resolve(element.id);
-          }
-        }); 
-
-      })
-      .catch((error) => {
-
-        //TODO: handle this error
-        reject(error);
-
-      });
-  
-
-    });
-  });
-
-  //Patch the "interval" of the scheduler task with the new value.
-  var patchScheduler = ((id) => {
-    return new Promise((resolve,reject) => {
-
-      var body = {
-        "interval": interval
-      };
-  
-      var path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
-      let uri = that.generateURI(host, path);
-      let restOp = that.createRestOperation(uri, body);
-
- 
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() restOp...' +restOp); }
-      
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Attemtping to patch interval...'); }
-  
-      that.restRequestSender.sendPatch(restOp)
-      .then (function (resp) {
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
-        resolve(resp.body);
-      });
-      //TODO: catch error
-    });
-  });
-
-  getSchedulerId()
-  .then((id) => {
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Scheduler Task id: ' +id); }
-    return patchScheduler(id);
-  })
-  .then((results) => {
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Patch Scheduler results: ' +JSON.stringify(results)); }
-  });
-
-};
-
+/**
+ * Creates an iControl 'task-scheduler' job to poke onPost every 'n' seconds
+ * Executed by onStartCompleted()
+ * Interval configuration managed by BigStatsSettings: this.config.interval
+ */
 BigStats.prototype.createScheduler = function () {
 
   var that = this;
@@ -206,6 +146,96 @@ BigStats.prototype.createScheduler = function () {
       }
     });
 
+  });
+
+};
+
+/**
+ * Updates the iControl 'task-scheduler' job if interval has changed
+ * Executed with every onPost poll.
+ * 'interval' is a persisted setting managed by BigStatsSettings. See bigstats-schema.json
+ */
+BigStats.prototype.updateScheduler = function (interval) {
+  
+  var that = this;
+
+  // Fetch task-cheduler's unique identifier for the BigStats scheduler task
+  var getSchedulerId = (() => {
+    return new Promise((resolve, reject) => {
+
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN updateScheduler() with config: ' +JSON.stringify(this.config)); }
+
+      var path = '/mgmt/shared/task-scheduler/scheduler'; 
+      let uri = that.generateURI(host, path);
+      let restOp = that.createRestOperation(uri);
+  
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Attemtping to fetch config...'); }
+  
+      that.restRequestSender.sendGet(restOp)
+      .then (function (resp) {
+        
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
+
+        resp.body.items.map((element, index) => {
+          if (element.name === "n8-BigStats") {
+            resolve(element.id);
+          }
+        }); 
+
+      })
+      .catch((error) => {
+
+        //TODO: handle this error
+        reject(error);
+
+      });
+  
+
+    });
+  });
+
+  // Using the task-scheduler unique id, Patch the "interval" of the scheduler task with the new value.
+  var patchScheduler = ((id) => {
+    return new Promise((resolve, reject) => {
+
+      var body = {
+        "interval": interval
+      };
+  
+      var path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
+      let uri = that.generateURI(host, path);
+      let restOp = that.createRestOperation(uri, body);
+
+ 
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() restOp...' +restOp); }
+      
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Attemtping to patch interval...'); }
+  
+      that.restRequestSender.sendPatch(restOp)
+      .then (function (resp) {
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
+        resolve(resp.body);
+      })
+      .catch((error) => {
+
+        //TODO: handle this error
+        reject(error);
+
+      });
+    });
+  });
+
+  // Execute the shceduler interval update 
+  getSchedulerId()
+  .then((id) => {
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Scheduler Task id: ' +id); }
+    return patchScheduler(id);
+  })
+  .then((results) => {
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Patch Scheduler results: ' +JSON.stringify(results)); }
+  })
+  .catch((err) => {
+    reject(err);
   });
 
 };
@@ -282,12 +312,15 @@ BigStats.prototype.pullStats = function () {
   
       })
       .catch((error) => {
+
         logger.info('[BigStats] - Error: ' +JSON.stringify(error));
         reject(error);
+
       });
   
     });
   }); 
+
 //TODO: implement sizing: 
   var parseResources = ((list) => {
     return new Promise((resolve, reject) => {
@@ -317,19 +350,20 @@ BigStats.prototype.pullStats = function () {
           }
 
         })
-        .catch((error) => {
+        .catch((err) => {
 
-          logger.info('[BigStats] - Error: ' +JSON.stringify(error));
-          reject(error);
+          logger.info('[BigStats] - Error: ' +JSON.stringify(err));
+          reject(err);
+
         });
       });
     });
   });
   
   var getVipStats = ((resource) => {
-    return new Promise((resolve,reject) => {
+    return new Promise((resolve, reject) => {
 
-      var that = this;
+//      var that = this;
     
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getVipStats with resource_list: ' +JSON.stringify(resource)); }
 
@@ -364,9 +398,11 @@ BigStats.prototype.pullStats = function () {
         resolve(vipStats);
 
       })
-      .catch((error) => {
-        logger.info('[BigStats] - Error: ' +error);
-        reject(error);
+      .catch((err) => {
+
+        logger.info('[BigStats] - Error: ' +err);
+        reject(err);
+
       });
     });
   });
@@ -410,12 +446,13 @@ BigStats.prototype.pullStats = function () {
         resolve(poolStats);
 
       })
-      .catch((error) => {
-        logger.info('[BigStats - Error] pool_stats error: '+error);
+      .catch((err) => {
+        logger.info('[BigStats - Error] pool_stats error: ' +err);
       });
     });
   });
 
+  // Execute the BIG-IP stats scraping workflow
   this.getSettings()
   .then((config) => {
 
@@ -434,9 +471,9 @@ BigStats.prototype.pullStats = function () {
     that.pushStats(stats);
 
   })
-  .catch((error) => {
+  .catch((err) => {
 
-    logger.info('Promise Chain Error: ' +error);
+    logger.info('Promise Chain Error: ' +err);
 
   });
 
@@ -490,10 +527,10 @@ BigStats.prototype.pushStats = function (body) {
     req.end();
   }
 
-  //If the protocol is statsd
+  // If the protocol is statsd
   else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "statsd") {
 
-    //we're using the statsd client
+    // we're using the statsd client
     var sdc = new StatsD(this.config.destination.address, 8125);
 
     Object.keys(body).map((level1) => {

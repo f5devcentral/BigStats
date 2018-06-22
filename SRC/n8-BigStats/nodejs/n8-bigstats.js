@@ -185,7 +185,7 @@ BigStats.prototype.updateScheduler = function (interval) {
       })
       .catch((error) => {
 
-        //TODO: handle this error
+        logger.info('[BigStats] - Error retrieving Task Scheduler ID: ' +error);
         reject(error);
 
       });
@@ -206,10 +206,8 @@ BigStats.prototype.updateScheduler = function (interval) {
       let uri = that.generateURI(host, path);
       let restOp = that.createRestOperation(uri, body);
 
- 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() restOp...' +restOp); }
       
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Attemtping to patch interval...'); }
   
       that.restRequestSender.sendPatch(restOp)
       .then (function (resp) {
@@ -218,14 +216,14 @@ BigStats.prototype.updateScheduler = function (interval) {
       })
       .catch((error) => {
 
-        //TODO: handle this error
+        logger.info('[BigStats] - Error patching scheduler interval: ' +error);
         reject(error);
 
       });
     });
   });
 
-  // Execute the shceduler interval update 
+  // Execute update to the Task Shceduler interval 
   getSchedulerId()
   .then((id) => {
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Scheduler Task id: ' +id); }
@@ -264,21 +262,18 @@ BigStats.prototype.getSettings = function () {
         DEBUG = false;
       }
 
-      //Check if interval changed
+      // Check if interval has actually changed
       if (typeof that.config.interval !== 'undefined' && that.config.interval !== resp.body.config.interval) {
-
         that.updateScheduler(resp.body.config.interval);
-
       }
 
-      that.config = resp.body.config;      
-
+      that.config = resp.body.config;
       resolve(that.config);
 
     })
     .catch (function (error) {
 
-      logger.info('[BigStats] - Error retrieving settings: ' +error);
+      logger.info('[BigStats] - Error retrieving settings from BigStatsSettings worker: ' +error);
       reject(error);
 
     });
@@ -321,7 +316,6 @@ BigStats.prototype.pullStats = function () {
     });
   }); 
 
-//TODO: implement sizing: 
   var parseResources = ((list) => {
     return new Promise((resolve, reject) => {
 
@@ -345,7 +339,7 @@ BigStats.prototype.pullStats = function () {
               that.stats[element.subPath] = {};
             }
             that.stats[element.subPath].vip = values;
-  
+
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(list.items.length - 1)+ '  index: ' +index); }
             if (index === (list.items.length - 1)) {
   
@@ -383,12 +377,8 @@ BigStats.prototype.pullStats = function () {
               that.stats[element.subPath] = {};
             }
 
-            if (typeof that.stats[element.subPath][element.pool] === 'undefined') {
-//              logger.info('initializing object array: ' +that.stats[element.subPath][element.pool]);
-              that.stats[element.subPath][element.pool] = [];
-            }
-
             that.stats[element.subPath].vip = values[0];
+            that.stats[element.subPath][element.pool] = [];
 
             values[1].map((item, index) => {
               getPoolMemberStats(item)
@@ -397,14 +387,18 @@ BigStats.prototype.pullStats = function () {
                 that.stats[element.subPath][element.pool].push(stats);
                 logger.info('getPoolMemberStats(values[1]) that.stats:' +JSON.stringify(that.stats, '', '\t'));
 
-                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(item.length - 1)+ '  index: ' +index); }
-                if (index === (item.length - 1)) {
-      
+
+                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(values[1].length - 1)+ '  index: ' +index); }
+                if (index === (values[1].length - 1)) {
+
                   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of getPoolMemberList (index === (list.items.length - 1))'); }
-                  resolve(that.stats);
-    
-                }
-    
+
+                  if (index === (list.items.length - 1)) {  
+                    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of resource list (index === (list.items.length - 1))'); }
+                    resolve(that.stats);
+                  }
+      
+                }    
 
               })
               .catch((err) => {
@@ -608,7 +602,7 @@ BigStats.prototype.pullStats = function () {
   })
   .then((stats) => {
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Pushing stats: ' +JSON.stringify(stats, '', '\t')); }
+    if (DEBUG === true) { logger.info('\n\n***************************\n\n[BigStats - DEBUG] - BEGIN Pushing stats:\n\n***************************\n\n' +JSON.stringify(stats, '', '\t')+ '\n\n***************************\n\n[BigStats - DEBUG] - END Pushing stats:\n\n***************************\n\n'); }
     that.pushStats(stats);
 
   })

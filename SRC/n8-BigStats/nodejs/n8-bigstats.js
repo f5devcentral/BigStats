@@ -136,13 +136,17 @@ BigStats.prototype.createScheduler = function () {
       let errorStatusCode = error.getResponseOperation().getStatusCode();
       var errorBody = error.getResponseOperation().getBody();
 
-      logger.info('[BigStats] Scheduler - Error: Status Code: ' +errorStatusCode+ ' Message: ' +errorBody.message);
-
       if (errorBody.message.startsWith("Duplicate item")) {
+
+        logger.info('[BigStats] Scheduler - Status Code: ' +errorStatusCode+ ' Message: ' +errorBody.message);
         resolve('Scheduler entry exists.');
+
       }
       else{
+
+        logger.info('[BigStats] createScheduler() - Error: Status Code: ' +errorStatusCode+ ' Message: ' +errorBody.message);
         reject(errorBody);
+
       }
     });
 

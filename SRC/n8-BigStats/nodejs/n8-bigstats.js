@@ -103,7 +103,7 @@ BigStats.prototype.createScheduler = function () {
 
   return new Promise((resolve,reject) => {
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getResourceList() with config: ' +JSON.stringify(this.config)); }
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN createScheduler() with config: ' +JSON.stringify(this.config)); }
 
     var body = {
       "interval": this.config.interval,
@@ -235,7 +235,7 @@ BigStats.prototype.updateScheduler = function (interval) {
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Patch Scheduler results: ' +JSON.stringify(results)); }
   })
   .catch((err) => {
-    reject(err);
+    logger.info('[BigStats] Error updating Task Scheduler:' +err);
   });
 
 };
@@ -327,35 +327,112 @@ BigStats.prototype.pullStats = function () {
 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN parseResources() with list: ' +JSON.stringify(list)); }
 
+      // Fetch stats from each resource, based on config.size
       list.items.map((element, index) => {
 
-        Promise.all([getVipStats(element), getPoolStats(element)])
-        .then((values) => {
-          if (DEBUG === true) { 
-            logger.info('[BigStats - DEBUG] - Index:' +index+ ', values[0]: ' +JSON.stringify(values[0],'','\t'));
-            logger.info('[BigStats - DEBUG] - Index:' +index+ ', values[1]: ' +JSON.stringify(values[1],'','\t'));
-          }
+        /*
+        * For 'small' stats size (config.size: small), fetch only Virtual IP in/out data
+        */ 
+        if (typeof this.config.size === 'undefined' || this.config.size === 'small') {
 
-          if (typeof that.stats[element.subPath] === 'undefined') {
-            that.stats[element.subPath] = {};
-          }
-          that.stats[element.subPath].vip = values[0];
-          that.stats[element.subPath].pool = values[1];
+          getVipStats(element)
+          .then((values) => {
+            if (DEBUG === true) { 
+              logger.info('[BigStats - DEBUG] - Index:' +index+ ', values: ' +JSON.stringify(values,'','\t'));
+            }
+  
+            if (typeof that.stats[element.subPath] === 'undefined') {
+              that.stats[element.subPath] = {};
+            }
+            that.stats[element.subPath].vip = values;
+  
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(list.items.length - 1)+ '  index: ' +index); }
+            if (index === (list.items.length - 1)) {
+  
+              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of resource list (index === (list.items.length - 1))'); }
+              resolve(that.stats);
+            }
+  
+          })
+          .catch((err) => {
+  
+            logger.info('[BigStats] - Error: ' +JSON.stringify(err));
+            reject(err);
+  
+          });
+  
+        }
 
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(list.items.length - 1)+ '  index: ' +index); }
-          if (index === (list.items.length - 1)) {
+        /*
+        * For 'medium' stats size (config.size: medium), fetch:
+        *   - Virtual IP in/out data
+        *   - Individual Pool Member data
+        */ 
+        else if (this.config.size === 'medium') {
 
-            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of resource list (index === (list.items.length - 1))'); }
-            resolve(that.stats);
-          }
+          Promise.all([getVipStats(element), getPoolMemberList(element)])  //TODO: add getPoolMemberStats(element)
+          .then((values) => {
+            if (DEBUG === true) { 
+              logger.info('[BigStats - DEBUG] - Index:' +index+ ', getVipStats() values[0]: ' +JSON.stringify(values[0],'','\t'));
+              logger.info('[BigStats - DEBUG] - Index:' +index+ ', getPoolMemberList() values[1]: ' +JSON.stringify(values[1],'','\t'));
+            }
 
-        })
-        .catch((err) => {
+            // Initialize object on first run
 
-          logger.info('[BigStats] - Error: ' +JSON.stringify(err));
-          reject(err);
+            if (typeof that.stats[element.subPath] === 'undefined') {
+              that.stats[element.subPath] = {};
+            }
 
-        });
+            if (typeof that.stats[element.subPath][element.pool] === 'undefined') {
+//              logger.info('initializing object array: ' +that.stats[element.subPath][element.pool]);
+              that.stats[element.subPath][element.pool] = [];
+            }
+
+            that.stats[element.subPath].vip = values[0];
+
+            values[1].map((item, index) => {
+              getPoolMemberStats(item)
+              .then((stats) => {
+                logger.info('getPoolMemberStats(values[1]) returned:' +JSON.stringify(stats));
+                that.stats[element.subPath][element.pool].push(stats);
+                logger.info('getPoolMemberStats(values[1]) that.stats:' +JSON.stringify(that.stats, '', '\t'));
+
+                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(item.length - 1)+ '  index: ' +index); }
+                if (index === (item.length - 1)) {
+      
+                  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of getPoolMemberList (index === (list.items.length - 1))'); }
+                  resolve(that.stats);
+    
+                }
+    
+
+              })
+              .catch((err) => {
+                reject(err);
+              });
+            });
+  
+  
+          })
+          .catch((err) => {
+  
+            logger.info('[BigStats] - Error: ' +JSON.stringify(err));
+            reject(err);
+  
+          });
+  
+        }
+
+        /*
+        * For 'large' stats size (config.size: large), fetch:
+        *   - Virtual IP in/out data
+        *   - Individual Pool Member data
+        *   - //TODO: What else should we share?
+        */ 
+        else if (this.config.size === 'large') {
+          logger.info('[BigStats] Not implemented');
+        }
+
       });
     });
   });
@@ -407,18 +484,77 @@ BigStats.prototype.pullStats = function () {
     });
   });
 
-  var getPoolStats = ((resource) => {
-    return new Promise((resolve,reject) => {
+  var getPoolMemberList = ((resource) => {
+    return new Promise((resolve, reject) => {
 
-      var that = this;
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getPoolStats with resource_list: ' +JSON.stringify(resource)); }
+//      var that = this;
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getPoolMemberList with resource list: ' +JSON.stringify(resource)); }
+
+      var cleanPath = ""; 
+      var PREFIX = "https://localhost";
+
+      //TODO: isn't it always at the begining? What are we testing?
+      if (resource.poolReference.link.indexOf(PREFIX) === 0) {
+        // PREFIX is exactly at the beginning
+        cleanPath = resource.poolReference.link.slice(PREFIX.length).split("?").shift();
+      }
+
+      var query = '$select=name,selfLink';    
+
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Sliced Path: '+cleanPath); }
+      var path = cleanPath+'/members';
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Members URI: '+path); }
+
+      var uri = that.restHelper.makeRestnodedUri(path, query);
+      var restOp = that.createRestOperation(uri);
+    
+      that.restRequestSender.sendGet(restOp)
+      .then((resp) => {
+
+        var poolMemberListObj = [];
+
+        resp.body.items.map((element, index) => {
+          logger.info('\n\ngetPoolMemberList = element.selfLink:' +element.selfLink);
+          logger.info('\n\ngetPoolMemberList = element.name:' +element.name);
+          poolMemberListObj.push(
+            {
+              name: element.name,
+              path: element.selfLink
+            }
+          );
+
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - list.items.length - 1: ' +(resp.body.items.length - 1)+ '  index: ' +index); }
+          if (index === (resp.body.items.length - 1)) {
+
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - End of resource list (index === (list.items.length - 1))'); }
+            resolve(poolMemberListObj);
+
+          }
+  
+        });
+
+      })
+      .catch((err) => {
+
+        logger.info('[BigStats - Error] getPoolMemberList() error: ' +err);
+        reject(err);
+
+      });
+    });
+  });
+
+  var getPoolMemberStats = ((poolMemberObj) => {
+    return new Promise((resolve, reject) => {
+
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getPoolMemberStats with resource: ' +JSON.stringify(poolMemberObj)); }
 
       var path = ""; 
       var PREFIX = "https://localhost";
 
-      if (resource.poolReference.link.indexOf(PREFIX) === 0) {
+      if (poolMemberObj.path.indexOf(PREFIX) === 0) {
         // PREFIX is exactly at the beginning
-        path = resource.poolReference.link.slice(PREFIX.length).split("?").shift();
+        // Remove any trailing querstrings
+        path = poolMemberObj.path.slice(PREFIX.length).split("?").shift();
       }
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Sliced Path: '+path); }
       var uri = path+'/stats';
@@ -434,20 +570,25 @@ BigStats.prototype.pullStats = function () {
         let entry_uri = path+'/'+name+'/stats';
         let entry_url ="https://localhost" +entry_uri;
 
-        let poolStats = { 
+        let poolMemberStats = {};
+        poolMemberStats[poolMemberObj.name] = { 
           serverside_curConns: resp.body.entries[entry_url].nestedStats.entries["serverside.curConns"].value,
           serverside_maxConns: resp.body.entries[entry_url].nestedStats.entries["serverside.maxConns"].value,
           serverside_bitsIn: resp.body.entries[entry_url].nestedStats.entries["serverside.bitsIn"].value,
+          monitorStatus: resp.body.entries[entry_url].nestedStats.entries["monitorStatus"].description,
           serverside_bitsOut: resp.body.entries[entry_url].nestedStats.entries["serverside.bitsOut"].value,
           serverside_pktsIn: resp.body.entries[entry_url].nestedStats.entries["serverside.pktsIn"].value,
           serverside_pktsOut: resp.body.entries[entry_url].nestedStats.entries["serverside.pktsOut"].value  
         };
 
-        resolve(poolStats);
+        resolve(poolMemberStats);
 
       })
       .catch((err) => {
-        logger.info('[BigStats - Error] pool_stats error: ' +err);
+
+        logger.info('[BigStats - Error] getPoolMemberStats(): ' +err);
+        reject(err);
+
       });
     });
   });

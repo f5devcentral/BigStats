@@ -177,6 +177,7 @@ BigStats.prototype.createScheduler = function () {
  * 'interval' is a persisted setting managed by BigStatsSettings. See bigstats-schema.json
  * 
  * @param {Integer} interval used for task-scheduler task interval
+ * 
  * @returns {String} HTTP Status code 
  */
 BigStats.prototype.updateScheduler = function (interval) {

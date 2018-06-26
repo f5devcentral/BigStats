@@ -41,6 +41,8 @@ Note the `"status":"FINISHED"` indicating that installation was successful.
 
 To configure, POST settings to `/mgmt/shared/n8/bigstats_settings`:
 
+The BigStats Schema is located here: `SRC/bigstats-schema.json`
+
 * **proto:** [http|https|statsd|kafka]
 * **address** ip address or resolvable domain name
 * **port** destination tcp port

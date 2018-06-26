@@ -9,7 +9,6 @@
 "use strict";
 
 const logger = require('f5-logger').getInstance();
-const host = 'localhost';
 const bigStatsSettingsPath = '/shared/n8/bigstats_settings';
 var StatsD = require('node-statsd');
 var kafka = require('kafka-node');
@@ -99,8 +98,6 @@ BigStats.prototype.onPost = function (restOperation) {
  */
 BigStats.prototype.createScheduler = function () {
 
-  var that = this;
-
   return new Promise((resolve,reject) => {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN createScheduler() with config: ' +JSON.stringify(this.config)); }
@@ -115,14 +112,15 @@ BigStats.prototype.createScheduler = function () {
       "taskBodyToRun":{
         "enabled": true
       },
-      "taskRestMethodToRun":"POST"
+      "taskRestMethodToRun":"POST",
+      "maxTaskHistoryToKeep": 3
     };
 
     var path = '/mgmt/shared/task-scheduler/scheduler'; 
-    var uri = that.restHelper.makeRestnodedUri(path);
-    var restOp = that.createRestOperation(uri, body);
+    var uri = this.restHelper.makeRestnodedUri(path);
+    var restOp = this.createRestOperation(uri, body);
     
-    that.restRequestSender.sendPost(restOp)
+    this.restRequestSender.sendPost(restOp)
     .then((resp) => {
 
       if (DEBUG === true) {
@@ -174,7 +172,7 @@ BigStats.prototype.updateScheduler = function (interval) {
   })
   .then((results) => {
     
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Patch Scheduler results: ' +JSON.stringify(results)); }
+    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() results: ' +JSON.stringify(results)); }
 
   })
   .catch((err) => {
@@ -192,26 +190,22 @@ BigStats.prototype.updateScheduler = function (interval) {
  */
 BigStats.prototype.getSchedulerId = function () {
   
-  var that = this;
+//  var that = this;
 
   return new Promise((resolve, reject) => {
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN updateScheduler() with config: ' +JSON.stringify(this.config)); }
-
     var path = '/mgmt/shared/task-scheduler/scheduler'; 
-    let uri = that.generateURI(host, path);
-    let restOp = that.createRestOperation(uri);
+    let uri = this.restHelper.makeRestnodedUri(path);
+    let restOp = this.createRestOperation(uri);
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Attemtping to fetch config...'); }
-
-    that.restRequestSender.sendGet(restOp)
+    this.restRequestSender.sendGet(restOp)
     .then (function (resp) {
       
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - updateScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
+      resp.body.items.map((schedulerTask) => {
+        if (schedulerTask.name === "n8-BigStats") {
 
-      resp.body.items.map((element) => {
-        if (element.name === "n8-BigStats") {
-          resolve(element.id);
+          resolve(schedulerTask.id);
+
         }
       }); 
 
@@ -243,15 +237,13 @@ BigStats.prototype.patchScheduler = function (id, interval) {
       };
   
       var path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
-      let uri = this.generateURI(host, path);
+      let uri = this.restHelper.makeRestnodedUri(path);
       let restOp = this.createRestOperation(uri, body);
-
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() restOp...' +restOp); }
       
       this.restRequestSender.sendPatch(restOp)
       .then (function (resp) {
 
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Response: ' +JSON.stringify(resp.body,'', '\t')); }
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - patchScheduler() Response: ' +JSON.stringify(resp.statusCode,'', '\t')); }
         resolve(resp.body);
 
       })
@@ -271,18 +263,16 @@ BigStats.prototype.patchScheduler = function (id, interval) {
  * @returns {Object} Operating settings
  */
 BigStats.prototype.getSettings = function () {
-
-  var that = this;
   
   return new Promise((resolve, reject) => {
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getSettings()'); }
 
-    let uri = that.generateURI(host, '/mgmt' +bigStatsSettingsPath);
-    let restOp = that.createRestOperation(uri);
+    let uri = this.restHelper.makeRestnodedUri('/mgmt' +bigStatsSettingsPath);
+    let restOp = this.createRestOperation(uri);
 
-    that.restRequestSender.sendGet(restOp)
-    .then (function (resp) {
+    this.restRequestSender.sendGet(restOp)
+    .then ((resp) => {
 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() Response: ' +JSON.stringify(resp.body.config,'', '\t')); }
 
@@ -299,15 +289,15 @@ BigStats.prototype.getSettings = function () {
 
       }
 
-      // Check if interval has actually changed
-      if (typeof that.config.interval !== 'undefined' && that.config.interval !== resp.body.config.interval) {
+      // Check if interval is new, or has changed
+      if (typeof this.config.interval !== 'undefined' || this.config.interval !== resp.body.config.interval) {
 
-        that.updateScheduler(resp.body.config.interval);
+        this.updateScheduler(resp.body.config.interval);
 
       }
 
-      that.config = resp.body.config;
-      resolve(that.config);
+      this.config = resp.body.config;
+      resolve(this.config);
 
     })
     .catch (function (error) {
@@ -326,7 +316,6 @@ BigStats.prototype.pullStats = function () {
   this.getSettings()
   .then((config) => {
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - config.destination: ' +JSON.stringify(config.destination)); }
     return this.getVipResourceList();
 
   })
@@ -554,12 +543,8 @@ BigStats.prototype.getVipStats = function (vipResource) {
     var url = this.restHelper.makeRestnodedUri(uri);
     var restOp = this.createRestOperation(url);
 
-    if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getVipStats and performing get with restOp: ' +JSON.stringify(restOp, '','\t')); }
-
     this.restRequestSender.sendGet(restOp)
     .then((resp) => {
-
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getVipStats and got a response from restOp: ' +JSON.stringify(resp.body)); }
 
       let name = slicedPath.split("/").slice(-1)[0];
       let entry_uri = slicedPath+'/'+name+'/stats';
@@ -574,8 +559,6 @@ BigStats.prototype.getVipStats = function (vipResource) {
         clientside_pktsIn: resp.body.entries[entry_url].nestedStats.entries["clientside.pktsIn"].value,
         clientside_pktsOut: resp.body.entries[entry_url].nestedStats.entries["clientside.pktsOut"].value  
       };
-
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - ***************IN getVipStats returning vipResourceStats: ' +JSON.stringify(vipResourceStats)); }
 
       resolve(vipResourceStats);
 

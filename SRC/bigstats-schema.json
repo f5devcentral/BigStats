@@ -49,6 +49,7 @@
                                 "examples": [
                                     "1.1.1.1"
                                 ]
+                            }
                         },
                         "address": {
                             "$id": "/properties/config/properties/destitation/properties/address",

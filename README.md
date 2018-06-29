@@ -63,6 +63,7 @@ To configure, POST settings to `/mgmt/shared/n8/bigstats_settings`:
           "port": "8080",
           "uri": "/stats"
         },
+        "size": "small",
         "interval": "10",
         "debug": false
       }
@@ -83,6 +84,7 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
           "address": "192.168.1.42",
           "port": "8125"
         },
+        "size": "small",
         "interval": "10",
         "debug": false
       }
@@ -100,9 +102,13 @@ NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
     "config": {
         "destination": {
           "proto": "kafka",
+          "kafka": {
+                  "topic": "per-app"
+          },
           "address": "172.31.1.78",
           "port": "9092"
         },
+        "size": "small",
         "interval": "10",
         "debug": false
       }

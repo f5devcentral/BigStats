@@ -372,7 +372,7 @@ BigStats.prototype.pullStats = function () {
       logger.info('\n\n*******************************************\n*  [BigStats - DEBUG] - END Stats Object  *\n*******************************************\n\n'); 
     }
 
-    this.pushStats(this.stats);
+    this.exportStats(this.stats);
 
   })
   .catch((err) => {
@@ -713,10 +713,10 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
           serverside_curConns: resp.body.entries[entry_url].nestedStats.entries["serverside.curConns"].value,
           serverside_maxConns: resp.body.entries[entry_url].nestedStats.entries["serverside.maxConns"].value,
           serverside_bitsIn: resp.body.entries[entry_url].nestedStats.entries["serverside.bitsIn"].value,
-          monitorStatus: resp.body.entries[entry_url].nestedStats.entries.monitorStatus.description,
           serverside_bitsOut: resp.body.entries[entry_url].nestedStats.entries["serverside.bitsOut"].value,
           serverside_pktsIn: resp.body.entries[entry_url].nestedStats.entries["serverside.pktsIn"].value,
-          serverside_pktsOut: resp.body.entries[entry_url].nestedStats.entries["serverside.pktsOut"].value  
+          serverside_pktsOut: resp.body.entries[entry_url].nestedStats.entries["serverside.pktsOut"].value,
+          monitorStatus: resp.body.entries[entry_url].nestedStats.entries.monitorStatus.description
         };
 
         resolve(poolMemberStats);
@@ -738,7 +738,7 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
  * @param {Object} body representing the collected statistics 
  */
 //Push stats to a remote destination
-BigStats.prototype.pushStats = function (body) {
+BigStats.prototype.exportStats = function (body) {
 
   //If the destination is 'http' or 'https'
   if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol.startsWith('http')) {
@@ -772,7 +772,7 @@ BigStats.prototype.pushStats = function (body) {
     
       res.on('end', function () {
         var body = Buffer.concat(chunks);
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats(): ' +body.toString()); }
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats(): ' +body.toString()); }
       });
   
     });
@@ -791,16 +791,16 @@ BigStats.prototype.pushStats = function (body) {
     var sdc = new StatsD(this.config.destination.address, 8125);
 
     Object.keys(body).map((level1) => {
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd: level1: ' +level1); }
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: level1: ' +level1); }
       Object.keys(body[level1]).map((level2) => {
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - level1+2: ' +level1+'.'+level2); }
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2: ' +level1+'.'+level2); }
         Object.keys(body[level1][level2]).map((level3) => {
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - level1+2+3: ' +level1+'.'+level2+'.'+level3); }
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3: ' +level1+'.'+level2+'.'+level3); }
 
           let namespace = level1+'.'+level2+'.'+level3;
           let value = body[level1][level2][level3];
 
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - statsd - namespace: ' +namespace+ ' value: ' +value); }
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - namespace: ' +namespace+ ' value: ' +value); }
           sdc.gauge(namespace, value);
 
         });
@@ -811,28 +811,54 @@ BigStats.prototype.pushStats = function (body) {
   
   else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "kafka") {
 
-    const client = new kafka.KafkaClient ( 
+    var client = new kafka.KafkaClient ( 
       {
         kafkaHost: this.config.destination.address+':'+this.config.destination.port
       } 
     );
     var producer = new Producer(client);
 
-    producer.on('ready', function () {
+    if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'all') {
 
-      Object.keys(body).map((level1) => {
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - kafka: topic: ' +level1); }
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - pushStats() - kafka: message: ' +JSON.stringify(body[level1])); }
+      producer.on('ready', function () {
 
         var payload = [
-                { topic: level1, messages: JSON.stringify(body[level1]) }
+          {
+            topic: 'BigStats',
+            messages: JSON.stringify(body)
+          }
         ];
-        producer.send(payload, function (err, data) {
-          if (DEBUG === true) { logger.info('kafka producer response: ' +JSON.stringify(data)); }
+
+        producer.send(payload, function (err, resp) {
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +resp); }
+          logger.info('[BigStats - ERROR] - Kafka error: ' +err);
+      });
+      });
+
+    }
+    else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'per-app') {
+
+      producer.on('ready', function () {
+
+        Object.keys(body).map((level1) => {
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +level1); }
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(body[level1])); }
+
+          var payload = [
+            {
+              topic: level1,
+              messages: JSON.stringify(body[level1])
+            }
+          ];
+
+          producer.send(payload, function (err, resp) {
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +resp); }
+            logger.info('[BigStats - ERROR] - Kafka error: ' +err);
+          });
         });
       });
-                    
-    });
+
+    }                   
 
     producer.on('error', function (err) {
       logger.info('Kafka Producer error: ' +err);

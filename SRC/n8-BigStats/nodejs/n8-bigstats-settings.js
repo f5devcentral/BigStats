@@ -72,7 +72,14 @@ BigStatsSettings.prototype.onPost = function(restOperation) {
     else {
 
         logger.info('[BigStatsSettings] - Settings updated.');
+
+        //Check if interval is less that minimum
         this.state = newState;
+
+        if (this.state.config.interval < 10) {
+            //Enforcing minimum interval
+            this.state.config.interval = 10;
+        }
 
     }
 
@@ -89,7 +96,7 @@ BigStatsSettings.prototype.getExampleState = function () {
     return {
         "config": {
             "desintation": {
-              "proto": "[http|https|statsd]",
+              "protocol": "[http|https|statsd|kafka]",
               "address": "[ip_address]",
               "port": "[tcp_port]",
               "uri": "[uri]"

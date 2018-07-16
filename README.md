@@ -1,13 +1,13 @@
 # n8-BigStats
 
-Push BIG-IP stats to remote logging services. Support http, https, and statsd destinations.
+Push BIG-IP stats to remote logging services. Supports http, https, statsd, and Apache Kafka destinations.
 
 1. Install the RPM in /DIST to your BIG-IP.
 2. Configure the destination
 
 ## Install
 
-To implement this solution you must install with the AS3 worker and the BigStats worker. This document will cover BigStats only. Details on AS3 cn be found here: http://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/3/
+To implement this solution you must install with the AS3 worker and the BigStats worker. This document will cover BigStats only. Details on AS3 can be found here: http://clouddocs.f5.com/products/extensions/f5-appsvcs-extension/3/
 
 1. Download the latest BigStats RPM from the here: https://github.com/npearce/n8-BigStats It's name will be something like (numbers may differ): `n8-BigStats-0.1.0-0002.noarch.rpm`
 2. Copy the BigStats RPM into the following directory on your BIG-IP: `/var/config/rest/downloads/`
@@ -37,17 +37,20 @@ The response will look something like this:
 
 Note the `"status":"FINISHED"` indicating that installation was successful.
 
-5. [OPTIONAL] Confirm you can reach the newly installed REST end-point and that it is running (note the `/available` on the end:
-
-`curl -u <username>:<password> -X GET http://localhost:8100/mgmt/shared/n8/bigstats/available`
-
-Your response should be without error, e.g.:
-
-```json
-{}
-````
-
 ## Configure
+
+To configure, POST settings to `/mgmt/shared/n8/bigstats_settings`:
+
+The BigStats Schema is located here: `SRC/bigstats-schema.json`
+
+* **proto:** [http|https|statsd|kafka]
+* **address** ip address or resolvable domain name
+* **port** destination tcp port
+* **uri** [OPTIONAL] End-point to post data to. Can be blank. Used only for http or https destinations.
+* **interval** - how often, in seconds, to send the stats. Default: 10 seconds.
+* **debug** - this will put a LOT of data into the BIG-IPs `/var/log/restnoded/restnoded.log`. Remember to turn this off when done.
+
+### Example comnfigurations:
 
 **HTTP destination:**
 
@@ -62,6 +65,7 @@ Your response should be without error, e.g.:
           "port": "8080",
           "uri": "/stats"
         },
+        "size": "small",
         "interval": "10",
         "debug": false
       }
@@ -82,18 +86,52 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
           "address": "192.168.1.42",
           "port": "8125"
         },
+        "size": "small",
         "interval": "10",
         "debug": false
       }
 }
 ```
 
-* **proto:** [http|https|statsd]
-* **address** ip address or resolvable domain name
-* **port** destination tcp port
-* **uri** [OPTINAL] End-point to post data to. Can be blank.
-* **interval** - how often, in seconds, to send the stats. Default: 5 seconds.
-* **debug** - this will put a LOT of data into the BIG-IPs `/var/log/restnoded/restnoded.log`. Remember to turn this off when done.
+**Kafka Message Bus Destination:**
+
+NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
+
+`POST https://{{mgmt_ip_address}}/mgmt/shared/n8/bigstats_settings`
+
+```json
+{
+    "config": {
+        "destination": {
+          "proto": "kafka",
+          "kafka": {
+                  "topic": "per-app"
+          },
+          "address": "172.31.1.78",
+          "port": "9092"
+        },
+        "size": "small",
+        "interval": "10",
+        "debug": false
+      }
+}
+```
+
+BigStats creates a new Kafka Topic for each AS3 application found on the BIG-IP. 
+
+```sh
+/ # kafka-topics.sh --list --zookeeper zookeeper
+App1a
+App1b
+App2
+```
+
+A Kafka message for sample application (topic) `App1a` looks like:
+
+```sh
+/ # kafka-simple-consumer-shell.sh --broker-list localhost:9092 --topic App1a
+{"vip":{"clientside_curConns":0,"clientside_maxConns":6,"clientside_bitsIn":668184240,"clientside_bitsOut":37371977200,"clientside_pktsIn":1500027,"clientside_pktsOut":2031911},"pool":{"serverside_curConns":0,"serverside_maxConns":9,"serverside_bitsIn":537711552,"serverside_bitsOut":36314664160,"serverside_pktsIn":1270792,"serverside_pktsOut":2353845}}
+```
 
 **Example BigStats http output:**
 
@@ -107,59 +145,155 @@ Connection: keep-alive
 Transfer-Encoding: chunked
 
 {
-    "App1a": {
-        "vip": {
-            "clientside_curConns": 0,
-            "clientside_maxConns": 0,
-            "clientside_bitsIn": 0,
-            "clientside_bitsOut": 0,
-            "clientside_pktsIn": 0,
-            "clientside_pktsOut": 0
+        "App1a": {
+                "class": "app",
+                "/Sample_01/172.31.4.11:80": {
+                        "class": "service",
+                        "clientside_curConns": 0,
+                        "clientside_maxConns": 0,
+                        "clientside_bitsIn": 0,
+                        "clientside_bitsOut": 0,
+                        "clientside_pktsIn": 0,
+                        "clientside_pktsOut": 0,
+                        "/Sample_01/App1a/web_pool1a": [
+                                {
+                                        "172.31.10.101:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                },
+                                {
+                                        "172.31.10.102:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                },
+                                {
+                                        "172.31.10.103:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                }
+                        ]
+                }
         },
-        "pool": {
-            "serverside_curConns": 0,
-            "serverside_maxConns": 0,
-            "serverside_bitsIn": 0,
-            "serverside_bitsOut": 0,
-            "serverside_pktsIn": 0,
-            "serverside_pktsOut": 0
-        }
-    },
-    "App1b": {
-        "vip": {
-            "clientside_curConns": 0,
-            "clientside_maxConns": 0,
-            "clientside_bitsIn": 0,
-            "clientside_bitsOut": 0,
-            "clientside_pktsIn": 0,
-            "clientside_pktsOut": 0
+        "App1b": {
+                "class": "app",
+                "/Sample_01/172.31.4.12:80": {
+                        "class": "service",
+                        "clientside_curConns": 0,
+                        "clientside_maxConns": 0,
+                        "clientside_bitsIn": 0,
+                        "clientside_bitsOut": 0,
+                        "clientside_pktsIn": 0,
+                        "clientside_pktsOut": 0,
+                        "/Sample_01/App1b/web_pool1b": [
+                                {
+                                        "172.31.10.104:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                },
+                                {
+                                        "172.31.10.105:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                },
+                                {
+                                        "172.31.10.106:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                }
+                        ]
+                }
         },
-        "pool": {
-            "serverside_curConns": 0,
-            "serverside_maxConns": 0,
-            "serverside_bitsIn": 0,
-            "serverside_bitsOut": 0,
-            "serverside_pktsIn": 0,
-            "serverside_pktsOut": 0
+        "App2": {
+                "class": "app",
+                "/Sample_02/172.31.4.22:80": {
+                        "class": "service",
+                        "clientside_curConns": 0,
+                        "clientside_maxConns": 0,
+                        "clientside_bitsIn": 0,
+                        "clientside_bitsOut": 0,
+                        "clientside_pktsIn": 0,
+                        "clientside_pktsOut": 0,
+                        "/Sample_02/App2/web_pool2": [
+                                {
+                                        "172.31.10.120:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                },
+                                {
+                                        "172.31.10.121:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                },
+                                {
+                                        "172.31.10.122:8080": {
+                                                "class": "pool",
+                                                "serverside_curConns": 0,
+                                                "serverside_maxConns": 0,
+                                                "serverside_bitsIn": 0,
+                                                "monitorStatus": "down",
+                                                "serverside_bitsOut": 0,
+                                                "serverside_pktsIn": 0,
+                                                "serverside_pktsOut": 0
+                                        }
+                                }
+                        ]
+                }
         }
-    },
-    "App2": {
-        "vip": {
-            "clientside_curConns": 0,
-            "clientside_maxConns": 0,
-            "clientside_bitsIn": 0,
-            "clientside_bitsOut": 0,
-            "clientside_pktsIn": 0,
-            "clientside_pktsOut": 0
-        },
-        "pool": {
-            "serverside_curConns": 0,
-            "serverside_maxConns": 0,
-            "serverside_bitsIn": 0,
-            "serverside_bitsOut": 0,
-            "serverside_pktsIn": 0,
-            "serverside_pktsOut": 0
-        }
-    }
 }
 ```

@@ -1,5 +1,21 @@
 # RELEASE NOTES
 
+## v0.3.0-release
+
+### Features
+
+* Added Kafka Topic configuration: all stats in one topic, or per-app topics
+* Added Stats sizing: small (VIPs), medium (VIPs + Pool Members)
+* Added BigStats Schema: `SRC/bigstats-schema.json`
+
+### Fixes
+
+* Mega refactor to break down some big functions.
+
+### Known Issues
+
+* No 'large' stats size.
+
 ## v0.2.0-release
 
 ### Features

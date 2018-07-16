@@ -96,7 +96,7 @@ BigStatsSettings.prototype.getExampleState = function () {
     return {
         "config": {
             "desintation": {
-              "proto": "[http|https|statsd]",
+              "protocol": "[http|https|statsd|kafka]",
               "address": "[ip_address]",
               "port": "[tcp_port]",
               "uri": "[uri]"

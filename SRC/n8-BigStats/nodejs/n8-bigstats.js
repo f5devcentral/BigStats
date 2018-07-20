@@ -900,7 +900,7 @@ BigStats.prototype.createRestOperation = function (uri, body) {
 BigStats.prototype.getExampleState = function () {
   
   return {
-    // redirce to /bigstats_settings
+    // redirct to /bigstats_settings
   };
 
 };

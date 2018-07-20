@@ -1,5 +1,7 @@
 # n8-BigStats
 
+<img align="right" width="150px" src="BigStats-300dpi.png" alt="BigStats_Logo"/>
+
 Push BIG-IP stats to remote logging services. Supports http, https, statsd, and Apache Kafka destinations.
 
 1. Install the RPM in /DIST to your BIG-IP.

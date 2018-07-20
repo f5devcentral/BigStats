@@ -1,5 +1,7 @@
 # n8-BigStats
 
+<img align="right" width="150px" src="BigStats-300dpi.png" alt="drawing"/>
+
 <img style="float: right; width:150px;" src="BigStats-300dpi.png" alt="drawing"/>
 
 Push BIG-IP stats to remote logging services. Supports http, https, statsd, and Apache Kafka destinations.

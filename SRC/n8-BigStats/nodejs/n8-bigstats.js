@@ -81,6 +81,7 @@ BigStats.prototype.onStartCompleted = function(success, error) {
 BigStats.prototype.onPost = function (restOperation) {
 
   var onPostdata = restOperation.getBody();
+
   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - onPost receved data: ' +JSON.stringify(onPostdata)); }
   
   if (typeof onPostdata.enabled !== 'undefined' && onPostdata.enabled === true) {
@@ -403,13 +404,28 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
       this.getVipStats(element)
       .then((values) => {
 
+        var servicePath;
+
+        // Check if subPath is un use.
+        if ('subPath' in element) {
+
+          // Merge 'tenant' name and 'subPath' name as '/' delimited string.
+          servicePath = element.partition+'/'+element.subPath;
+
+        } else {
+
+          // 'subPath' is NOT used, use 'tenant' name on its own.
+          servicePath = element.partition;
+
+        }
+
         // Initialize object on first run
-        if (typeof this.stats[element.subPath] === 'undefined') {
-          this.stats[element.subPath] = {};
+        if (typeof this.stats[servicePath] === 'undefined') {
+          this.stats[servicePath] = {};
         }
 
         // Build JavaScript object of stats for each service
-        this.stats[element.subPath].vip = values;
+        this.stats[servicePath][element.destination] = values;
 
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - buildSmallStatsObject() - Processing: ' +index+ ' of: ' +(vipResourceList.items.length - 1)); }
 
@@ -451,14 +467,29 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
       Promise.all([this.getVipStats(vipResource), this.getPoolResourceList(vipResource)])
       .then((values) => {
 
+        var servicePath;
+
+        // Check if subPath is un use.
+        if ('subPath' in vipResource) {
+
+          // Merge 'tenant' name and 'subPath' name as '/' delimited string.
+          servicePath = vipResource.partition+'/'+vipResource.subPath;
+
+        } else {
+
+          // 'subPath' is NOT used, use 'tenant' name on its own.
+          servicePath = vipResource.partition;
+
+        }
+
         // Initialize object on first run
-        if (typeof this.stats[vipResource.subPath] === 'undefined') {
-          this.stats[vipResource.subPath] = { "class": "app" };
+        if (typeof this.stats[servicePath] === 'undefined') {
+          this.stats[servicePath] = {};
         }
 
         // Adding VIP data to the 'medium' stats object
-        this.stats[vipResource.subPath][vipResource.destination] = values[0];
-        this.stats[vipResource.subPath][vipResource.destination][vipResource.pool] = [];
+        this.stats[servicePath][vipResource.destination] = values[0];
+        this.stats[servicePath][vipResource.destination][vipResource.pool] = [];
 
         values[1].map((poolMemberResource, poolMemberResourceIndex) => {
 
@@ -466,7 +497,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
           .then((stats) => {
 
             // Adding Pool data to the 'medium' stats object
-            this.stats[vipResource.subPath][vipResource.destination][vipResource.pool].push(stats);
+            this.stats[servicePath][vipResource.destination][vipResource.pool].push(stats);
  
             if (vipResourceListIndex === (vipResourceList.items.length - 1)) {  
 
@@ -532,7 +563,7 @@ BigStats.prototype.getVipResourceList = function () {
   return new Promise((resolve, reject) => {
 
     var path = '/mgmt/tm/ltm/virtual/';
-    var query = '$select=subPath,fullPath,destination,selfLink,pool';
+    var query = '$select=partition,subPath,fullPath,destination,selfLink,pool';
     
     var uri = this.restHelper.makeRestnodedUri(path, query);
     var restOp = this.createRestOperation(uri);
@@ -591,7 +622,6 @@ BigStats.prototype.getVipStats = function (vipResource) {
       let entry_url ="https://localhost" +entry_uri;
 
       let vipResourceStats = {
-        class: "service",
         clientside_curConns: resp.body.entries[entry_url].nestedStats.entries["clientside.curConns"].value,
         clientside_maxConns: resp.body.entries[entry_url].nestedStats.entries["clientside.maxConns"].value,
         clientside_bitsIn: resp.body.entries[entry_url].nestedStats.entries["clientside.bitsIn"].value,
@@ -623,54 +653,60 @@ BigStats.prototype.getPoolResourceList = function (vipResource) {
 
     return new Promise((resolve, reject) => {
 
-      var cleanPath = ""; 
-      var PREFIX = "https://localhost";
+      // If the VIP has an associated pool
+      if (typeof vipResource.poolReference !== 'undefined') {
 
-      //TODO: isn't it always at the begining? What are we testing?
-      if (vipResource.poolReference.link.indexOf(PREFIX) === 0) {
-        // PREFIX is exactly at the beginning
-        cleanPath = vipResource.poolReference.link.slice(PREFIX.length).split("?").shift();
-      }
-
-      var query = '$select=name,selfLink';    
-      var path = cleanPath+'/members';
- 
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getPoolResourceList() - Pool Members URI: '+path); }
-
-      var uri = this.restHelper.makeRestnodedUri(path, query);
-      var restOp = this.createRestOperation(uri);
-      var poolMemberListObj = [];
-    
-      this.restRequestSender.sendGet(restOp)
-      .then((resp) => {
-
-
-        resp.body.items.map((element, index) => {
-
-          poolMemberListObj.push(
-            {
-              name: element.name,
-              path: element.selfLink
+        var cleanPath = ""; 
+        var PREFIX = "https://localhost";
+  
+        //TODO: isn't it always at the begining? What are we testing?
+        if (vipResource.poolReference.link.indexOf(PREFIX) === 0) {
+          // PREFIX is exactly at the beginning
+          cleanPath = vipResource.poolReference.link.slice(PREFIX.length).split("?").shift();
+        }
+  
+        var query = '$select=name,selfLink';    
+        var path = cleanPath+'/members';
+   
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getPoolResourceList() - Pool Members URI: '+path); }
+  
+        var uri = this.restHelper.makeRestnodedUri(path, query);
+        var restOp = this.createRestOperation(uri);
+        var poolMemberListObj = [];
+      
+        this.restRequestSender.sendGet(restOp)
+        .then((resp) => {
+  
+  
+          resp.body.items.map((element, index) => {
+  
+            poolMemberListObj.push(
+              {
+                name: element.name,
+                path: element.selfLink
+              }
+            );
+  
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getPoolResourceList() - Processing: ' +index+ ' of: ' +(resp.body.items.length - 1)); }
+  
+            if (index === (resp.body.items.length - 1)) {
+  
+              resolve(poolMemberListObj);
+  
             }
-          );
-
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getPoolResourceList() - Processing: ' +index+ ' of: ' +(resp.body.items.length - 1)); }
-
-          if (index === (resp.body.items.length - 1)) {
-
-            resolve(poolMemberListObj);
-
-          }
+    
+          });
+  
+        })
+        .catch((err) => {
+  
+          logger.info('[BigStats - Error] getPoolResourceList(): ' +err);
+          reject(err);
   
         });
 
-      })
-      .catch((err) => {
+      }
 
-        logger.info('[BigStats - Error] getPoolResourceList(): ' +err);
-        reject(err);
-
-      });
     });
 };
 
@@ -709,7 +745,6 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
 
         let poolMemberStats = {};
         poolMemberStats[poolMemberResource.name] = {
-          class: "pool",
           serverside_curConns: resp.body.entries[entry_url].nestedStats.entries["serverside.curConns"].value,
           serverside_maxConns: resp.body.entries[entry_url].nestedStats.entries["serverside.maxConns"].value,
           serverside_bitsIn: resp.body.entries[entry_url].nestedStats.entries["serverside.bitsIn"].value,
@@ -791,20 +826,60 @@ BigStats.prototype.exportStats = function (body) {
     var sdc = new StatsD(this.config.destination.address, 8125);
 
     Object.keys(body).map((level1) => {
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: level1: ' +level1); }
+      var level1_noDots = level1.replace(/\./g, '-');
+      var level1_noDots_noSlash = level1_noDots.replace(/\//g, '-');
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: level1: ' +level1_noDots_noSlash); }
+
       Object.keys(body[level1]).map((level2) => {
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2: ' +level1+'.'+level2); }
+        var level2_noDots = level2.replace(/\./g, '-');
+        var level2_noDots_noSlash = level2_noDots.replace(/\//g, '-');
+        var level2_noDots_noSlash_noColon = level2_noDots_noSlash.replace(/\:/g, '_');
+        
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon); }
         Object.keys(body[level1][level2]).map((level3) => {
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3: ' +level1+'.'+level2+'.'+level3); }
+          var level3_noDots = level3.replace(/\./g, '-');
+          var level3_noDots_noSlash = level3_noDots.replace(/\//g, '-');
+          var level3_noDots_noSlash_noColon = level3_noDots_noSlash.replace(/\:/g, '_');
 
-          let namespace = level1+'.'+level2+'.'+level3;
-          let value = body[level1][level2][level3];
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon); }
 
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - namespace: ' +namespace+ ' value: ' +value); }
-          sdc.gauge(namespace, value);
+          for (var i in body[level1][level2][level3]) {
 
+            logger.info('\n\n\nbody[level1][level2][level3][i]: ' +JSON.stringify(body[level1][level2][level3][i], '', '\t'));
+
+            Object.keys(body[level1][level2][level3][i]).map((level4) => {
+
+              var level4_noDots = level4.replace(/\./g, '-');
+              var level4_noDots_noSlash = level4_noDots.replace(/\//g, '-');
+              var level4_noDots_noSlash_noColon = level4_noDots_noSlash.replace(/\:/g, '_');
+
+              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3+4: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon); }
+
+              let namespace = level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon;
+              let value = body[level1][level2][level3][i][level4];
+    
+              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level4 namespace: ' +namespace+ ' value: ' +JSON.stringify(value, '', '\t')); }
+              sdc.gauge(namespace, value);
+
+              Object.keys(body[level1][level2][level3][i][level4]).map((level5) => {
+                var level5_noDots = level5.replace(/\./g, '-');
+                var level5_noDots_noSlash = level5_noDots.replace(/\./g, '-');
+                var level5_noDots_noSlash_noColon = level5_noDots_noSlash.replace(/\:/g, '_');
+                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3+4+5: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon+'.'+level5_noDots_noSlash_noColon); }
+
+                let namespace = level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon+'.'+level5_noDots_noSlash_noColon;
+                let value = body[level1][level2][level3][i][level4][level5];
+              
+                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level5 namespace: ' +namespace+ ' value: ' +value); }
+                sdc.gauge(namespace, value);
+      
+              });        
+
+            });   
+                  
+          }
         });
-      });      
+      });
     });
 
   } 

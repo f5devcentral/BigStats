@@ -81,6 +81,7 @@ BigStats.prototype.onStartCompleted = function(success, error) {
 BigStats.prototype.onPost = function (restOperation) {
 
   var onPostdata = restOperation.getBody();
+
   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - onPost receved data: ' +JSON.stringify(onPostdata)); }
   
   if (typeof onPostdata.enabled !== 'undefined' && onPostdata.enabled === true) {
@@ -424,7 +425,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
         }
 
         // Build JavaScript object of stats for each service
-        this.stats[servicePath].vip = values;
+        this.stats[servicePath][element.destination] = values;
 
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - buildSmallStatsObject() - Processing: ' +index+ ' of: ' +(vipResourceList.items.length - 1)); }
 
@@ -824,20 +825,59 @@ BigStats.prototype.exportStats = function (body) {
     // we're using the statsd client
     var sdc = new StatsD(this.config.destination.address, 8125);
 
-    //FIXME: StatsD uses dot notation, so doesnt like IP addresses. replace '.' with '-'
     Object.keys(body).map((level1) => {
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: level1: ' +level1); }
+      var level1_noDots = level1.replace(/\./g, '-');
+      var level1_noDots_noSlash = level1_noDots.replace(/\//g, '-');
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: level1: ' +level1_noDots_noSlash); }
+
       Object.keys(body[level1]).map((level2) => {
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2: ' +level1+'.'+level2); }
+        var level2_noDots = level2.replace(/\./g, '-');
+        var level2_noDots_noSlash = level2_noDots.replace(/\//g, '-');
+        var level2_noDots_noSlash_noColon = level2_noDots_noSlash.replace(/\:/g, '_');
+        
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon); }
         Object.keys(body[level1][level2]).map((level3) => {
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3: ' +level1+'.'+level2+'.'+level3); }
+          var level3_noDots = level3.replace(/\./g, '-');
+          var level3_noDots_noSlash = level3_noDots.replace(/\//g, '-');
+          var level3_noDots_noSlash_noColon = level3_noDots_noSlash.replace(/\:/g, '_');
 
-          let namespace = level1+'.'+level2+'.'+level3;
-          let value = body[level1][level2][level3];
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon); }
 
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - namespace: ' +namespace+ ' value: ' +value); }
-          sdc.gauge(namespace, value);
+          for (var i in body[level1][level2][level3]) {
 
+            logger.info('\n\n\nbody[level1][level2][level3][i]: ' +JSON.stringify(body[level1][level2][level3][i], '', '\t'));
+
+            Object.keys(body[level1][level2][level3][i]).map((level4) => {
+
+              var level4_noDots = level4.replace(/\./g, '-');
+              var level4_noDots_noSlash = level4_noDots.replace(/\//g, '-');
+              var level4_noDots_noSlash_noColon = level4_noDots_noSlash.replace(/\:/g, '_');
+
+              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3+4: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon); }
+
+              let namespace = level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon;
+              let value = body[level1][level2][level3][i][level4];
+    
+              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level4 namespace: ' +namespace+ ' value: ' +JSON.stringify(value, '', '\t')); }
+              sdc.gauge(namespace, value);
+
+              Object.keys(body[level1][level2][level3][i][level4]).map((level5) => {
+                var level5_noDots = level5.replace(/\./g, '-');
+                var level5_noDots_noSlash = level5_noDots.replace(/\./g, '-');
+                var level5_noDots_noSlash_noColon = level5_noDots_noSlash.replace(/\:/g, '_');
+                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3+4+5: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon+'.'+level5_noDots_noSlash_noColon); }
+
+                let namespace = level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon+'.'+level5_noDots_noSlash_noColon;
+                let value = body[level1][level2][level3][i][level4][level5];
+              
+                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level5 namespace: ' +namespace+ ' value: ' +value); }
+                sdc.gauge(namespace, value);
+      
+              });        
+
+            });   
+                  
+          }
         });
       });
     });

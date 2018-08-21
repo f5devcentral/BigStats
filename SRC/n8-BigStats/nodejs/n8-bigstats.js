@@ -823,61 +823,65 @@ BigStats.prototype.exportStats = function (body) {
   else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "statsd") {
 
     // we're using the statsd client
+    //FIXME: change port to use BigStat_Settings
     var sdc = new StatsD(this.config.destination.address, 8125);
 
     Object.keys(body).map((level1) => {
-      var level1_noDots = level1.replace(/\./g, '-');
-      var level1_noDots_noSlash = level1_noDots.replace(/\//g, '-');
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: level1: ' +level1_noDots_noSlash); }
+
+      var l1 = this.replaceDotsSlashesColons(level1);
+
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: l1:\n\t' +l1); }
 
       Object.keys(body[level1]).map((level2) => {
-        var level2_noDots = level2.replace(/\./g, '-');
-        var level2_noDots_noSlash = level2_noDots.replace(/\//g, '-');
-        var level2_noDots_noSlash_noColon = level2_noDots_noSlash.replace(/\:/g, '_');
-        
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon); }
+
+        var l2 = this.replaceDotsSlashesColons(level2);
+
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l1+2:\n\t' +l1+'.'+l2); }
+
         Object.keys(body[level1][level2]).map((level3) => {
-          var level3_noDots = level3.replace(/\./g, '-');
-          var level3_noDots_noSlash = level3_noDots.replace(/\//g, '-');
-          var level3_noDots_noSlash_noColon = level3_noDots_noSlash.replace(/\:/g, '_');
 
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon); }
+          var l3 = this.replaceDotsSlashesColons(level3);
 
-          for (var i in body[level1][level2][level3]) {
+          // If the value is a number, send it to statsd.
+          if (typeof body[level1][level2][level3] === 'number') {
+  
+            let namespace = l1+'.'+l2+'.'+l3;
+            let value = body[level1][level2][level3];
+  
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l3 namespace:\n\t' +namespace+ ' value: ' +JSON.stringify(value, '', '\t')); }
+            sdc.gauge(namespace, value);
 
-            logger.info('\n\n\nbody[level1][level2][level3][i]: ' +JSON.stringify(body[level1][level2][level3][i], '', '\t'));
-
-            Object.keys(body[level1][level2][level3][i]).map((level4) => {
-
-              var level4_noDots = level4.replace(/\./g, '-');
-              var level4_noDots_noSlash = level4_noDots.replace(/\//g, '-');
-              var level4_noDots_noSlash_noColon = level4_noDots_noSlash.replace(/\:/g, '_');
-
-              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3+4: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon); }
-
-              let namespace = level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon;
-              let value = body[level1][level2][level3][i][level4];
-    
-              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level4 namespace: ' +namespace+ ' value: ' +JSON.stringify(value, '', '\t')); }
-              sdc.gauge(namespace, value);
-
-              Object.keys(body[level1][level2][level3][i][level4]).map((level5) => {
-                var level5_noDots = level5.replace(/\./g, '-');
-                var level5_noDots_noSlash = level5_noDots.replace(/\./g, '-');
-                var level5_noDots_noSlash_noColon = level5_noDots_noSlash.replace(/\:/g, '_');
-                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level1+2+3+4+5: ' +level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon+'.'+level5_noDots_noSlash_noColon); }
-
-                let namespace = level1_noDots_noSlash+'.'+level2_noDots_noSlash_noColon+'.'+level3_noDots_noSlash_noColon+'.'+level4_noDots_noSlash_noColon+'.'+level5_noDots_noSlash_noColon;
-                let value = body[level1][level2][level3][i][level4][level5];
-              
-                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level5 namespace: ' +namespace+ ' value: ' +value); }
-                sdc.gauge(namespace, value);
-      
-              });        
-
-            });   
-                  
           }
+
+          // If the value is an object, process the child objects..
+          else if (typeof body[level1][level2][level3] === 'object') {
+
+           Object.keys(body[level1][level2][level3]).map((level4) => {
+  
+            var l4 = this.replaceDotsSlashesColons(level4);
+
+              Object.keys(body[level1][level2][level3][level4]).map((level5) => {
+  
+                var l5 = this.replaceDotsSlashesColons(level5);
+  
+                Object.keys(body[level1][level2][level3][level4][level5]).map((level6) => {
+
+                  var l6 = this.replaceDotsSlashesColons(level6);
+  
+                  let namespace = l1+'.'+l2+'.'+l3+'.'+l4+'.'+l5+'.'+l6;
+                  let value = body[level1][level2][level3][level4][level5][level6];
+                
+                  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level6 namespace:\n\t' +namespace+ ' value: ' +value); }
+                  sdc.gauge(namespace, value);
+        
+                });        
+  
+              });   
+                    
+            });
+
+          }
+
         });
       });
     });
@@ -943,6 +947,23 @@ BigStats.prototype.exportStats = function (body) {
   else {
     logger.info('[BigStats] - Unrecognized \'protocol\'');
   }
+
+};
+
+/**
+* Escapes Slashes and Colons
+*
+* @param {String} notEscaped string that needs
+*
+* @returns {String} without slashes or colons
+*/
+BigStats.prototype.replaceDotsSlashesColons = function (notReplaced) {
+
+  let str_noDots = notReplaced.replace(/\./g, '-');
+  let str_noDots_noSlashes = str_noDots.replace(/\//g, '-');
+  let str_noDots_noSlashes_noColon = str_noDots_noSlashes.replace(/\:/g, '_');
+
+  return str_noDots_noSlashes_noColon;
 
 };
 

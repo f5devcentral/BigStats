@@ -676,8 +676,7 @@ BigStats.prototype.getPoolResourceList = function (vipResource) {
       
         this.restRequestSender.sendGet(restOp)
         .then((resp) => {
-  
-  
+    
           resp.body.items.map((element, index) => {
   
             poolMemberListObj.push(
@@ -830,13 +829,13 @@ BigStats.prototype.exportStats = function (body) {
 
       var l1 = this.replaceDotsSlashesColons(level1);
 
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: l1:\n\t' +l1); }
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Administrative Partition: ' +l1); }
 
       Object.keys(body[level1]).map((level2) => {
 
         var l2 = this.replaceDotsSlashesColons(level2);
 
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l1+2:\n\t' +l1+'.'+l2); }
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server: ' +l1+'.'+l2); }
 
         Object.keys(body[level1][level2]).map((level3) => {
 
@@ -848,7 +847,7 @@ BigStats.prototype.exportStats = function (body) {
             let namespace = l1+'.'+l2+'.'+l3;
             let value = body[level1][level2][level3];
   
-            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l3 namespace:\n\t' +namespace+ ' value: ' +JSON.stringify(value, '', '\t')); }
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server Stats: ' +namespace+ ' value: ' +value); }
             sdc.gauge(namespace, value);
 
           }
@@ -856,22 +855,23 @@ BigStats.prototype.exportStats = function (body) {
           // If the value is an object, process the child objects..
           else if (typeof body[level1][level2][level3] === 'object') {
 
-           Object.keys(body[level1][level2][level3]).map((level4) => {
-  
-            var l4 = this.replaceDotsSlashesColons(level4);
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Pool: ' +l3); }
 
+            Object.keys(body[level1][level2][level3]).map((level4) => {
+  
               Object.keys(body[level1][level2][level3][level4]).map((level5) => {
   
                 var l5 = this.replaceDotsSlashesColons(level5);
+                if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Pool Member: ' +l5); }
   
                 Object.keys(body[level1][level2][level3][level4][level5]).map((level6) => {
 
                   var l6 = this.replaceDotsSlashesColons(level6);
   
-                  let namespace = l1+'.'+l2+'.'+l3+'.'+l4+'.'+l5+'.'+l6;
+                  let namespace = l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
                   let value = body[level1][level2][level3][level4][level5][level6];
                 
-                  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - level6 namespace:\n\t' +namespace+ ' value: ' +value); }
+                  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l6 namespace: ' +namespace+ ' value: ' +value); }
                   sdc.gauge(namespace, value);
         
                 });        

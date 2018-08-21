@@ -9,7 +9,7 @@
 "use strict";
 
 const logger = require('f5-logger').getInstance();
-const bigStatsSettingsPath = '/shared/n8/bigstats_settings';
+const bigStatsSettingsPath = '/shared/webhook_server/github/bigstats_settings';
 var StatsD = require('node-statsd');
 var kafka = require('kafka-node');
 var Producer = kafka.Producer;
@@ -21,7 +21,7 @@ function BigStats() {
   this.stats = {};
 }
 
-BigStats.prototype.WORKER_URI_PATH = "shared/n8/bigstats";
+BigStats.prototype.WORKER_URI_PATH = "shared/webhook_server/github/bigstats";
 BigStats.prototype.isPublic = true;
 BigStats.prototype.isSingleton = true;
 
@@ -124,7 +124,7 @@ BigStats.prototype.createScheduler = function () {
       "intervalUnit":"SECOND",
       "scheduleType":"BASIC_WITH_INTERVAL",
       "deviceGroupName":"tm-shared-all-big-ips",
-      "taskReferenceToRun":"http://localhost:8100/mgmt/shared/n8/bigstats",
+      "taskReferenceToRun":"http://localhost:8100/mgmt/shared/webhook_server/github/bigstats",
       "name":"n8-BigStats",
       "taskBodyToRun":{
         "enabled": true

@@ -9,6 +9,7 @@
 "use strict";
 
 const logger = require('f5-logger').getInstance();
+const os = require("os");
 
 function BigStatsSettings() {
   this.state = {};
@@ -34,9 +35,13 @@ BigStatsSettings.prototype.onStart = function(success, error) {
                 return;
 
             }
+            else {
 
-            logger.info('[BigStatsSettings] - State loaded.');
-            that.state = state;
+                logger.info('[BigStatsSettings] - State loaded.');
+                that.state = state;
+    
+            }
+
         }
 
     );
@@ -48,6 +53,10 @@ BigStatsSettings.prototype.onStart = function(success, error) {
  * handle onGet HTTP request
  */
 BigStatsSettings.prototype.onGet = function(restOperation) {
+
+    let hostname = os.hostname();
+    let safeHostname = hostname.replace(/\./g, '-');
+    this.state.config.hostname = safeHostname;
 
     // Respond with the persisted state (config)
     restOperation.setBody(this.state);
@@ -62,26 +71,37 @@ BigStatsSettings.prototype.onPost = function(restOperation) {
 
     var newState = restOperation.getBody();
 
-    // If there's no 
+    // If there's no input
     if (!newState) {
 
         restOperation.fail(new Error("[BigStatsSettings] - No state provided..."));
         return;
 
     }
-    else {
+    else if (typeof newState !== 'object') {
 
-        logger.info('[BigStatsSettings] - Settings updated.');
+        try {
 
-        //Check if interval is less that minimum
-        this.state = newState;
+            newState = JSON.parse(newState);
 
-        if (this.state.config.interval < 10) {
-            //Enforcing minimum interval
-            this.state.config.interval = 10;
+        } catch (err) {
+
+            logger.info('[BigStatsSettings - ERROR] Unable to parse input. Valid JSON?');
+            
         }
 
     }
+
+    logger.info('[BigStatsSettings] - Settings updated.');
+
+    //Check if interval is less that minimum
+    this.state = newState;
+
+    if (this.state.config.interval < 10) {
+        //Enforcing minimum interval
+        this.state.config.interval = 10;
+    }
+
 
     restOperation.setBody(this.state);
     this.completeRestOperation(restOperation);

@@ -774,102 +774,155 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
 //Push stats to a remote destination
 BigStats.prototype.exportStats = function (body) {
 
-  //If the destination is 'http' or 'https'
+  // If the destination is 'http' OR 'https'
   if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol.startsWith('http')) {
 
-    var http;
+    this.httpExporter(body);
 
-    if (this.config.destination.protocol === 'https') {
-      http = require("https");
-    }
-    else {
-      http = require("http");
-    }
-  
-    var options = {
-      "method": "POST",
-      "hostname": this.config.destination.address,
-      "port": this.config.destination.port,
-      "path": this.config.destination.uri,
-      "headers": {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache"
-      }
-    };
-    
-    var req = http.request(options, function (res) {
-      var chunks = [];
-    
-      res.on('data', function (chunk) {
-        chunks.push(chunk);
-      });
-    
-      res.on('end', function () {
-        var body = Buffer.concat(chunks);
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats(): ' +body.toString()); }
-      });
-  
-    });
-    
-    req.write(JSON.stringify(body));
-    req.on('error', ((error) => {
-      logger.info('[BigStats] - ***************Error pushing stats): ' +error);
-    }));
-    req.end();
   }
 
-  // If the protocol is statsd
+  // If the destination is StatsD
   else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "statsd") {
 
-    // we're using the statsd client
-    //FIXME: change port to use BigStat_Settings
-    var sdc = new StatsD(this.config.destination.address, 8125);
+    this.statsdExporter(body);
 
-    Object.keys(body).map((level1) => {
+  } 
+
+  // If the destination is an Apache Kafka Broker  
+  else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "kafka") {
+
+    this.kafkaExporter(body);
+
+  }
+
+  // If the desintation protocol is unrecognized
+  else {
+
+    logger.info('[BigStats] - Unrecognized \'protocol\'');
+
+  }
+
+};
+
+/**
+* Exports data to http/https destinations
+*
+* @param {String} data to be exported
+*
+*/
+BigStats.prototype.httpExporter = function (data) {
+
+  var http;
+
+  if (this.config.destination.protocol === 'https') {
+
+    http = require("https");
+
+  }
+  else {
+
+    http = require("http");
+
+  }
+
+  var options = {
+    "method": "POST",
+    "hostname": this.config.destination.address,
+    "port": this.config.destination.port,
+    "path": this.config.destination.uri,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache"
+    }
+  };
+  
+  var req = http.request(options, function (res) {
+
+    var chunks = [];
+  
+    res.on('data', function (chunk) {
+
+      chunks.push(chunk);
+
+    });
+  
+    res.on('end', function () {
+
+      var body = Buffer.concat(chunks);
+
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats(): ' +body.toString()); }
+
+    });
+
+  });
+  
+  req.write(JSON.stringify(data));
+
+  req.on('error', ((error) => {
+
+    logger.info('[BigStats] - ***************Error pushing stats): ' +error);
+
+  }));
+
+  req.end();
+
+};
+
+/**
+* Exports data to StatsD destinations
+*
+* @param {String} data to be exported
+*
+*/
+BigStats.prototype.statsdExporter = function (data) {
+
+    var sdc = new StatsD(this.config.destination.address, this.config.destination.port);
+
+    Object.keys(data).map((level1) => {
 
       var l1 = this.replaceDotsSlashesColons(level1);
 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Administrative Partition: ' +l1); }
 
-      Object.keys(body[level1]).map((level2) => {
+      Object.keys(data[level1]).map((level2) => {
 
         var l2 = this.replaceDotsSlashesColons(level2);
 
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server: ' +l1+'.'+l2); }
 
-        Object.keys(body[level1][level2]).map((level3) => {
+        Object.keys(data[level1][level2]).map((level3) => {
 
           var l3 = this.replaceDotsSlashesColons(level3);
 
           // If the value is a number, send it to statsd.
-          if (typeof body[level1][level2][level3] === 'number') {
+          if (typeof data[level1][level2][level3] === 'number') {
   
             let namespace = l1+'.'+l2+'.'+l3;
-            let value = body[level1][level2][level3];
+            let value = data[level1][level2][level3];
   
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server Stats: ' +namespace+ ' value: ' +value); }
             sdc.gauge(namespace, value);
 
           }
 
-          // If the value is an object, process the child objects..
-          else if (typeof body[level1][level2][level3] === 'object') {
+          // If the value is an object, process the child object..
+          else if (typeof data[level1][level2][level3] === 'object') {
 
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Pool: ' +l3); }
 
-            Object.keys(body[level1][level2][level3]).map((level4) => {
+            Object.keys(data[level1][level2][level3]).map((level4) => {
   
-              Object.keys(body[level1][level2][level3][level4]).map((level5) => {
+              Object.keys(data[level1][level2][level3][level4]).map((level5) => {
   
                 var l5 = this.replaceDotsSlashesColons(level5);
                 if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Pool Member: ' +l5); }
   
-                Object.keys(body[level1][level2][level3][level4][level5]).map((level6) => {
+                Object.keys(data[level1][level2][level3][level4][level5]).map((level6) => {
 
                   var l6 = this.replaceDotsSlashesColons(level6);
   
                   let namespace = l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
-                  let value = body[level1][level2][level3][level4][level5][level6];
+                  let value = data[level1][level2][level3][level4][level5][level6];
                 
                   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l6 namespace: ' +namespace+ ' value: ' +value); }
                   sdc.gauge(namespace, value);
@@ -883,73 +936,86 @@ BigStats.prototype.exportStats = function (body) {
           }
 
         });
+
       });
+
     });
 
-  } 
-  
-  else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "kafka") {
+};
 
-    var client = new kafka.KafkaClient ( 
-      {
-        kafkaHost: this.config.destination.address+':'+this.config.destination.port
-      } 
-    );
-    var producer = new Producer(client);
+/**
+* Exports data to Apache Kafka Broker destinations
+*
+* @param {String} data to be exported
+*
+*/
+BigStats.prototype.kafkaExporter = function (data) {
 
-    if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'all') {
+  var client = new kafka.KafkaClient ( 
+    {
+      kafkaHost: this.config.destination.address+':'+this.config.destination.port
+    } 
+  );
 
-      producer.on('ready', function () {
+  var producer = new Producer(client);
+
+  if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'all') {
+
+    producer.on('ready', function () {
+
+      var payload = [
+        {
+          topic: 'BigStats',
+          messages: JSON.stringify(data)
+        }
+      ];
+
+      producer.send(payload, function (err, resp) {
+
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
+        if (err) { logger.info('[BigStats - ERROR] - Kafka producer response:' +err); }
+
+      });
+
+    });
+
+  }
+  else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'partition') {
+
+    var that = this;
+
+    producer.on('ready', function () {
+
+      Object.keys(data).map((level1) => {
+
+        let safeTopic = that.replaceDotsSlashesColons(level1);
+
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(data[level1])); }
 
         var payload = [
           {
-            topic: 'BigStats',
-            messages: JSON.stringify(body)
+            topic: safeTopic,
+            messages: JSON.stringify(data[level1])
           }
         ];
 
         producer.send(payload, function (err, resp) {
+
           if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
-      });
-      });
+          if (err) { logger.info('[BigStats - ERROR] - Kafka producer response:' +err); }
 
-    }
-    else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'partition') {
-
-      var that = this;
-      producer.on('ready', function () {
-
-        Object.keys(body).map((level1) => {
-
-          let safeTopic = that.replaceDotsSlashesColons(level1);
-
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(body[level1])); }
-
-          var payload = [
-            {
-              topic: safeTopic,
-              messages: JSON.stringify(body[level1])
-            }
-          ];
-
-          producer.send(payload, function (err, resp) {
-            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
-            if (err) { logger.info('[BigStats - ERROR] - Kafka producer response:' +err); }
-          });
         });
       });
-
-    }                   
-
-    producer.on('error', function (err) {
-      logger.info('Kafka Producer error: ' +err);
     });
 
-  }
-  else {
-    logger.info('[BigStats] - Unrecognized \'protocol\'');
-  }
+  }                   
+
+  producer.on('error', function (err) {
+
+    logger.info('Kafka Producer error: ' +err);
+
+  });
 
 };
 

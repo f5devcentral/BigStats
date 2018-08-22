@@ -14,7 +14,7 @@ function BigStatsSettings() {
   this.state = {};
 }
 
-BigStatsSettings.prototype.WORKER_URI_PATH = "shared/webhook_server/github/bigstats_settings";
+BigStatsSettings.prototype.WORKER_URI_PATH = "shared/bigstats_settings";
 BigStatsSettings.prototype.isPublic = true;
 BigStatsSettings.prototype.isSingleton = true;
 BigStatsSettings.prototype.isPersisted = true;

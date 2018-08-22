@@ -37,6 +37,16 @@ The response will look something like this:
 
 Note the `"status":"FINISHED"` indicating that installation was successful.
 
+5. [OPTIONAL] View the installed packages using:
+
+`curl <username>:<password> -X GET http://localhost:8100/shared/iapp/global-installed-packages`
+
+The response will look something like:
+
+```json
+{"items":[{"id":"3616c231-6973-3608-8d74-1b87fc3d95e0","appName":"BigStats","packageName":"BigStats-0.4.0-0005.noarch","version":"0.4.0","release":"0005","arch":"noarch","tags":["IAPP"],"generation":2,"lastUpdateMicros":1534972313326949,"kind":"shared:iapp:global-installed-packages:installedpackagestate","selfLink":"https://localhost/mgmt/shared/iapp/global-installed-packages/3616c231-6973-3608-8d74-1b87fc3d95e0"}],"generation":2,"kind":"shared:iapp:global-installed-packages:installedpackagecollectionstate","lastUpdateMicros":1534972313328758,"selfLink":"https://localhost/mgmt/shared/iapp/global-installed-packages"}
+```
+
 ## Configure
 
 To configure, POST settings to `/mgmt/shared/bigstats_settings`:
@@ -136,14 +146,14 @@ curl -u <username>:<password> -X POST http://localhost:8100/mgmt/shared/bigstats
 > NOTE: To build your own Apache Kafka Broker lab environment, refer to `DOCS/LAB_SETUP.md`
 
 
-Dependong on your Apache Kafka Borker implementation, viewing the list of Kafka Topics might look like this:
+Dependong on your Apache Kafka Broker implementation, viewing the list of Kafka Topics might look like this:
 
 ```sh
 / # kafka-topics.sh --list --zookeeper zookeeper
-Common
-Tenant_01-App1
-Tenant_02-App2
-Tenant_03-App3
+ip-172-31-1-20-us-west-1-compute-internal-Common
+ip-172-31-1-20-us-west-1-compute-internal-Tenant_01-App1
+ip-172-31-1-20-us-west-1-compute-internal-Tenant_02-App2
+ip-172-31-1-20-us-west-1-compute-internal-Tenant_03-App3
 ```
 
 And viewing the contents of a Kafka Topic Kafka for sample BIG-IP Administrative partition `Tenant_01-App1` looks like:

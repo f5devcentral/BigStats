@@ -62,7 +62,7 @@ The BigStats Schema is located here: `SRC/bigstats-schema.json`
 {
     "config": {
         "destination": {
-          "proto": "http",
+          "protocol": "http",
           "address": "192.168.1.42",
           "port": "8080",
           "uri": "/stats"
@@ -84,7 +84,7 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
 {
     "config": {
         "destination": {
-          "proto": "statsd",
+          "protocol": "statsd",
           "address": "192.168.1.42",
           "port": "8125"
         },
@@ -105,7 +105,7 @@ NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
 {
     "config": {
         "destination": {
-          "proto": "kafka",
+          "protocol": "kafka",
           "kafka": {
                   "topic": "per-app"
           },

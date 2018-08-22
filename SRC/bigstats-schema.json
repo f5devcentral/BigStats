@@ -39,7 +39,7 @@
                                         "default": "all",
                                         "enum": [
                                             "all",
-                                            "per-app"
+                                            "partition"
                                         ]
                                     }
                                 },

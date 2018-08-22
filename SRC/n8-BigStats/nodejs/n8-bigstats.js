@@ -915,7 +915,7 @@ BigStats.prototype.exportStats = function (body) {
       });
 
     }
-    else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'per-app') {
+    else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'partition') {
 
       producer.on('ready', function () {
 

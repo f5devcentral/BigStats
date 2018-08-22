@@ -916,21 +916,26 @@ BigStats.prototype.exportStats = function (body) {
     }
     else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'partition') {
 
+      var that = this;
       producer.on('ready', function () {
 
         Object.keys(body).map((level1) => {
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +level1); }
+
+          let safeTopic = that.replaceDotsSlashesColons(level1);
+
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
           if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(body[level1])); }
 
           var payload = [
             {
-              topic: level1,
+              topic: safeTopic,
               messages: JSON.stringify(body[level1])
             }
           ];
 
           producer.send(payload, function (err, resp) {
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
+            if (err) { logger.info('[BigStats - ERROR] - Kafka producer response:' +err); }
           });
         });
       });
@@ -951,17 +956,17 @@ BigStats.prototype.exportStats = function (body) {
 /**
 * Escapes Slashes and Colons
 *
-* @param {String} notEscaped string that needs
+* @param {String} notReplaced string that needs
 *
 * @returns {String} without slashes or colons
 */
 BigStats.prototype.replaceDotsSlashesColons = function (notReplaced) {
 
   let str_noDots = notReplaced.replace(/\./g, '-');
-  let str_noDots_noSlashes = str_noDots.replace(/\//g, '-');
-  let str_noDots_noSlashes_noColon = str_noDots_noSlashes.replace(/\:/g, '_');
+  let str_noSlashes = str_noDots.replace(/\//g, '-');
+  let str_noColon = str_noSlashes.replace(/\:/g, '_');
 
-  return str_noDots_noSlashes_noColon;
+  return str_noColon;
 
 };
 

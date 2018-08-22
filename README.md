@@ -76,7 +76,7 @@ The BigStats Configuration Schema is located here: `SRC/bigstats-schema.json`
 
 NOTE: This functionality uses https://github.com/sivy/node-statsd 
 
-`POST https://{{mgmt_ip_address}}/mgmt/shared/n8/bigstats_settings`
+`POST https://{{mgmt_ip_address}}/mgmt/shared/bigstats_settings`
 
 ```json
 {
@@ -93,13 +93,20 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
 }
 ```
 
+Example using curl:
+
+```sh
+curl -u <username>:<password> -X POST https://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "statsd","address": "192.168.1.202","port": "8125"},"size": "small","interval": "10","debug": false}}'
+```
+
+
 > NOTE: To build your own StatsD/GraphiteDB/Grafana lab environment, refer to `DOCS/LAB_SETUP.md`
 
 **Kafka Message Bus Destination:**
 
 NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
 
-`POST https://{{mgmt_ip_address}}/mgmt/shared/n8/bigstats_settings`
+`POST https://{{mgmt_ip_address}}/mgmt/shared/bigstats_settings`
 
 ```json
 {
@@ -119,9 +126,15 @@ NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
 }
 ```
 
+Depending on your configuration above (`'topic': 'all'` or `'topic': 'partition'`) BigStats will put all the stats into one kafka topic, or create seperate topics per BIG-IP Administrative Partition.
+
+Example, using curl:
+```sh
+curl -u <username>:<password> -X POST http://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "kafka","kafka": { "topic":"partition" },"address": "172.31.1.78","port": "9092"},"size": "small","interval": "10","debug": false}}'
+```
+
 > NOTE: To build your own Apache Kafka Broker lab environment, refer to `DOCS/LAB_SETUP.md`
 
-Depending on your configuration above (`'topic': 'all'` or `'topic': 'partition'`) BigStats will put all the stats into one kafka topic, or create seperate topics per BIG-IP Administrative Partition.
 
 Dependong on your Apache Kafka Borker implementation, viewing the list of Kafka Topics might look like this:
 

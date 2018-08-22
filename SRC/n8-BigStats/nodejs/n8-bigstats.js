@@ -96,7 +96,6 @@ BigStats.prototype.onPost = function (restOperation) {
     .catch((err) => {
   
       logger.info('[BigStats - ERROR] - onPost() - Error handling POST: ' +err);
-      error(err);
   
     });
 
@@ -258,7 +257,7 @@ BigStats.prototype.patchScheduler = function (id, interval) {
         "interval": interval
       };
   
-      var path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
+      let path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
       let uri = this.restHelper.makeRestnodedUri(path);
       let restOp = this.createRestOperation(uri, body);
       
@@ -288,7 +287,8 @@ BigStats.prototype.getSettings = function () {
   
   return new Promise((resolve, reject) => {
 
-    let uri = this.restHelper.makeRestnodedUri('/mgmt' +bigStatsSettingsPath);
+    let path = '/mgmt' +bigStatsSettingsPath;
+    let uri = this.restHelper.makeRestnodedUri(path);
     let restOp = this.createRestOperation(uri);
 
     this.restRequestSender.sendGet(restOp)
@@ -909,8 +909,7 @@ BigStats.prototype.exportStats = function (body) {
         ];
 
         producer.send(payload, function (err, resp) {
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +resp); }
-          logger.info('[BigStats - ERROR] - Kafka error: ' +err);
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
       });
       });
 
@@ -931,8 +930,7 @@ BigStats.prototype.exportStats = function (body) {
           ];
 
           producer.send(payload, function (err, resp) {
-            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +resp); }
-            logger.info('[BigStats - ERROR] - Kafka error: ' +err);
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
           });
         });
       });

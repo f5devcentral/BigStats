@@ -109,7 +109,7 @@ NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
           "kafka": {
                   "topic": "partition"
           },
-          "address": "172.31.1.78",
+          "address": "172.31.1.42",
           "port": "9092"
         },
         "size": "small",
@@ -127,15 +127,16 @@ Dependong on your Apache Kafka Borker implementation, viewing the list of Kafka 
 
 ```sh
 / # kafka-topics.sh --list --zookeeper zookeeper
-App1a
-App1b
-App2
+Common
+Tenant_01-App1
+Tenant_02-App2
+Tenant_03-App3
 ```
 
-And viewing the contents of a Kafka Topic Kafka for sample BIG-IP Administrative partition `App1a` looks like:
+And viewing the contents of a Kafka Topic Kafka for sample BIG-IP Administrative partition `Tenant_01-App1` looks like:
 
 ```sh
-/ # kafka-simple-consumer-shell.sh --broker-list localhost:9092 --topic App1a
+/ # kafka-simple-consumer-shell.sh --broker-list localhost:9092 --topic Tenant_01-App1
 {"vip":{"clientside_curConns":0,"clientside_maxConns":6,"clientside_bitsIn":668184240,"clientside_bitsOut":37371977200,"clientside_pktsIn":1500027,"clientside_pktsOut":2031911},"pool":{"serverside_curConns":0,"serverside_maxConns":9,"serverside_bitsIn":537711552,"serverside_bitsOut":36314664160,"serverside_pktsIn":1270792,"serverside_pktsOut":2353845}}
 ```
 

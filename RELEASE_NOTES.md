@@ -1,5 +1,22 @@
 # RELEASE NOTES
 
+## v0.4.0-release
+
+### Features
+
+* Added supoprt for tradition configurations (prior to AS3). Previous version required the use of AS3, F5 BIG-IP's declarative interface. Traditional, AS3 (declarative) and mixed configurations are now suported.
+
+### Fixes
+
+* StatsD TCP Port is no longer hard coded. Now using `config.destination.port`
+* Undefined 'error' fixed and handled
+
+### Known Issues
+
+* No 'large' stats size.
+
+---
+
 ## v0.3.0-release
 
 ### Features
@@ -16,6 +33,8 @@
 
 * No 'large' stats size.
 
+---
+
 ## v0.2.0-release
 
 ### Features
@@ -25,11 +44,11 @@
 
 ### Fixes
 
-None
+* None
 
 ### Known Issues
 
-Kafka Producer implementation doesnt support message bus discovery. Should add Zookeeper support to facilitate this.
+* None
 
 ---
 
@@ -37,14 +56,15 @@ Kafka Producer implementation doesnt support message bus discovery. Should add Z
 
 ### Features
 
-No new features
+* No new features
 
 ### Fixes
 
-**Legacy 'config' object model breaking 'http' destination**
+* **Legacy 'config' object model breaking 'http' destination**
 
 ### Known Issues
-none
+
+* None
 
 ---
 

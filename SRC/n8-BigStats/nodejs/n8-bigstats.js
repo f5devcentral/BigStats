@@ -810,7 +810,11 @@ BigStats.prototype.exportStats = function (body) {
 * @param {String} data to be exported
 *
 */
-BigStats.prototype.httpExporter = function (data) {
+BigStats.prototype.httpExporter = function (stats) {
+
+  var data = {
+    [this.config.hostname]: stats
+  };
 
   var http;
 
@@ -897,7 +901,7 @@ BigStats.prototype.statsdExporter = function (data) {
           // If the value is a number, send it to statsd.
           if (typeof data[level1][level2][level3] === 'number') {
   
-            let namespace = l1+'.'+l2+'.'+l3;
+            let namespace = this.config.hostname+'.'+l1+'.'+l2+'.'+l3;
             let value = data[level1][level2][level3];
   
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server Stats: ' +namespace+ ' value: ' +value); }
@@ -921,7 +925,7 @@ BigStats.prototype.statsdExporter = function (data) {
 
                   var l6 = this.replaceDotsSlashesColons(level6);
   
-                  let namespace = l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
+                  let namespace = this.config.hostname+'.'+l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
                   let value = data[level1][level2][level3][level4][level5][level6];
                 
                   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l6 namespace: ' +namespace+ ' value: ' +value); }
@@ -951,6 +955,8 @@ BigStats.prototype.statsdExporter = function (data) {
 */
 BigStats.prototype.kafkaExporter = function (data) {
 
+  var hostname = this.config.hostname;
+
   var client = new kafka.KafkaClient ( 
     {
       kafkaHost: this.config.destination.address+':'+this.config.destination.port
@@ -965,7 +971,7 @@ BigStats.prototype.kafkaExporter = function (data) {
 
       var payload = [
         {
-          topic: 'BigStats',
+          topic: hostname,
           messages: JSON.stringify(data)
         }
       ];
@@ -988,7 +994,8 @@ BigStats.prototype.kafkaExporter = function (data) {
 
       Object.keys(data).map((level1) => {
 
-        let safeTopic = that.replaceDotsSlashesColons(level1);
+        let safePartitionName = that.replaceDotsSlashesColons(level1);
+        let safeTopic = hostname+'-'+safePartitionName;
 
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(data[level1])); }

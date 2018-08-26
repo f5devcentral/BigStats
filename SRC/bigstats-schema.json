@@ -42,13 +42,7 @@
                                             "partition"
                                         ]
                                     }
-                                },
-                                "title": "The Address Schema ",
-                                "description": "Desintation IP Address",
-                                "default": "",
-                                "examples": [
-                                    "1.1.1.1"
-                                ]
+                                }
                             }
                         },
                         "address": {

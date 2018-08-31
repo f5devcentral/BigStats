@@ -104,8 +104,6 @@ BigStatsSettings.prototype.validateConfiguration = function(input) {
 
     let jsonInput = this.isJson(input);
 
-    logger.info('\n\n this.isJson() returned: ' +JSON.stringify(jsonInput)+ ' \n\n');
-
     if (jsonInput && typeof jsonInput.config !== 'undefined') {
 
         // Check if interval exists, or is less than the minimum

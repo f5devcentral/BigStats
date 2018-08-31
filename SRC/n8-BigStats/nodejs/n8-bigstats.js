@@ -84,22 +84,24 @@ BigStats.prototype.onPost = function (restOperation) {
 
   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - onPost receved data: ' +JSON.stringify(onPostdata)); }
   
-  if (typeof onPostdata.enabled !== 'undefined' && onPostdata.enabled === true) {
+  this.getSettings()
+  .then(() => {
 
-    this.getSettings()
-    .then(() => {
+    if (this.config.enabled === false) {
 
-      // Execute stats collection
-      this.pullStats();
+      logger.info('[BigStats] onPost() - config.enabled is set to \'false\'');
+      return;
 
-    })
-    .catch((err) => {
-  
-      logger.info('[BigStats - ERROR] - onPost() - Error handling POST: ' +err);
-  
-    });
+    }
+    // Execute stats collection
+    this.pullStats();
 
-  }
+  })
+  .catch((err) => {
+
+    logger.info('[BigStats - ERROR] - onPost() - Error handling POST: ' +err);
+
+  });
 
   // Acknowledge the Scheduler Task
   restOperation.setBody("BigStats says, Thanks!!");
@@ -126,7 +128,7 @@ BigStats.prototype.createScheduler = function () {
       "taskReferenceToRun":"http://localhost:8100/mgmt/shared/bigstats",
       "name":"n8-BigStats",
       "taskBodyToRun":{
-        "enabled": true
+        "polling": "BigStats"
       },
       "taskRestMethodToRun":"POST",
       "maxTaskHistoryToKeep": 3
@@ -182,6 +184,8 @@ BigStats.prototype.createScheduler = function () {
  */
 BigStats.prototype.updateScheduler = function (interval) {
   
+  logger.info('[BigStats] - updateScheduler() - New Settings detected, Updating Scheduler.');
+
   // Execute update to the Task Shceduler interval 
   this.getSchedulerId()
   .then((id) => {
@@ -254,7 +258,10 @@ BigStats.prototype.patchScheduler = function (id, interval) {
     return new Promise((resolve, reject) => {
 
       var body = {
-        "interval": interval
+        "interval": interval,
+        "taskBodyToRun": {
+          "polling": "BigStats"
+        }
       };
   
       let path = '/mgmt/shared/task-scheduler/scheduler/'+id; 
@@ -297,7 +304,7 @@ BigStats.prototype.getSettings = function () {
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getSettings() - Response from BigStatsSettings worker: ' +JSON.stringify(resp.body.config,'', '\t')); }
 
       // Is DEBUG enabled?
-      if (resp.body.config.debug === true) {
+      if (typeof resp.body.config.debug !== 'undefined' && resp.body.config.debug === true) {
 
         logger.info('\n\n[BigStats] - DEBUG ENABLED\n\n');
         DEBUG = true;
@@ -308,11 +315,16 @@ BigStats.prototype.getSettings = function () {
         DEBUG = false;
 
       }
+      
+      // Ensure we have both 'interval' and 'enabled' options
+      if (typeof resp.body.config.interval !== 'undefined' && typeof resp.body.config.enabled !== 'undefined' && typeof this.config.interval !== 'undefined' && typeof this.config.enabled !== 'undefined') {
 
-      // If an 'interval' is new, or it has changed, update the task-scheduler task
-      if (typeof this.config.interval !== 'undefined' && this.config.interval !== resp.body.config.interval) {
+        // If 'interval' has changed, update the task-scheduler task
+        if (this.config.interval !== resp.body.config.interval || this.config.enabled !== resp.body.config.enabled) {
 
-        this.updateScheduler(resp.body.config.interval);
+          this.updateScheduler(resp.body.config.interval, resp.body.config.enabled);
+
+        }
 
       }
 

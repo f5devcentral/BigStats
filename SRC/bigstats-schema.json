@@ -84,6 +84,16 @@
                         42
                     ]
                 },
+                "enabled": {
+                    "$id": "/properties/config/properties/enabled",
+                    "type": "boolean",
+                    "title": "The Enabled Schema ",
+                    "default": true,
+                    "enum": [
+                        true,
+                        false
+                    ]
+                },
                 "debug": {
                     "$id": "/properties/config/properties/debug",
                     "type": "boolean",

@@ -377,15 +377,22 @@ BigStats.prototype.pullStats = function () {
     }
 
   })
-  .then(() => {
+  .then((stats) => {
+
+    // Ready the stats for export - Apply stats prefix: 'hostname.services.stats'
+    let statsExpObj = {
+      [this.config.hostname]: {
+        services: stats
+      }
+    };
 
     if (DEBUG === true) { 
       logger.info('\n\n*******************************************\n* [BigStats - DEBUG] - BEGIN Stats Object *\n*******************************************\n\n');
-      logger.info(JSON.stringify(this.stats, '', '\t'));
+      logger.info(JSON.stringify(statsExpObj, '', '\t'));
       logger.info('\n\n*******************************************\n*  [BigStats - DEBUG] - END Stats Object  *\n*******************************************\n\n'); 
     }
 
-    this.exportStats(this.stats);
+    this.exportStats(statsExpObj);
 
   })
   .catch((err) => {
@@ -781,36 +788,45 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
 /**
  * Push the stats object to the desired destinations
  * 
- * @param {Object} body representing the collected statistics 
+ * @param {Object} statsObj representing the collected statistics 
  */
 //Push stats to a remote destination
-BigStats.prototype.exportStats = function (body) {
+BigStats.prototype.exportStats = function (statsObj) {
 
   // If the destination is 'http' OR 'https'
-  if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol.startsWith('http')) {
+  if (typeof this.config.destination.protocol !== 'undefined') {
 
-    this.httpExporter(body);
+    if (this.config.destination.protocol.startsWith('http')) {
 
-  }
+      this.httpExporter(statsObj);
+  
+    }
+  
+    // If the destination is StatsD
+    else if (this.config.destination.protocol === "statsd") {
+  
+      this.statsdExporter(statsObj);
+  
+    } 
+  
+    // If the destination is an Apache Kafka Broker  
+    else if (this.config.destination.protocol === "kafka") {
+  
+      this.kafkaExporter(statsObj);
+  
+    }
+    else {
 
-  // If the destination is StatsD
-  else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "statsd") {
+      logger.info('[BigStats] - Unrecognized \'protocol\'');
 
-    this.statsdExporter(body);
-
+    }
+  
   } 
-
-  // If the destination is an Apache Kafka Broker  
-  else if (typeof this.config.destination.protocol !== 'undefined' && this.config.destination.protocol === "kafka") {
-
-    this.kafkaExporter(body);
-
-  }
 
   // If the desintation protocol is unrecognized
   else {
 
-    logger.info('[BigStats] - Unrecognized \'protocol\'');
+    logger.info('[BigStats - ERROR] - A destination \'protocol\' must be defined');
 
   }
 
@@ -819,14 +835,10 @@ BigStats.prototype.exportStats = function (body) {
 /**
 * Exports data to http/https destinations
 *
-* @param {String} data to be exported
+* @param {Object} statsObj to be exported
 *
 */
-BigStats.prototype.httpExporter = function (stats) {
-
-  var data = {
-    [this.config.hostname]: stats
-  };
+BigStats.prototype.httpExporter = function (statsObj) {
 
   var http;
 
@@ -866,13 +878,13 @@ BigStats.prototype.httpExporter = function (stats) {
 
       var body = Buffer.concat(chunks);
 
-      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats(): ' +body.toString()); }
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - httpExporter() resp: ' +body.toString()); }
 
     });
 
   });
   
-  req.write(JSON.stringify(data));
+  req.write(JSON.stringify(statsObj));
 
   req.on('error', ((error) => {
 
@@ -890,9 +902,10 @@ BigStats.prototype.httpExporter = function (stats) {
 * @param {String} data to be exported
 *
 */
-BigStats.prototype.statsdExporter = function (data) {
+BigStats.prototype.statsdExporter = function (statsObj) {
 
     var sdc = new StatsD(this.config.destination.address, this.config.destination.port);
+    var data = statsObj[this.config.hostname].services;
 
     Object.keys(data).map((level1) => {
 
@@ -913,7 +926,7 @@ BigStats.prototype.statsdExporter = function (data) {
           // If the value is a number, send it to statsd.
           if (typeof data[level1][level2][level3] === 'number') {
   
-            let namespace = this.config.hostname+'.'+l1+'.'+l2+'.'+l3;
+            let namespace = this.config.hostname+'.services.'+l1+'.'+l2+'.'+l3;
             let value = data[level1][level2][level3];
   
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server Stats: ' +namespace+ ' value: ' +value); }
@@ -937,7 +950,7 @@ BigStats.prototype.statsdExporter = function (data) {
 
                   var l6 = this.replaceDotsSlashesColons(level6);
   
-                  let namespace = this.config.hostname+'.'+l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
+                  let namespace = this.config.hostname+'.services.'+l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
                   let value = data[level1][level2][level3][level4][level5][level6];
                 
                   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l6 namespace: ' +namespace+ ' value: ' +value); }
@@ -962,10 +975,10 @@ BigStats.prototype.statsdExporter = function (data) {
 /**
 * Exports data to Apache Kafka Broker destinations
 *
-* @param {String} data to be exported
+* @param {Object} statsObj to be exported
 *
 */
-BigStats.prototype.kafkaExporter = function (data) {
+BigStats.prototype.kafkaExporter = function (statsObj) {
 
   var hostname = this.config.hostname;
 
@@ -977,14 +990,14 @@ BigStats.prototype.kafkaExporter = function (data) {
 
   var producer = new Producer(client);
 
-  if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'all') {
+  if (typeof this.config.destination.kafka === 'undefined' || typeof this.config.destination.kafka.topic === 'undefined' && this.config.destination.kafka.topic === 'all') {
 
     producer.on('ready', function () {
 
       var payload = [
         {
           topic: hostname,
-          messages: JSON.stringify(data)
+          messages: JSON.stringify(statsObj)
         }
       ];
 
@@ -998,10 +1011,11 @@ BigStats.prototype.kafkaExporter = function (data) {
     });
 
   }
-  else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'partition') {
+  else if (typeof this.config.destination.kafka.topic !== 'undefined' &&this.config.destination.kafka.topic === 'partition') {
 
     var that = this;
-
+    var data = statsObj[hostname].services;
+    
     producer.on('ready', function () {
 
       Object.keys(data).map((level1) => {
@@ -1009,13 +1023,20 @@ BigStats.prototype.kafkaExporter = function (data) {
         let safePartitionName = that.replaceDotsSlashesColons(level1);
         let safeTopic = hostname+'-'+safePartitionName;
 
+        // Ready the stats for topic-based export - Apply stats prefix: 'hostname.services.data[level1]'
+        let message = {
+          [hostname]: {
+            services: data[level1]
+          }
+        };
+
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(data[level1])); }
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(message)); }
 
         var payload = [
           {
             topic: safeTopic,
-            messages: JSON.stringify(data[level1])
+            messages: JSON.stringify(message)
           }
         ];
 
@@ -1028,7 +1049,8 @@ BigStats.prototype.kafkaExporter = function (data) {
       });
     });
 
-  }                   
+  }
+                     
 
   producer.on('error', function (err) {
 

@@ -77,6 +77,7 @@ The BigStats Configuration Schema is located here: `SRC/bigstats-schema.json`
         },
         "size": "small",
         "interval": "10",
+        "enabled": true,
         "debug": false
       }
 }
@@ -98,6 +99,7 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
         },
         "size": "small",
         "interval": "10",
+        "enabled": true,
         "debug": false
       }
 }
@@ -106,7 +108,7 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
 Example using curl:
 
 ```sh
-curl -u <username>:<password> -X POST https://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "statsd","address": "192.168.1.202","port": "8125"},"size": "small","interval": "10","debug": false}}'
+curl -u <username>:<password> -X POST https://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "statsd","address": "192.168.1.202","port": "8125"},"size": "small","interval": 10, "enabled": true, "debug": false}}'
 ```
 
 
@@ -131,6 +133,7 @@ NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
         },
         "size": "small",
         "interval": "10",
+        "enabled": true,
         "debug": false
       }
 }
@@ -140,7 +143,7 @@ Depending on your configuration above (`'topic': 'all'` or `'topic': 'partition'
 
 Example, using curl:
 ```sh
-curl -u <username>:<password> -X POST http://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "kafka","kafka": { "topic":"partition" },"address": "172.31.1.78","port": "9092"},"size": "small","interval": "10","debug": false}}'
+curl -u <username>:<password> -X POST http://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "kafka","kafka": { "topic":"partition" },"address": "172.31.1.78","port": "9092"},"size": "small","interval": 10,"enabled": true,"debug": false}}'
 ```
 
 > NOTE: To build your own Apache Kafka Broker lab environment, refer to `DOCS/LAB_SETUP.md`
@@ -152,8 +155,10 @@ Dependong on your Apache Kafka Broker implementation, viewing the list of Kafka 
 / # kafka-topics.sh --list --zookeeper zookeeper
 ip-172-31-1-20-us-west-1-compute-internal-Common
 ip-172-31-1-20-us-west-1-compute-internal-Tenant_01-App1
-ip-172-31-1-20-us-west-1-compute-internal-Tenant_02-App2
 ip-172-31-1-20-us-west-1-compute-internal-Tenant_03-App3
+ip-172-31-1-20-us-west-1-compute-internal-Tenant_07-App7
+ip-172-31-1-20-us-west-1-compute-internal-Tenant_08-App8
+ip-172-31-1-20-us-west-1-compute-internal-device_stats
 ```
 
 And viewing the contents of a Kafka Topic Kafka for sample BIG-IP Administrative partition `Tenant_01-App1` looks like:

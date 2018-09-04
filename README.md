@@ -175,206 +175,127 @@ Connection: keep-alive
 Transfer-Encoding: chunked
 
 {
-        "Common": {
-                "/Common/172.31.4.200:80": {
-                        "clientside_curConns": 0,
-                        "clientside_maxConns": 0,
-                        "clientside_bitsIn": 0,
-                        "clientside_bitsOut": 0,
-                        "clientside_pktsIn": 0,
-                        "clientside_pktsOut": 0,
-                        "/Common/noAS3_POOL": [
-                                {
-                                        "172.31.10.200:8080": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.10.201:8080": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.10.202:8080": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
+        "ip-172-31-1-20-us-west-1-compute-internal": {
+                "services": {
+                        "Tenant_01/App1": {
+                                "/Tenant_01/App3/172.31.4.11:80": {
+                                        "clientside_curConns": 0,
+                                        "clientside_maxConns": 0,
+                                        "clientside_bitsIn": 0,
+                                        "clientside_bitsOut": 0,
+                                        "clientside_pktsIn": 0,
+                                        "clientside_pktsOut": 0,
+                                        "/Tenant_01/App1/web_pool1": [
+                                                {
+                                                        "172.31.10.112:80": {
+                                                                "serverside_curConns": 0,
+                                                                "serverside_maxConns": 0,
+                                                                "serverside_bitsIn": 0,
+                                                                "serverside_bitsOut": 0,
+                                                                "serverside_pktsIn": 0,
+                                                                "serverside_pktsOut": 0,
+                                                                "monitorStatus": "down"
+                                                        }
+                                                },
+                                                {
+                                                        "172.31.10.111:80": {
+                                                                "serverside_curConns": 0,
+                                                                "serverside_maxConns": 0,
+                                                                "serverside_bitsIn": 0,
+                                                                "serverside_bitsOut": 0,
+                                                                "serverside_pktsIn": 0,
+                                                                "serverside_pktsOut": 0,
+                                                                "monitorStatus": "down"
+                                                        }
+                                                },
+                                                {
+                                                        "172.31.10.113:80": {
+                                                                "serverside_curConns": 0,
+                                                                "serverside_maxConns": 0,
+                                                                "serverside_bitsIn": 0,
+                                                                "serverside_bitsOut": 0,
+                                                                "serverside_pktsIn": 0,
+                                                                "serverside_pktsOut": 0,
+                                                                "monitorStatus": "down"
+                                                        }
+                                                },
+                                                {
+                                                        "172.31.10.114:80": {
+                                                                "serverside_curConns": 0,
+                                                                "serverside_maxConns": 0,
+                                                                "serverside_bitsIn": 0,
+                                                                "serverside_bitsOut": 0,
+                                                                "serverside_pktsIn": 0,
+                                                                "serverside_pktsOut": 0,
+                                                                "monitorStatus": "down"
+                                                        }
+                                                }
+                                        ]
                                 }
-                        ]
-                }
-        },
-        "Tenant_02/App2": {
-                "/Tenant_02/App2/172.31.4.21:443": {
-                        "clientside_curConns": 0,
-                        "clientside_maxConns": 0,
-                        "clientside_bitsIn": 0,
-                        "clientside_bitsOut": 0,
-                        "clientside_pktsIn": 0,
-                        "clientside_pktsOut": 0,
-                        "/Tenant_02/App2/web_pool2": [
-                                {
-                                        "172.31.4.120:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.4.121:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.4.122:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.4.123:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
+                        },
+                        "Common": {
+                                "/Common/172.31.4.200:80": {
+                                        "clientside_curConns": 0,
+                                        "clientside_maxConns": 0,
+                                        "clientside_bitsIn": 0,
+                                        "clientside_bitsOut": 0,
+                                        "clientside_pktsIn": 0,
+                                        "clientside_pktsOut": 0,
+                                        "/Common/noAS3_POOL": [
+                                                {
+                                                        "172.31.10.200:8080": {
+                                                                "serverside_curConns": 0,
+                                                                "serverside_maxConns": 0,
+                                                                "serverside_bitsIn": 0,
+                                                                "serverside_bitsOut": 0,
+                                                                "serverside_pktsIn": 0,
+                                                                "serverside_pktsOut": 0,
+                                                                "monitorStatus": "down"
+                                                        }
+                                                },
+                                                {
+                                                        "172.31.10.201:8080": {
+                                                                "serverside_curConns": 0,
+                                                                "serverside_maxConns": 0,
+                                                                "serverside_bitsIn": 0,
+                                                                "serverside_bitsOut": 0,
+                                                                "serverside_pktsIn": 0,
+                                                                "serverside_pktsOut": 0,
+                                                                "monitorStatus": "down"
+                                                        }
+                                                },
+                                                {
+                                                        "172.31.10.202:8080": {
+                                                                "serverside_curConns": 0,
+                                                                "serverside_maxConns": 0,
+                                                                "serverside_bitsIn": 0,
+                                                                "serverside_bitsOut": 0,
+                                                                "serverside_pktsIn": 0,
+                                                                "serverside_pktsOut": 0,
+                                                                "monitorStatus": "down"
+                                                        }
+                                                }
+                                        ]
                                 }
-                        ]
-                }
-        },
-        "Tenant_01/App1": {
-                "/Tenant_01/App1/172.31.4.11:80": {
-                        "clientside_curConns": 0,
-                        "clientside_maxConns": 0,
-                        "clientside_bitsIn": 0,
-                        "clientside_bitsOut": 0,
-                        "clientside_pktsIn": 0,
-                        "clientside_pktsOut": 0,
-                        "/Tenant_01/App1/web_pool1": [
-                                {
-                                        "172.31.10.112:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.10.111:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.10.113:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.10.114:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                }
-                        ]
-                }
-        },
-        "Tenant_03/App3": {
-                "/Tenant_03/App3/172.31.4.31:80": {
-                        "clientside_curConns": 0,
-                        "clientside_maxConns": 0,
-                        "clientside_bitsIn": 0,
-                        "clientside_bitsOut": 0,
-                        "clientside_pktsIn": 0,
-                        "clientside_pktsOut": 0,
-                        "/Tenant_03/App3/web_pool3": [
-                                {
-                                        "172.31.10.132:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.10.131:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                },
-                                {
-                                        "172.31.10.134:80": {
-                                                "serverside_curConns": 0,
-                                                "serverside_maxConns": 0,
-                                                "serverside_bitsIn": 0,
-                                                "serverside_bitsOut": 0,
-                                                "serverside_pktsIn": 0,
-                                                "serverside_pktsOut": 0,
-                                                "monitorStatus": "down"
-                                        }
-                                }
-                        ]
+                        }
+                },
+                "device": {
+                        "memory": {
+                                "memoryTotal": 7574732800,
+                                "memoryUsed": 1525312880
+                        },
+                        "cpu0": {
+                                "cpuIdle": 161495459,
+                                "cpuIowait": 169763,
+                                "cpuSystem": 292088,
+                                "cpuUser": 973939
+                        },
+                        "cpu1": {
+                                "cpuIdle": 160343033,
+                                "cpuIowait": 68690,
+                                "cpuSystem": 426881,
+                                "cpuUser": 992052
+                        }
                 }
         }
 }

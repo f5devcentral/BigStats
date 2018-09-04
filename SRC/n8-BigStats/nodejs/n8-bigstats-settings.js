@@ -69,43 +69,105 @@ BigStatsSettings.prototype.onGet = function(restOperation) {
  */
 BigStatsSettings.prototype.onPost = function(restOperation) {
 
-    var newState = restOperation.getBody();
+    let input = restOperation.getBody();
 
-    // If there's no input
-    if (!newState) {
+    let newState = this.validateConfiguration(input);
 
-        restOperation.fail(new Error("[BigStatsSettings] - No state provided..."));
+    if (newState) {
+
+        this.state = newState;
+
+        logger.info('[BigStatsSettings] - Settings updated.');
+
+        restOperation.setBody(this.state);
+        this.completeRestOperation(restOperation);
+    
+    }
+    else {
+
+        // Invlid input
+        restOperation.fail(new Error("[BigStatsSettings] - Invalid/No state provided..."));
         return;
 
     }
-    else if (typeof newState !== 'object') {
+      
+};
+
+/**
+ * Check for some values, enforce some defaults
+ * 
+ * @param {(object|string)} input
+ * 
+ * @return {boolean} 
+ */
+BigStatsSettings.prototype.validateConfiguration = function(input) {
+
+    let jsonInput = this.isJson(input);
+
+    if (jsonInput && typeof jsonInput.config !== 'undefined') {
+
+        // Check if interval exists, or is less than the minimum
+        if (typeof jsonInput.config.interval === 'undefined' || jsonInput.config.interval < 10) {
+
+            //Enforce minimum interval
+            jsonInput.config.interval = 10;
+
+        }
+
+        // Enable by default
+        if (typeof jsonInput.config.enabled === 'undefined') {
+
+            jsonInput.config.enabled = true;
+
+        }
+
+        if (typeof jsonInput.config.destination === 'undefined') {
+
+            logger.info('[BigStatsSettings - ERROR] - Must provide \'destination: \'.');
+            return false;
+
+        }
+
+        return jsonInput;
+
+    }
+    else {
+
+        // isJson() returned false. Is ths even valid JSON??
+        return false;
+
+    }
+        
+
+};
+
+/**
+ * If not an Object, can we parse it?
+ * 
+ * @param {(object|string)} input
+ * 
+ * @return {object}
+ */
+BigStatsSettings.prototype.isJson = function(input) {
+
+    if (input && typeof input !== 'object') {
 
         try {
 
-            newState = JSON.parse(newState);
-
+            input = JSON.parse(input);
+    
         } catch (err) {
-
-            logger.info('[BigStatsSettings - ERROR] Unable to parse input. Valid JSON?');
+    
+            logger.info('[BigStatsSettings - ERROR] Unable to parse input: ' +err);
+    
+            return;
             
         }
 
     }
 
-    logger.info('[BigStatsSettings] - Settings updated.');
+    return input;
 
-    //Check if interval is less that minimum
-    this.state = newState;
-
-    if (this.state.config.interval < 10) {
-        //Enforcing minimum interval
-        this.state.config.interval = 10;
-    }
-
-
-    restOperation.setBody(this.state);
-    this.completeRestOperation(restOperation);
-      
 };
 
 /**
@@ -122,6 +184,7 @@ BigStatsSettings.prototype.getExampleState = function () {
               "uri": "[uri]"
             },
             "interval": "[seconds]",
+            "enabled": true,
             "debug": false
           }
     };

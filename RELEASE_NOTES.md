@@ -4,12 +4,16 @@
 
 ### Features
 
-* Added supoprt for tradition configurations (prior to AS3). Previous version required the use of AS3, F5 BIG-IP's declarative interface. Traditional, AS3 (declarative) and mixed configurations are now suported.
+* Added supoprt for tradition configurations (prior to AS3). Previous version required the use of AS3 (F5 BIG-IP's declarative interface). Traditional, AS3 (declarative) and mixed configurations are now suported.
+* Added `"enabled": true|false` setting. 
+* Added `device` stats for CPU and Memory utilization.
+* Added some configuration validation to ensure it will run.
 
 ### Fixes
 
 * StatsD TCP Port is no longer hard coded. Now using `config.destination.port`
 * Undefined 'error' fixed and handled
+* Attempt to parse settings to resolve an issue where customer was using `curl` without specifying `Content-Type: application/json`. Previously, valid JSON was being interpreted as a string without the `Content-Type` header.
 
 ### Known Issues
 

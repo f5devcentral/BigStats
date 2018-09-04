@@ -352,6 +352,11 @@ BigStats.prototype.pullStats = function () {
   this.getSettings()
   .then(() => {
 
+    return this.getDeviceStats();
+
+  })
+  .then(() => {
+
     return this.getVipResourceList();
 
   })
@@ -377,12 +382,13 @@ BigStats.prototype.pullStats = function () {
     }
 
   })
-  .then((stats) => {
+  .then(() => {
 
     // Ready the stats for export - Apply stats prefix: 'hostname.services.stats'
     let statsExpObj = {
       [this.config.hostname]: {
-        services: stats
+        services: this.stats.services,
+        device: this.stats.device
       }
     };
 
@@ -404,6 +410,64 @@ BigStats.prototype.pullStats = function () {
 };
 
 /**
+* Fetch device statistics - CPU, RAM
+*
+*/ 
+BigStats.prototype.getDeviceStats = function () {
+
+  return new Promise((resolve, reject) => {
+
+    var path = '/mgmt/tm/sys/hostInfo/';    
+    var uri = this.restHelper.makeRestnodedUri(path);
+    var restOp = this.createRestOperation(uri);
+  
+    this.restRequestSender.sendGet(restOp)
+    .then((resp) => {
+
+      if (DEBUG === true) {
+        logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.statusCode: ' +JSON.stringify(resp.statusCode));
+//        logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+      }
+
+      this.stats.device = {
+        memory: {
+          memoryTotal: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries.memoryTotal.value,
+          memoryUsed: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries.memoryUsed.value
+        }
+      };
+
+      // Iterate through the BIG-IP CPU's 
+      Object.keys(resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries).map((cpu) => {
+
+        // For each CPU, grab the following stats.
+        let cpuStats = {
+          cpuIdle: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.idle.value,
+          cpuIowait: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.iowait.value,
+          cpuSystem: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.system.value,
+          cpuUser: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.user.value
+        }; 
+
+        let cpuId = resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.cpuId.value;
+
+        let cpuNum = 'cpu'+cpuId;
+        this.stats.device[cpuNum] = cpuStats;
+  
+      });
+
+      resolve();
+
+    })
+    .catch((err) => {
+
+      logger.info('[BigStats - ERROR] - getDeviceStats(): ' +JSON.stringify(err));
+      reject(err);
+
+    });
+
+  });
+};
+
+/**
 * For 'small' stats size (config.size: small), fetch:
 *   - Virtual IP in/out data
 *
@@ -413,6 +477,9 @@ BigStats.prototype.pullStats = function () {
 *
 */ 
 BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
+
+  // Initialize services object
+  this.stats.services = {};
 
   return new Promise((resolve, reject) => {
   
@@ -439,18 +506,18 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
         }
 
         // Initialize object on first run
-        if (typeof this.stats[servicePath] === 'undefined') {
-          this.stats[servicePath] = {};
+        if (typeof this.stats.services[servicePath] === 'undefined') {
+          this.stats.services[servicePath] = {};
         }
 
         // Build JavaScript object of stats for each service
-        this.stats[servicePath][element.destination] = values;
+        this.stats.services[servicePath][element.destination] = values;
 
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - buildSmallStatsObject() - Processing: ' +index+ ' of: ' +(vipResourceList.items.length - 1)); }
 
         if (index === (vipResourceList.items.length - 1)) {
 
-          resolve(this.stats);
+          resolve();
 
         }
 
@@ -478,6 +545,9 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
 */ 
 BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 
+  // Initialize services object
+  this.stats.services = {};
+
   return new Promise((resolve, reject) => {
 
     // Fetch stats from each resource, based on config.size
@@ -502,13 +572,13 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
         }
 
         // Initialize object on first run
-        if (typeof this.stats[servicePath] === 'undefined') {
-          this.stats[servicePath] = {};
+        if (typeof this.stats.services[servicePath] === 'undefined') {
+          this.stats.services[servicePath] = {};
         }
 
         // Adding VIP data to the 'medium' stats object
-        this.stats[servicePath][vipResource.destination] = values[0];
-        this.stats[servicePath][vipResource.destination][vipResource.pool] = [];
+        this.stats.services[servicePath][vipResource.destination] = values[0];
+        this.stats.services[servicePath][vipResource.destination][vipResource.pool] = [];
 
         values[1].map((poolMemberResource, poolMemberResourceIndex) => {
 
@@ -516,7 +586,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
           .then((stats) => {
 
             // Adding Pool data to the 'medium' stats object
-            this.stats[servicePath][vipResource.destination][vipResource.pool].push(stats);
+            this.stats.services[servicePath][vipResource.destination][vipResource.pool].push(stats);
  
             if (vipResourceListIndex === (vipResourceList.items.length - 1)) {  
 
@@ -525,7 +595,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 
               if (poolMemberResourceIndex === (values[1].length - 1)) {
   
-                resolve(this.stats);
+                resolve();
 
               }
 
@@ -793,9 +863,9 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
 //Push stats to a remote destination
 BigStats.prototype.exportStats = function (statsObj) {
 
-  // If the destination is 'http' OR 'https'
   if (typeof this.config.destination.protocol !== 'undefined') {
 
+    // If the destination is 'http' OR 'https'
     if (this.config.destination.protocol.startsWith('http')) {
 
       this.httpExporter(statsObj);
@@ -905,29 +975,50 @@ BigStats.prototype.httpExporter = function (statsObj) {
 BigStats.prototype.statsdExporter = function (statsObj) {
 
     var sdc = new StatsD(this.config.destination.address, this.config.destination.port);
-    var data = statsObj[this.config.hostname].services;
+    var servicesData = statsObj[this.config.hostname].services;
+    var deviceData = statsObj[this.config.hostname].device;
 
-    Object.keys(data).map((level1) => {
+    // Export device data
+    Object.keys(deviceData).map((level1) => {
+
+      if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Device Mtric Category: ' +level1); }
+
+      Object.keys(deviceData[level1]).map((level2) => {
+
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Device Metric Sub-Category: ' +level1+ '.' +level2); }
+
+        let namespace = this.config.hostname+'.device.'+level1+'.'+level2;
+        let value = deviceData[level1][level2];
+
+        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Device Sub-Category Stats: ' +namespace+ ' value: ' +value); }
+        sdc.gauge(namespace, value);
+
+      });
+
+    });
+
+    // Export services data
+    Object.keys(servicesData).map((level1) => {
 
       var l1 = this.replaceDotsSlashesColons(level1);
 
       if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Administrative Partition: ' +l1); }
 
-      Object.keys(data[level1]).map((level2) => {
+      Object.keys(servicesData[level1]).map((level2) => {
 
         var l2 = this.replaceDotsSlashesColons(level2);
 
         if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server: ' +l1+'.'+l2); }
 
-        Object.keys(data[level1][level2]).map((level3) => {
+        Object.keys(servicesData[level1][level2]).map((level3) => {
 
           var l3 = this.replaceDotsSlashesColons(level3);
 
           // If the value is a number, send it to statsd.
-          if (typeof data[level1][level2][level3] === 'number') {
+          if (typeof servicesData[level1][level2][level3] === 'number') {
   
             let namespace = this.config.hostname+'.services.'+l1+'.'+l2+'.'+l3;
-            let value = data[level1][level2][level3];
+            let value = servicesData[level1][level2][level3];
   
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Virtual Server Stats: ' +namespace+ ' value: ' +value); }
             sdc.gauge(namespace, value);
@@ -935,23 +1026,23 @@ BigStats.prototype.statsdExporter = function (statsObj) {
           }
 
           // If the value is an object, process the child object..
-          else if (typeof data[level1][level2][level3] === 'object') {
+          else if (typeof servicesData[level1][level2][level3] === 'object') {
 
             if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Pool: ' +l3); }
 
-            Object.keys(data[level1][level2][level3]).map((level4) => {
+            Object.keys(servicesData[level1][level2][level3]).map((level4) => {
   
-              Object.keys(data[level1][level2][level3][level4]).map((level5) => {
+              Object.keys(servicesData[level1][level2][level3][level4]).map((level5) => {
   
                 var l5 = this.replaceDotsSlashesColons(level5);
                 if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd: Pool Member: ' +l5); }
   
-                Object.keys(data[level1][level2][level3][level4][level5]).map((level6) => {
+                Object.keys(servicesData[level1][level2][level3][level4][level5]).map((level6) => {
 
                   var l6 = this.replaceDotsSlashesColons(level6);
   
                   let namespace = this.config.hostname+'.services.'+l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
-                  let value = data[level1][level2][level3][level4][level5][level6];
+                  let value = servicesData[level1][level2][level3][level4][level5][level6];
                 
                   if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l6 namespace: ' +namespace+ ' value: ' +value); }
                   sdc.gauge(namespace, value);
@@ -990,7 +1081,9 @@ BigStats.prototype.kafkaExporter = function (statsObj) {
 
   var producer = new Producer(client);
 
-  if (typeof this.config.destination.kafka === 'undefined' || typeof this.config.destination.kafka.topic === 'undefined' && this.config.destination.kafka.topic === 'all') {
+  if (typeof this.config.destination.kafka.topic === 'undefined' || this.config.destination.kafka.topic === 'all') {
+
+    logger.info('The topic is all!!!\n\n');
 
     producer.on('ready', function () {
 
@@ -1011,46 +1104,92 @@ BigStats.prototype.kafkaExporter = function (statsObj) {
     });
 
   }
-  else if (typeof this.config.destination.kafka.topic !== 'undefined' &&this.config.destination.kafka.topic === 'partition') {
+  else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'partition') {
+
+    logger.info('The topic is parittion!!!\n\n');
 
     var that = this;
-    var data = statsObj[hostname].services;
-    
+    var data = statsObj[hostname];
+    var message;
+    var safeTopic;
+        
     producer.on('ready', function () {
+
+      logger.info('PRODUCER READY....');
 
       Object.keys(data).map((level1) => {
 
-        let safePartitionName = that.replaceDotsSlashesColons(level1);
-        let safeTopic = hostname+'-'+safePartitionName;
+        // Build 'device' stats message and send
+        if (level1 === 'device') {
 
-        // Ready the stats for topic-based export - Apply stats prefix: 'hostname.services.data[level1]'
-        let message = {
-          [hostname]: {
-            services: data[level1]
-          }
-        };
+          safeTopic = hostname+ '-device_stats';
 
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
-        if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(message)); }
+          message = {
+            [hostname]: {
+              device: data[level1]
+            }
+          };
 
-        var payload = [
-          {
-            topic: safeTopic,
-            messages: JSON.stringify(message)
-          }
-        ];
+          var payload = [
+            {
+              topic: safeTopic,
+              messages: JSON.stringify(message)
+            }
+          ];
 
-        producer.send(payload, function (err, resp) {
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
+          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(message)); }  
+          
+          producer.send(payload, function (err, resp) {
+  
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
+            if (err) { logger.info('[BigStats - ERROR] - Kafka producer response:' +err); }
+  
+          });
+  
+        }
+        // Iterate through 'services' building service messages and sending.
+        else {
+  
+          Object.keys(data[level1]).map((level2) => {
+    
+            let safePartitionName = that.replaceDotsSlashesColons(level2);
+            safeTopic = hostname+'-'+safePartitionName;
+  
+            // Ready the stats for topic-based export - Apply stats prefix: 'hostname.services.data[level1]'
+  
+            message = {
+              [hostname]: {
+                service: data[level1][level2]
+              }
+            };
 
-          if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
-          if (err) { logger.info('[BigStats - ERROR] - Kafka producer response:' +err); }
+            var payload = [
+              {
+                topic: safeTopic,
+                messages: JSON.stringify(message)
+              }
+            ];
 
-        });
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: topic: ' +safeTopic); }
+            if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(message)); }
+    
+            producer.send(payload, function (err, resp) {
+    
+              if (DEBUG === true) { logger.info('[BigStats - DEBUG] - Kafka producer response: ' +JSON.stringify(resp)); }
+              if (err) { logger.info('[BigStats - ERROR] - Kafka producer response:' +err); }
+    
+            });
+                
+
+          });
+  
+        }
+
       });
     });
 
   }
-                     
 
   producer.on('error', function (err) {
 

@@ -306,7 +306,7 @@ BigStats.prototype.getSettings = function () {
       // Is DEBUG enabled?
       if (typeof resp.body.config.debug !== 'undefined' && resp.body.config.debug === true) {
 
-        logger.info('\n\n[BigStats] - DEBUG ENABLED\n\n');
+        logger.info('[BigStats] - DEBUG ENABLED');
         DEBUG = true;
 
       }
@@ -426,7 +426,7 @@ BigStats.prototype.getDeviceStats = function () {
 
       if (DEBUG === true) {
         logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.statusCode: ' +JSON.stringify(resp.statusCode));
-//        logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+        logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
       }
 
       this.stats.device = {
@@ -1083,8 +1083,6 @@ BigStats.prototype.kafkaExporter = function (statsObj) {
 
   if (typeof this.config.destination.kafka.topic === 'undefined' || this.config.destination.kafka.topic === 'all') {
 
-    logger.info('The topic is all!!!\n\n');
-
     producer.on('ready', function () {
 
       var payload = [
@@ -1106,16 +1104,12 @@ BigStats.prototype.kafkaExporter = function (statsObj) {
   }
   else if (typeof this.config.destination.kafka.topic !== 'undefined' && this.config.destination.kafka.topic === 'partition') {
 
-    logger.info('The topic is parittion!!!\n\n');
-
     var that = this;
     var data = statsObj[hostname];
     var message;
     var safeTopic;
         
     producer.on('ready', function () {
-
-      logger.info('PRODUCER READY....');
 
       Object.keys(data).map((level1) => {
 

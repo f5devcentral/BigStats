@@ -426,7 +426,7 @@ BigStats.prototype.getDeviceStats = function () {
 
       if (DEBUG === true) {
         logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.statusCode: ' +JSON.stringify(resp.statusCode));
-        logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));
+//        logger.info('[BigStats - DEBUG] - getDeviceStats() - resp.body: ' +JSON.stringify(resp.body, '', '\t'));   // This is a little too verbose
       }
 
       this.stats.device = {

@@ -1,0 +1,110 @@
+{
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "properties": {
+        "config": {
+            "$id": "/properties/config",
+            "type": "object",
+            "properties": {
+                "destitation": {
+                    "$id": "/properties/config/properties/destitation",
+                    "type": "object",
+                    "properties": {
+                        "protocol": {
+                            "$id": "/properties/config/properties/destitation/properties/protocol",
+                            "type": "string",
+                            "title": "The Protocol Schema",
+                            "description": "Protocol used to export statistics",
+                            "default": "",
+                            "enum": [
+                                "http",
+                                "https",
+                                "statsd",
+                                "kafka"
+                            ]
+                        },
+                        "if": {
+                            "protocol": "kafka"
+                        },
+                        "then": {
+                            "kafka": {
+                                "$id": "/properties/config/properties/destitation/properties/kafak",
+                                "type": "object",
+                                "properties": {
+                                    "topic": {
+                                        "$id": "/properties/config/properties/destitation/properties/kafak/properties/topic",
+                                        "type": "string",
+                                        "title": "The Kafka Topic Schema",
+                                        "description": "Specifies what data constitues a Kafka Topic",
+                                        "default": "all",
+                                        "enum": [
+                                            "all",
+                                            "partition"
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "address": {
+                            "$id": "/properties/config/properties/destitation/properties/address",
+                            "type": "string",
+                            "title": "The Address Schema ",
+                            "description": "",
+                            "default": "",
+                            "examples": [
+                                "1.1.1.1"
+                            ]
+                        },
+                        "port": {
+                            "$id": "/properties/config/properties/destitation/properties/port",
+                            "type": "integer",
+                            "title": "The Port Schema ",
+                            "default": "",
+                            "examples": [
+                                8080
+                            ]
+                        },
+                        "uri": {
+                            "$id": "/properties/config/properties/destitation/properties/uri",
+                            "type": "string",
+                            "title": "The Uri Schema ",
+                            "default": "/",
+                            "examples": [
+                                "/stats"
+                            ]
+                        }
+                    }
+                },
+                "interval": {
+                    "$id": "/properties/config/properties/interval",
+                    "type": "integer",
+                    "title": "The Interval Schema ",
+                    "default": 10,
+                    "examples": [
+                        42
+                    ]
+                },
+                "enabled": {
+                    "$id": "/properties/config/properties/enabled",
+                    "type": "boolean",
+                    "title": "The Enabled Schema ",
+                    "default": true,
+                    "enum": [
+                        true,
+                        false
+                    ]
+                },
+                "debug": {
+                    "$id": "/properties/config/properties/debug",
+                    "type": "boolean",
+                    "title": "The Debug Schema ",
+                    "default": false,
+                    "examples": [
+                        true,
+                        false
+                    ]
+                }
+            }
+        }
+    }
+}

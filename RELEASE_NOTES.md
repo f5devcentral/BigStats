@@ -5,7 +5,7 @@
 ### Features
 
 * Added supoprt for tradition configurations (prior to AS3). Previous version required the use of AS3 (F5 BIG-IP's declarative interface). Traditional, AS3 (declarative) and mixed configurations are now suported.
-* Added `"enabled": true|false` setting. 
+* Added `"enabled": true|false` setting.
 * Added `device` stats for CPU and Memory utilization.
 * Added some configuration validation to ensure it will run.
 

@@ -1,5 +1,5 @@
 {
-    "$id": "http://example.com/example.json",
+    "$id": "https://github.com/f5devcentral/BigStats",
     "type": "object",
     "properties": {
         "config": {

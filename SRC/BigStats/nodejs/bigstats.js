@@ -451,18 +451,6 @@ BigStats.prototype.getDeviceStats = function () {
           fiveSecAvgUser: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgUser.value
         };
 
-
-/*
-        // For each CPU, grab the following stats.
-        let cpuStats = {
-          cpuIdle: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.idle.value,
-          cpuIowait: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.iowait.value,
-          cpuSystem: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.system.value,
-          cpuUser: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.user.value
-        }; 
-
-*/
-
         let cpuId = resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.cpuId.value;
 
         let cpuNum = 'cpu'+cpuId;
@@ -705,13 +693,13 @@ BigStats.prototype.getVipStats = function (vipResource) {
 
   return new Promise((resolve, reject) => {
 
-    var slicedPath = ""; 
+    var slicedPath = "";
     var PREFIX = "https://localhost";
 
     if (vipResource.selfLink.indexOf(PREFIX) === 0) {
       slicedPath = vipResource.selfLink.slice(PREFIX.length).split("?").shift();
     }
-
+   
     var uri = slicedPath+'/stats';
 
     if (DEBUG === true) { logger.info('[BigStats - DEBUG] - getVipStats() - Stats URI: '+uri); }
@@ -722,9 +710,26 @@ BigStats.prototype.getVipStats = function (vipResource) {
     this.restRequestSender.sendGet(restOp)
     .then((resp) => {
 
-      let name = slicedPath.split("/").slice(-1)[0];
-      let entry_uri = slicedPath+'/'+name+'/stats';
-      let entry_url ="https://localhost" +entry_uri;
+      let ver = this.config.hostVersion.split('.');
+      let majorVer = ver[0];
+      let entry_url = '';
+
+      // Object structure changed in v14
+      if (majorVer > 13) {
+
+        // Crafting PRE-v14 url like this: https://localhost/mgmt/tm/ltm/virtual/~Common~myVip/stats
+        entry_url = vipResource.selfLink.split('?').shift() + '/stats';
+
+      }
+
+      else {
+
+        //// Crafting POST-v14 url like this:https://localhost/mgmt/tm/ltm/virtual/~Common~noAS3_VIP/~Common~noAS3_VIP/stats
+        var name = slicedPath.split("/").slice(-1)[0];
+        var entry_uri = slicedPath+'/'+name+'/stats';
+        entry_url ="https://localhost" +entry_uri;
+  
+      }
 
       let vipResourceStats = {
         clientside_curConns: resp.body.entries[entry_url].nestedStats.entries["clientside.curConns"].value,
@@ -740,7 +745,7 @@ BigStats.prototype.getVipStats = function (vipResource) {
     })
     .catch((err) => {
 
-      logger.info('[BigStats - ERROR] - getVipStats() - Error retrieving vipResrouceStats: ' +err);
+      logger.info('[BigStats - ERROR] - getVipStats() - Error retrieving vipResourceStats: ' +err);
       reject(err);
 
     });
@@ -1069,7 +1074,7 @@ BigStats.prototype.statsdExporter = function (statsObj) {
                   let namespace = this.config.hostname+'.services.'+l1+'.'+l2+'.'+l3+'.'+l5+'.'+l6;
                   let value = servicesData[level1][level2][level3][level4][level5][level6];
                 
-                  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - l6 namespace: ' +namespace+ ' value: ' +value); }
+                  if (DEBUG === true) { logger.info('[BigStats - DEBUG] - exportStats() - statsd - Pool Member Stats: ' +namespace+ ' value: ' +value); }
                   sdc.gauge(namespace, value);
         
                 });        

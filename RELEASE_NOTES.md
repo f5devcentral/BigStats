@@ -1,5 +1,16 @@
 # RELEASE NOTES
 
+## v0.4.1-release
+
+Bug fix release:
+
+### Fixes
+
+* removed 'example.com' from BigStatsSettings schema.
+* changed CPU stats from raw 'clock ticks' to '5 second average' percentages, for readability.
+
+---
+
 ## v0.4.0-release
 
 ### Features

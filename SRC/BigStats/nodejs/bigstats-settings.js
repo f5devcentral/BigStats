@@ -25,7 +25,9 @@ BigStatsSettings.prototype.isPersisted = true;
  */
 BigStatsSettings.prototype.onStart = function(success, error) {
 
+
     var that = this;
+
     this.loadState(null,
 
         function (err, state) {
@@ -45,6 +47,7 @@ BigStatsSettings.prototype.onStart = function(success, error) {
         }
 
     );
+
     success();
 
 };
@@ -54,13 +57,19 @@ BigStatsSettings.prototype.onStart = function(success, error) {
  */
 BigStatsSettings.prototype.onGet = function(restOperation) {
 
-    let hostname = os.hostname();
-    let safeHostname = hostname.replace(/\./g, '-');
-    this.state.config.hostname = safeHostname;
+    this.getHostVersion()
+    .then((version) => {
 
-    // Respond with the persisted state (config)
-    restOperation.setBody(this.state);
-    this.completeRestOperation(restOperation);
+        let hostname = os.hostname();
+        let safeHostname = hostname.replace(/\./g, '-');
+        this.state.config.hostname = safeHostname;    
+        this.state.config.hostVersion = version;
+
+        // Respond with the persisted state (config)
+        restOperation.setBody(this.state);
+        this.completeRestOperation(restOperation);
+        
+    });
   
 };
 
@@ -91,6 +100,37 @@ BigStatsSettings.prototype.onPost = function(restOperation) {
 
     }
       
+};
+
+/**
+ * Get the BIG-IP host version
+ *  * 
+ * @return {integer} 
+ */
+BigStatsSettings.prototype.getHostVersion = function() {
+
+    return new Promise((resolve,reject) => {
+
+        let path = '/mgmt/tm/sys/version';
+        var url = this.restHelper.makeRestnodedUri(path);
+        var restOp = this.createRestOperation(url);
+
+        this.restRequestSender.sendGet(restOp)
+        .then((resp) => {
+
+            let version = resp.body.entries["https://localhost/mgmt/tm/sys/version/0"].nestedStats.entries.Version.description;
+
+            resolve(version);
+
+        })
+        .catch((err) => {
+
+            reject('\n\ngetHostVersion(): ERR' +err);
+
+        });
+
+    });
+
 };
 
 /**
@@ -138,7 +178,6 @@ BigStatsSettings.prototype.validateConfiguration = function(input) {
 
     }
         
-
 };
 
 /**
@@ -168,6 +207,29 @@ BigStatsSettings.prototype.isJson = function(input) {
 
     return input;
 
+};
+
+/**
+* Creates a new rest operation instance. Sets the target uri and body
+*
+* @param {url} uri Target URI
+* @param {Object} body Request body
+*
+* @returns {RestOperation}
+*/
+BigStatsSettings.prototype.createRestOperation = function (uri, body) {
+
+    var restOp = this.restOperationFactory.createRestOperationInstance()
+        .setUri(uri)
+        .setContentType("application/json")
+        .setIdentifiedDeviceRequest(true);
+  
+        if (body) {
+          restOp.setBody(body);
+        }
+  
+    return restOp;
+  
 };
 
 /**

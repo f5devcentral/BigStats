@@ -8,6 +8,7 @@ Bug fix release:
 
 * removed 'example.com' from BigStatsSettings schema.
 * changed CPU stats from raw 'clock ticks' to '5 second average' percentages, for readability.
+* added suport for BIG-IP v14 object structure change
 
 ---
 

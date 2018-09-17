@@ -24,8 +24,11 @@ The response will look something like this:
 ```json
 {"packageFilePath":"/var/config/rest/downloads/BigStats-0.4.0-0002.noarch.rpm","operation":"INSTALL","id":"fa13463f-6556-44cc-a699-7a7981dcc295","status":"CREATED","userReference":{"link":"https://localhost/mgmt/shared/authz/users/admin"},"identityReferences":[{"link":"https://localhost/mgmt/shared/authz/users/admin"}],"ownerMachineId":"3ed07ac1-8c3e-43c5-aacf-53eebf4cb2f8","generation":1,"lastUpdateMicros":1524932793810249,"kind":"shared:iapp:package-management-tasks:iapppackagemanagementtaskstate","selfLink":"https://localhost/mgmt/shared/iapp/package-management-tasks/fa13463f-6556-44cc-a699-7a7981dcc295"}
 ```
+4. [OPTIONAL] You can see what packages/versions are installed by executing:
 
-4. [OPTIONAL] Using the 'id' value in the response above, you can confirm the installation results like this (using your own unique job id):
+`curl -u <username>:<password> -X GET http://localhost:8100/mgmt/shared/iapp/global-installed-packages`
+
+5. [OPTIONAL] Using the 'id' value in the response from step 3. above, you can confirm the installation results like this (using your own unique job id):
 
 `curl -u <username>:<password> -X GET http://localhost:8100/mgmt/shared/iapp/package-management-tasks/fa13463f-6556-44cc-a699-7a7981dcc295`
 

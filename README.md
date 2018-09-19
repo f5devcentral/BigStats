@@ -170,4 +170,4 @@ Then, depending on the configuration, BigStats re-formats the object to match th
 
 With BgStats you can insert your valuable BIG-IP data into your telemetry pipeline solutions, like this:
 
-![BgStats Architecture](BigStats_Arch.png)
+![BigStats Architecture](BigStats_Arch.png)

@@ -245,21 +245,16 @@ BigStats.prototype.getSettings = function () {
         if (DEBUG === true) { logger.info(this.util.formatLogMessage(`getSettings() - Response from BigStatsSettings worker: ${JSON.stringify(resp.body.config, '', '\t')}`)) }
 
         // Is DEBUG enabled?
-        // TODO: Can probabaly remove some of this logic now that the schema validator (which provides some defaults) is in place.
-        if (typeof resp.body.config.debug !== 'undefined' && resp.body.config.debug === true) {
+        if (resp.body.config.debug === true) {
           logger.info(this.util.formatLogMessage('DEBUG ENABLED'))
           DEBUG = true
         } else {
           DEBUG = false
         }
 
-        // Ensure we have both 'interval' and 'enabled' options
-        // TODO: Can probabaly remove some of this logic now that the schema validator (which provides some defaults) is in place.
-        if (typeof resp.body.config.interval !== 'undefined' && typeof resp.body.config.enabled !== 'undefined' && typeof this.config.interval !== 'undefined' && typeof this.config.enabled !== 'undefined') {
-          // If 'interval' has changed, update the task-scheduler task
-          if (this.config.interval !== resp.body.config.interval || this.config.enabled !== resp.body.config.enabled) {
-            this.updateScheduler(resp.body.config.interval, resp.body.config.enabled)
-          }
+        // If 'interval' has changed, update the task-scheduler task
+        if (this.config.interval !== resp.body.config.interval || this.config.enabled !== resp.body.config.enabled) {
+          this.updateScheduler(resp.body.config.interval, resp.body.config.enabled)
         }
 
         // Apply new config retreived from BigStatsSettings work to the BigStats running state
@@ -286,13 +281,14 @@ BigStats.prototype.pullStats = function () {
       return this.getVipResourceList()
     })
     .then((vipResourceList) => {
-      // TODO: Can probabaly remove some of this logic now that the schema validator (which provides some defaults) is in place.
-      if (typeof this.config.size === 'undefined' || this.config.size === 'small') {
-        return this.buildSmallStatsObject(vipResourceList)
-      } else if (this.config.size === 'medium') {
-        return this.buildMediumStatsObject(vipResourceList)
-      } else if (this.config.size === 'large') {
-        logger.info('[BigStats - ERROR] - largeStats not yet implemented')
+      switch (this.config.size) {
+        case 'medium':
+          return this.buildMediumStatsObject(vipResourceList)
+        case 'large':
+          logger.info('[BigStats - ERROR] - largeStats not yet implemented')
+          break
+        default:
+          return this.buildSmallStatsObject(vipResourceList)
       }
     })
     .then(() => {
@@ -305,13 +301,13 @@ BigStats.prototype.pullStats = function () {
       }
 
       if (DEBUG === true) {
-      // TODO: Refactor this to use the util function
+        // TODO: Refactor this to somehow use the util formatting function
         logger.info('\n\n*******************************************\n* [BigStats - DEBUG] - BEGIN Stats Object *\n*******************************************\n\n')
         logger.info(JSON.stringify(statsExpObj, '', '\t'))
         logger.info('\n\n*******************************************\n*  [BigStats - DEBUG] - END Stats Object  *\n*******************************************\n\n')
       }
 
-      this.exportStats(statsExpObj)
+      this.exportStats(statsExpObj, this.config.destination.protocol)
     })
     .catch((err) => {
       logger.info(this.util.formatLogMessage(`pullStats() - Promise Chain Error: ${err}`))
@@ -506,7 +502,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 * For 'large' stats size (config.size: large), fetch:
 *   - Virtual IP in/out data
 *   - Individual Pool Member data
-*   - //TODO: Some HTTP stats, maybe??
+*   - // TODO: Some HTTP stats, maybe??
 *
 * @param {Object} vipResourceList representing an individual vip resource
 *
@@ -609,14 +605,14 @@ BigStats.prototype.getPoolResourceList = function (vipResource) {
       var cleanPath = ''
       var PREFIX = 'https://localhost'
 
-      // TODO: isn't it always at the begining? What are we testing?
+      // TODO: isn't it always at the beginning? What are we testing?
       if (vipResource.poolReference.link.indexOf(PREFIX) === 0) {
         // PREFIX is exactly at the beginning
         cleanPath = vipResource.poolReference.link.slice(PREFIX.length).split('?').shift()
       }
 
       var query = '$select=name,selfLink'
-      var path = cleanPath + '/members'
+      var path = `${cleanPath}/members`
 
       if (DEBUG === true) { logger.info(this.util.formatLogMessage(`getPoolResourceList() - Pool Members URI: ${path}`)) }
 
@@ -713,30 +709,20 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
  * @param {Object} statsObj representing the collected statistics
  */
 // Push stats to a remote destination
-BigStats.prototype.exportStats = function (statsObj) {
-  // TODO: Can probabaly remove some of this logic now that the schema validator (which provides some defaults) is in place.
-  if (typeof this.config.destination.protocol !== 'undefined') {
-    // If the destination is 'http' OR 'https'
-    if (this.config.destination.protocol.startsWith('http')) {
+BigStats.prototype.exportStats = function (statsObj, protocol) {
+  switch (protocol) {
+    case 'http':
+    case 'https':
       this.httpExporter(statsObj)
-    } // eslint-disable-line brace-style
-
-    // If the destination is StatsD
-    else if (this.config.destination.protocol === 'statsd') {
+      break
+    case 'statsd':
       this.statsdExporter(statsObj)
-    }// eslint-disable-line brace-style
-
-    // If the destination is an Apache Kafka Broker
-    else if (this.config.destination.protocol === 'kafka') {
+      break
+    case 'kafka':
       this.kafkaExporter(statsObj)
-    } else {
+      break
+    default:
       logger.info(this.util.formatLogMessage('Unrecognized \'protocol\''))
-    }
-  } // eslint-disable-line brace-style
-
-  // If the destination protocol is unrecognized
-  else {
-    logger.info(this.util.formatLogMessage('A destination \'protocol\' must be defined'))
   }
 }
 
@@ -971,16 +957,12 @@ BigStats.prototype.kafkaExporter = function (statsObj) {
 /**
 * Escapes Slashes and Colons
 *
-* @param {String} notReplaced string that needs
+* @param {String} notReplaced string that needs character replacement
 *
-* @returns {String} without slashes or colons
+* @returns {String} without dots slashes or colons
 */
 BigStats.prototype.replaceDotsSlashesColons = function (notReplaced) {
-  let strNoDots = notReplaced.replace(/\./g, '-')
-  let strNoSlashes = strNoDots.replace(/\//g, '-')
-  let strNoColon = strNoSlashes.replace(/\:/g, '_')
-
-  return strNoColon
+  return notReplaced.replace(/[.|/|:]/g, '-')
 }
 
 /**

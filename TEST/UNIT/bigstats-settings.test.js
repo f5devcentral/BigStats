@@ -19,7 +19,7 @@ let loggerStub = {
   }
 }
 
-describe('settings', function () {
+describe('validateConfiguration', function () {
   // runs once before all tests in this block
   mocha.before(function (done) {
     done()

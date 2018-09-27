@@ -3,7 +3,7 @@
 *     Collection of helper functions for BigStats modules.
 *
 *   D. Edgar, September 2018
-*   http://github.com/npearce
+*   http://github.com/aknot242
 *
 */
 

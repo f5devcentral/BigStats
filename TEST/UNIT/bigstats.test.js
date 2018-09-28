@@ -53,28 +53,28 @@ describe('BigStats', function () {
   })
 
   describe('exportStats', function () {
-    it.only('should call httpExporter when called with protocol "http"', function () {
+    it('should call httpExporter when called with protocol "http"', function () {
       const protocol = 'http'
       bigstats.exportStats('', protocol)
       sinon.assert.calledOnce(httpExporterStub)
     })
 
-    it.only('should call httpExporter when called with protocol "https"', function () {
+    it('should call httpExporter when called with protocol "https"', function () {
       bigstats.exportStats('', 'https')
       sinon.assert.calledOnce(httpExporterStub)
     })
 
-    it.only('should call statsdExporter when called with protocol "statsd"', function () {
+    it('should call statsdExporter when called with protocol "statsd"', function () {
       bigstats.exportStats('', 'statsd')
       sinon.assert.calledOnce(statsdExporterStub)
     })
 
-    it.only('should call kafkaExporter when called with protocol "kafka"', function () {
+    it('should call kafkaExporter when called with protocol "kafka"', function () {
       bigstats.exportStats('', 'kafka')
       sinon.assert.calledOnce(kafkaExporterStub)
     })
 
-    it.only('should call logger info method when called with unknown protocol', function () {
+    it('should call logger info method when called with unknown protocol', function () {
       bigstats.exportStats('', 'kjhsdfkjhsdf')
       // TODO: find a way to stub out a proxyquire imported module method without resorting to this variable checking hackery
       assert.strictEqual(lastLoggerInfoMessage, '[BigStats] - Unrecognized \'protocol\'')

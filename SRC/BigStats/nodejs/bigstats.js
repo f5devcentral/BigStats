@@ -204,7 +204,7 @@ BigStats.prototype.getSchedulerId = function () {
  * @returns {Promise} Promise Object representing HTTP Status Code
  */
 BigStats.prototype.patchScheduler = function (id, interval) {
-  // Using the task-scheduler unique id, Patch the "interval" of the scheduler task with the new value.
+  // Using the task-scheduler unique id, Patch the 'interval' of the scheduler task with the new value.
   return new Promise((resolve, reject) => {
     var body = {
       'interval': interval,
@@ -351,17 +351,6 @@ BigStats.prototype.getDeviceStats = function () {
             fiveSecAvgSystem: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgSystem.value,
             fiveSecAvgUser: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgUser.value
           }
-
-          /*
-        // For each CPU, grab the following stats.
-        let cpuStats = {
-          cpuIdle: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.idle.value,
-          cpuIowait: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.iowait.value,
-          cpuSystem: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.system.value,
-          cpuUser: resp.body.entries["https://localhost/mgmt/tm/sys/host-info/0"].nestedStats.entries["https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo"].nestedStats.entries[cpu].nestedStats.entries.user.value
-        };
-
-*/
 
           let cpuId = resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.cpuId.value
 
@@ -569,9 +558,20 @@ BigStats.prototype.getVipStats = function (vipResource) {
 
     this.restRequestSender.sendGet(restOp)
       .then((resp) => {
-        let name = slicedPath.split('/').slice(-1)[0]
-        let entryUri = `${slicedPath}/${name}/stats`
-        let entryUrl = `https://localhost${entryUri}`
+        let ver = this.config.hostVersion.split('.')
+        let majorVer = ver[0]
+        let entryUrl = ''
+
+        // Object structure changed in v14
+        if (majorVer > 13) {
+          // Crafting PRE-v14 url like this: https://localhost/mgmt/tm/ltm/virtual/~Common~myVip/stats
+          entryUrl = vipResource.selfLink.split('?').shift() + '/stats'
+        } else {
+          // Crafting POST-v14 url like this:https://localhost/mgmt/tm/ltm/virtual/~Common~noAS3_VIP/~Common~noAS3_VIP/stats
+          let name = slicedPath.split('/').slice(-1)[0]
+          let entryUri = `${slicedPath}/${name}/stats`
+          entryUrl = `https://localhost${entryUri}`
+        }
 
         let vipResourceStats = {
           clientside_curConns: resp.body.entries[entryUrl].nestedStats.entries['clientside.curConns'].value,

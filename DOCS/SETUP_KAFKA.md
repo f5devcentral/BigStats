@@ -17,10 +17,10 @@ NOTE: This functionality uses https://github.com/SOHU-Co/kafka-node
                   "topic": "partition"
           },
           "address": "172.31.1.42",
-          "port": "9092"
+          "port": 9092
         },
         "size": "small",
-        "interval": "10",
+        "interval": 10,
         "enabled": true,
         "debug": false
       }
@@ -31,7 +31,7 @@ Depending on your configuration above (`'topic': 'all'` or `'topic': 'partition'
 
 Example, using curl:
 ```sh
-curl -u <username>:<password> -X POST http://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "kafka","kafka": { "topic":"partition" },"address": "172.31.1.78","port": "9092"},"size": "small","interval": 10,"enabled": true,"debug": false}}'
+curl -u <username>:<password> -X POST http://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "kafka","kafka": { "topic":"partition" },"address": "172.31.1.78","port": 9092},"size": "small","interval": 10,"enabled": true,"debug": false}}'
 ```
 
 > NOTE: To build your own Apache Kafka Broker lab environment, refer to `DOCS/LAB_SETUP.md`

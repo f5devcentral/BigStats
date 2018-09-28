@@ -14,10 +14,10 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
         "destination": {
           "protocol": "statsd",
           "address": "192.168.1.42",
-          "port": "8125"
+          "port": 8125
         },
         "size": "small",
-        "interval": "10",
+        "interval": 10,
         "enabled": true,
         "debug": false
       }
@@ -27,7 +27,7 @@ NOTE: This functionality uses https://github.com/sivy/node-statsd
 Example using curl:
 
 ```sh
-curl -u <username>:<password> -X POST https://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "statsd","address": "192.168.1.202","port": "8125"},"size": "small","interval": 10, "enabled": true, "debug": false}}'
+curl -u <username>:<password> -X POST https://localhost:8100/mgmt/shared/bigstats_settings -d '{"config":{"destination":{"protocol": "statsd","address": "192.168.1.202","port": 8125},"size": "small","interval": 10, "enabled": true, "debug": false}}'
 ```
 
 > NOTE: To build your own StatsD/GraphiteDB/Grafana lab environment, refer to `DOCS/LAB_SETUP.md`

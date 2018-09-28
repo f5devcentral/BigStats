@@ -12,11 +12,11 @@
         "destination": {
           "protocol": "http",
           "address": "192.168.1.42",
-          "port": "8080",
+          "port": 8080,
           "uri": "/stats"
         },
         "size": "small",
-        "interval": "10",
+        "interval": 10,
         "enabled": true,
         "debug": false
       }

@@ -34,7 +34,7 @@ BigStats.prototype.onStart = function (success, error) {
     var bigStatsSettingsUrl = this.restHelper.makeRestnodedUri(bigStatsSettingsPath);
     let bigStatsExporterUrl = this.restHelper.makeRestnodedUri(bigStatsExporterPath);
     this.dependencies.push(bigStatsSettingsUrl);
-//    this.dependencies.push(bigStatsExporterUrl);
+    this.dependencies.push(bigStatsExporterUrl);
     success();
   } catch (err) {
     logger.info(`[BigStats - ERROR] onStart() - Error starting worker: ${err}`);

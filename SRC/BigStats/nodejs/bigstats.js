@@ -84,7 +84,6 @@ BigStats.prototype.onPost = function (restOperation) {
     });
 
   // Acknowledge the Scheduler Task
-  restOperation.setBody('BigStats says, Thanks!!');
   this.completeRestOperation(restOperation);
 };
 
@@ -722,8 +721,7 @@ BigStats.prototype.exportStats = function (statsObj) {
 
   this.restRequestSender.sendPost(restOp)
   .then((resp) => {
-    logger.info('[BigStats] exportStats(): Got a response!!!');
-    logger.info(`[BigStats] exportStats():  ${JSON.stringify(resp.body)}`);
+    logger.info(`[BigStats] exportStats() - BigStatsExperter response:  ${resp.statusCode}`);
   })
   .catch((err) => {
     logger.info(`[BigStats - ERROR] - Exporter: err: ${err}`);

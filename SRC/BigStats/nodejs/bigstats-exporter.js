@@ -10,7 +10,7 @@
 
 const logger = require('f5-logger').getInstance();
 var StatsD = require('node-statsd');
-var kafka = require('kafka-node');   //FIXME: this is causing errors
+var kafka = require('kafka-node');   //FIXME: package-lock.json is doing somethign wrong
 var Producer = kafka.Producer;
 
 var DEBUG = true;
@@ -31,9 +31,7 @@ BigStatsExporter.prototype.onPost = function (restOperation) {
 
   var onPostdata = restOperation.getBody();
 
-  if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - onPost receved data: ' +onPostdata); }
-
-//    if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - onPost receved data: ' +JSON.stringify(onPostdata)); }
+  if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - onPost receved data: ' +JSON.stringify(onPostdata)); }
 
   var protocol = onPostdata.config.destination.protocol;
   
@@ -66,7 +64,7 @@ BigStatsExporter.prototype.onPost = function (restOperation) {
   }
 
     // Acknowledge the Scheduler Task
-  restOperation.setBody('BigStatsExporter says, Thanks!!');
+//  restOperation.setStatusCode(200);
   this.completeRestOperation(restOperation);
 
 };

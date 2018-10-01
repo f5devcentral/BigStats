@@ -13,7 +13,7 @@ var StatsD = require('node-statsd');
 var kafka = require('kafka-node');   //FIXME: package-lock.json is doing somethign wrong
 var Producer = kafka.Producer;
 
-var DEBUG = true;
+var DEBUG = false;
 
 function BigStatsExporter() {
 }
@@ -26,8 +26,6 @@ BigStatsExporter.prototype.isSingleton = true;
  * handle HTTP POST request
  */
 BigStatsExporter.prototype.onPost = function (restOperation) {
-
-  logger.info('\n\n\n**************************\n\n[BigStatsExporter] got some data.....\n\n**************************\n\n');
 
   var onPostdata = restOperation.getBody();
 
@@ -239,7 +237,7 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
   
     var producer = new Producer(client);
   
-    if (data.config.destination.kafka.topic === 'all') {
+    if (typeof data.config.destination.kafka === 'undefined' || data.config.destination.kafka.topic === 'all') {
   
       producer.on('ready', function () {
   
@@ -260,7 +258,7 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
       });
   
     }
-    else if (data.config.destination.kafka.topic === 'partition') {
+    else if (typeof data.config.destination.kafka === 'undefined' || data.config.destination.kafka.topic === 'partition') {
   
       var that = this;
       var stats = data.stats[hostname];

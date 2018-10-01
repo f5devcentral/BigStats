@@ -376,6 +376,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
   // Initialize services object
   this.stats.services = {};
 
+  logger.info('IN buildSmallStatsObject(): JSON.stringify(vipResourceList)' +JSON.stringify(vipResourceList));
   return new Promise((resolve, reject) => {
     // Fetch list of deployed services
     vipResourceList.items.map((element, index) => {
@@ -707,13 +708,9 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
 //Push stats to a remote destination
 BigStats.prototype.exportStats = function (statsObj) {
 
-//  if (DEBUG === true) { logger.info('[BigStats - DEBUG] exportStats():'); }
-  logger.info('[BigStats - DEBUG] exportStats():'); 
-
   var data = { config: this.config, stats: statsObj };
 
-//  if (DEBUG === true) { logger.info(`[BigStats - DEBUG] exportStats() w/:  ${JSON.stringify(data, '', '\t')}`); }
-  logger.info(`[BigStats - DEBUG] exportStats() w/:  ${JSON.stringify(data, '', '\t')}`);
+  if (DEBUG === true) { logger.info(`[BigStats - DEBUG] exportStats() w/:  ${JSON.stringify(data, '', '\t')}`); }
 
   var uri = '/mgmt/shared/bigstats_exporter';
   var url = this.restHelper.makeRestnodedUri(uri);
@@ -721,7 +718,7 @@ BigStats.prototype.exportStats = function (statsObj) {
 
   this.restRequestSender.sendPost(restOp)
   .then((resp) => {
-    logger.info(`[BigStats] exportStats() - BigStatsExperter response:  ${resp.statusCode}`);
+    if (DEBUG === true) { logger.info(`[BigStats] exportStats() - BigStatsExperter response:  ${resp.statusCode}`); }
   })
   .catch((err) => {
     logger.info(`[BigStats - ERROR] - Exporter: err: ${err}`);

@@ -376,7 +376,6 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
   // Initialize services object
   this.stats.services = {};
 
-  logger.info('IN buildSmallStatsObject(): JSON.stringify(vipResourceList)' +JSON.stringify(vipResourceList));
   return new Promise((resolve, reject) => {
     // Fetch list of deployed services
     vipResourceList.items.map((element, index) => {

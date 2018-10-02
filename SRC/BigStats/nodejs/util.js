@@ -7,11 +7,11 @@
 *
 */
 
-'use strict'
+'use strict';
 
 class Util {
   constructor (moduleName) {
-    this.moduleName = moduleName
+    this.moduleName = moduleName;
   }
 
   /**
@@ -19,7 +19,8 @@ class Util {
    * @param {*} message The message to log
    */
   formatLogMessage (message) {
-    return `[${this.moduleName}] - ${message}`
+//    return `[${this.moduleName}] - ${message}`;
+    return `[${this.moduleName}] - ${message}`;
   }
 
   /**
@@ -29,11 +30,11 @@ class Util {
    */
   safeAccess (func, fallbackValue) {
     try {
-      return func()
+      return func();
     } catch (e) {
-      return fallbackValue
+      return fallbackValue;
     }
   }
 }
 
-module.exports = Util
+module.exports = Util;

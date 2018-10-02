@@ -16,7 +16,7 @@ var Producer = kafka.Producer;
 var DEBUG = false;
 
 function BigStatsExporter() {
-  this.stats;
+  this.data = {};
 }
 
 BigStatsExporter.prototype.WORKER_URI_PATH = "shared/bigstats_exporter";
@@ -26,10 +26,10 @@ BigStatsExporter.prototype.isSingleton = true;
 /**
  * handle HTTP GET request
  */
-BigStatsExporter.prototype.onGet = function () {
+BigStatsExporter.prototype.onGet = function (restOperation) {
 
-  restOperation.setBody(this.stats);
-  this.completeRestOperation(restOperatio);
+  restOperation.setBody(this.data.stats);
+  this.completeRestOperation(restOperation);
 
 };
 
@@ -38,42 +38,35 @@ BigStatsExporter.prototype.onGet = function () {
  */
 BigStatsExporter.prototype.onPost = function (restOperation) {
 
-  this.stats = restOperation.getBody();
+  this.data = restOperation.getBody();
 
-  if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - onPost receved data: ' +JSON.stringify(this.stats)); }
-
-  var protocol = this.stats.config.destination.protocol;
-  
-  if (typeof protocol !== 'undefined') {
-
-    // If the destination is 'http' OR 'https'
-    if (protocol.startsWith('http')) {
-      this.httpExporter(this.stats);      
-    }
-  
-    // If the destination is StatsD
-    else if (protocol === "statsd") {      
-      this.statsdExporter(this.stats);
-    } 
-  
-    // If the destination is an Apache Kafka Broker  
-    else if (protocol === "kafka") {      
-      this.kafkaExporter(this.stats);
-    }
-
-    else {
-      logger.info('[BigStatsExporter] - Unrecognized \'protocol\'');
-    }
-    
-  } 
-    
-    // If the desintation protocol is unrecognized
-  else {    
-      logger.info('[BigStatsExporter - ERROR] - A destination \'protocol\' must be defined');
+  if (this.data.config.debug === true) {
+    DEBUG = true;
   }
 
-    // Acknowledge the Scheduler Task
-//  restOperation.setStatusCode(200);
+  if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - onPost receved data: ' +JSON.stringify(this.data)); }
+
+  var protocol = this.data.config.destination.protocol;
+
+  switch (protocol) {
+    case 'http':
+    case 'https':
+      this.httpExporter(this.data);
+      break;
+
+    case 'statsd':
+      this.statsdExporter(this.data);
+      break;
+
+    case 'kafka':
+      this.kafkaExporter(this.data);
+      break;
+
+    default:
+      if (DEBUG === true) { logger.info(`[BigStatsExporter - DEBUG] - polling mode enabled. Fetch stats with: \'GET /mgmt/${BigStatsExporter.prototype.WORKER_URI_PATH}\'`); }
+
+  }
+
   this.completeRestOperation(restOperation);
 
 };
@@ -112,15 +105,15 @@ BigStatsExporter.prototype.httpExporter = function (data) {
   
       var chunks = [];
     
-      res.on('data', function (chunk) {
+      res.on('data', ((chunk) => {
         chunks.push(chunk);
-      });
+      }));
     
-      res.on('end', function () {
+      res.on('end', (() => {
         var body = Buffer.concat(chunks);
         logger.info('[BigStatsExporter - DEBUG] - httpExporter() resp: ' +body.toString());
         if (data.config.debug === true) { logger.info('[BigStatsExporter - DEBUG] - httpExporter() resp: ' +body.toString()); }
-      });
+      }));
   
     });
     
@@ -130,7 +123,7 @@ BigStatsExporter.prototype.httpExporter = function (data) {
       logger.info('[BigStatsExporter] - ***************error pushing stats: ' +err);
     }));
 
-    req.on('uncaughtException' ((err) => {
+    req.on('uncaughtException', ((err) => {
       logger.info('[BigStatsExporter] - ***************uncaughtException pushing stats: ' +err);
     }));
   

@@ -10,12 +10,13 @@
 
 const logger = require('f5-logger').getInstance();
 var StatsD = require('node-statsd');
-var kafka = require('kafka-node');   //FIXME: package-lock.json is doing somethign wrong
+var kafka = require('kafka-node');
 var Producer = kafka.Producer;
 
 var DEBUG = false;
 
 function BigStatsExporter() {
+  this.stats;
 }
 
 BigStatsExporter.prototype.WORKER_URI_PATH = "shared/bigstats_exporter";
@@ -23,31 +24,41 @@ BigStatsExporter.prototype.isPublic = true;
 BigStatsExporter.prototype.isSingleton = true;
 
 /**
+ * handle HTTP GET request
+ */
+BigStatsExporter.prototype.onGet = function () {
+
+  restOperation.setBody(this.stats);
+  this.completeRestOperation(restOperatio);
+
+};
+
+/**
  * handle HTTP POST request
  */
 BigStatsExporter.prototype.onPost = function (restOperation) {
 
-  var onPostdata = restOperation.getBody();
+  this.stats = restOperation.getBody();
 
-  if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - onPost receved data: ' +JSON.stringify(onPostdata)); }
+  if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - onPost receved data: ' +JSON.stringify(this.stats)); }
 
-  var protocol = onPostdata.config.destination.protocol;
+  var protocol = this.stats.config.destination.protocol;
   
   if (typeof protocol !== 'undefined') {
 
     // If the destination is 'http' OR 'https'
     if (protocol.startsWith('http')) {
-      this.httpExporter(onPostdata);      
+      this.httpExporter(this.stats);      
     }
   
     // If the destination is StatsD
     else if (protocol === "statsd") {      
-      this.statsdExporter(onPostdata);
+      this.statsdExporter(this.stats);
     } 
   
     // If the destination is an Apache Kafka Broker  
     else if (protocol === "kafka") {      
-      this.kafkaExporter(onPostdata);
+      this.kafkaExporter(this.stats);
     }
 
     else {
@@ -85,7 +96,7 @@ BigStatsExporter.prototype.httpExporter = function (data) {
     else {
       http = require("http");
     }
-  
+
     var options = {
       "method": "POST",
       "hostname": dest.address,
@@ -107,15 +118,20 @@ BigStatsExporter.prototype.httpExporter = function (data) {
     
       res.on('end', function () {
         var body = Buffer.concat(chunks);
-        if (DEBUG === true) { logger.info('[BigStatsExporter - DEBUG] - httpExporter() resp: ' +body.toString()); }
+        logger.info('[BigStatsExporter - DEBUG] - httpExporter() resp: ' +body.toString());
+        if (data.config.debug === true) { logger.info('[BigStatsExporter - DEBUG] - httpExporter() resp: ' +body.toString()); }
       });
   
     });
     
     req.write(JSON.stringify(data.stats));
   
-    req.on('error', ((error) => {
-      logger.info('[BigStatsExporter] - ***************Error pushing stats): ' +error);
+    req.on('error', ((err) => {
+      logger.info('[BigStatsExporter] - ***************error pushing stats: ' +err);
+    }));
+
+    req.on('uncaughtException' ((err) => {
+      logger.info('[BigStatsExporter] - ***************uncaughtException pushing stats: ' +err);
     }));
   
     req.end();

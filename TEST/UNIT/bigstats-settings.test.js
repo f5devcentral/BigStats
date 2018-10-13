@@ -1,284 +1,271 @@
-'use strict'
+'use strict';
 
-var proxyquire = require('proxyquire').noCallThru()
+const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const assert = require('assert');
+const mocha = require('mocha');
+const util = require('./util-fake');
 
-const assert = require('assert')
-const mocha = require('mocha')
+const defaultValidationHeader = 'Validation error:';
 
-const defaultValidationHeader = '[BigStatsSettings] - Validation error:'
+let utilStub;
+let settings;
 
-let settings
-let loggedMessage = ''
-let loggerStub = {
-  getInstance: function () {
-    return {
-      info: function (message) {
-        loggedMessage = message
-      }
-    }
-  }
-}
+describe('BigStatsSettings', function () {
+  describe('validateConfiguration', function () {
+    // runs once before all tests in this block
+    mocha.before(function (done) {
+      let moduleUnderTest = '../../SRC/BigStats/nodejs/bigstats-settings';
+      utilStub = sinon.createStubInstance(util);
+      const BigStatsSettings = proxyquire(moduleUnderTest, { './util': utilStub });
+      settings = new BigStatsSettings();
+      done();
+    });
 
-describe('validateConfiguration', function () {
-  // runs once before all tests in this block
-  mocha.before(function (done) {
-    done()
-  })
+    mocha.after(function (done) {
+      done();
+    });
 
-  // runs before each test in this block
-  beforeEach(function () {
-    loggedMessage = ''
+    it('should be invalid', function () {
+      assert.strictEqual(settings.validateConfiguration(''), false);
+    });
 
-    // create stub for f5-logger dependency since it isn't available to the tests
-    var BigStatsSettings = proxyquire('../../SRC/BigStats/nodejs/bigstats-settings', {
-      'f5-logger': loggerStub
-    })
-    settings = new BigStatsSettings()
-  })
-
-  mocha.after(function (done) {
-    done()
-  })
-
-  it('should be invalid', function () {
-    assert.strictEqual(settings.validateConfiguration(''), false)
-  })
-
-  it('should be valid', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.42',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
-
-    assert.deepStrictEqual(settings.validateConfiguration(json), json)
-  })
-
-  it('should enforce minimum value for interval', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.42',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 8,
-        'enabled': true,
-        'debug': false
-      }
-    }
-
-    assert.strictEqual(settings.validateConfiguration(json), false)
-  })
-
-  it('should use default values if not provided', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.42',
-          'port': 8080,
-          'uri': '/stats'
+    it('should be valid', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.42',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
         }
-      }
-    }
+      };
 
-    let expectedJson = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.42',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+      assert.deepStrictEqual(settings.validateConfiguration(json), json);
+    });
 
-    assert.deepStrictEqual(settings.validateConfiguration(json), expectedJson)
-  })
+    it('should enforce minimum value for interval', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.42',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 8,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-  it('should fail validation if the destination object is missing', function () {
-    let json = {
-      'config': {
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+      assert.strictEqual(settings.validateConfiguration(json), false);
+    });
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config should have required property 'destination'`)
-  })
+    it('should use default values if not provided', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.42',
+            'port': 8080,
+            'uri': '/stats'
+          }
+        }
+      };
 
-  it('should fail validation if the protocol property is missing', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'address': '192.168.1.42',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+      let expectedJson = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.42',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination should have required property 'protocol'`)
-  })
+      assert.deepStrictEqual(settings.validateConfiguration(json), expectedJson);
+    });
 
-  it('should fail validation if the protocol property is not set to an expected value', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'blah',
-          'address': '192.168.1.42',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+    it('should fail validation if the destination object is missing', function () {
+      let json = {
+        'config': {
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination/protocol should be equal to one of the allowed values. Specified value: blah (allowed value(s) are http,https,statsd,kafka`)
-  })
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config should have required property 'destination'`);
+    });
 
-  it('should fail validation if the protocol property is set to kafka, but the topic property is missing', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'kafka',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+    it('should fail validation if the protocol property is missing', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'address': '192.168.1.42',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination should have required property 'address'`)
-  })
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination should have required property 'protocol'`);
+    });
 
-  it('should fail validation if the address property is missing', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+    it('should fail validation if the protocol property is not set to an expected value', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'blah',
+            'address': '192.168.1.42',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination should have required property 'address'`)
-  })
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination/protocol should be equal to one of the allowed values. Specified value: blah (allowed value(s) are http,https,statsd,kafka`);
+    });
 
-  it('should fail validation if the address property is not a valid ipv4 address', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.422',
-          'port': 8080,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+    it('should fail validation if the protocol property is set to kafka, but the topic property is missing', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'kafka',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination/address should match format "ipv4"`)
-  })
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination should have required property 'address'`);
+    });
 
-  it('should fail validation if the port property is missing', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.42',
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+    it('should fail validation if the address property is missing', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination should have required property 'port'`)
-  })
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination should have required property 'address'`);
+    });
 
-  it('should enforce minimum value for port', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.42',
-          'port': 0,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+    it('should fail validation if the address property is not a valid ipv4 address', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.422',
+            'port': 8080,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination/port should be >= 1`)
-  })
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination/address should match format "ipv4"`);
+    });
 
-  it('should enforce maximum value for port', function () {
-    let json = {
-      'config': {
-        'destination': {
-          'protocol': 'http',
-          'address': '192.168.1.42',
-          'port': 65536,
-          'uri': '/stats'
-        },
-        'size': 'small',
-        'interval': 10,
-        'enabled': true,
-        'debug': false
-      }
-    }
+    it('should fail validation if the port property is missing', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.42',
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
 
-    assert.strictEqual(settings.validateConfiguration(json), false)
-    assert.strictEqual(loggedMessage, `${defaultValidationHeader} /config/destination/port should be <= 65535`)
-  })
-})
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination should have required property 'port'`);
+    });
+
+    it('should enforce minimum value for port', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.42',
+            'port': 0,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
+
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination/port should be >= 1`);
+    });
+
+    it('should enforce maximum value for port', function () {
+      let json = {
+        'config': {
+          'destination': {
+            'protocol': 'http',
+            'address': '192.168.1.42',
+            'port': 65536,
+            'uri': '/stats'
+          },
+          'size': 'small',
+          'interval': 10,
+          'enabled': true,
+          'debug': false
+        }
+      };
+
+      assert.strictEqual(settings.validateConfiguration(json), false);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination/port should be <= 65535`);
+    });
+  });
+});

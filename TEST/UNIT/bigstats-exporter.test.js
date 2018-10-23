@@ -15,7 +15,6 @@ let utilStub;
 let httpStub;
 let bigStatsExporter;
 let httpPost;
-let httpBodyMessage;
 let testProtocol;
 let completeRestOperationStub;
 
@@ -53,7 +52,7 @@ describe('BigStatsExporter', function () {
           }
         };
       },
-      setBody: function (body) { httpBodyMessage = body; }
+      setBody: function () { }
     };
 
     done();
@@ -106,9 +105,7 @@ describe('BigStatsExporter', function () {
       });
 
       mocha.afterEach(function (done) {
-        assert.strictEqual(httpBodyMessage, 'BigStatsExporter says, Thanks!!');
         sinon.assert.calledWith(utilStub.logDebug, 'onPost received data: ' + httpPost.getBody());
-        httpBodyMessage = '';
         done();
       });
     });
@@ -169,7 +166,7 @@ describe('BigStatsExporter', function () {
       });
     });
 
-    describe('unknown exporter', function () {
+    describe('unknown or undefined exporter', function () {
       mocha.before(function (done) {
         const BigStatsExporter = proxyquire(moduleUnderTest,
           {
@@ -184,20 +181,15 @@ describe('BigStatsExporter', function () {
       });
 
       it('should call logger info method when called with unknown protocol', function () {
-        testProtocol = 'theknightswhosayni';
-        bigStatsExporter.onPost(httpPost, 'kjhsdfkjhsdf');
-        sinon.assert.calledWith(utilStub.logError, 'Unrecognized \'protocol\'');
+        testProtocol = 'somethingwrong';
+        bigStatsExporter.onPost(httpPost);
+        sinon.assert.calledWith(utilStub.logDebug, `polling mode enabled. Fetch stats with: 'GET /mgmt/shared/bigstats_exporter'`);
       });
 
       it('should call logger info method when called with undefined protocol', function () {
         testProtocol = undefined;
-        bigStatsExporter.onPost(httpPost, 'kjhsdfkjhsdf');
-        sinon.assert.calledWith(utilStub.logError, 'Unrecognized \'protocol\'');
-      });
-
-      mocha.afterEach(function (done) {
-        httpBodyMessage = '';
-        done();
+        bigStatsExporter.onPost(httpPost);
+        sinon.assert.calledWith(utilStub.logDebug, `polling mode enabled. Fetch stats with: 'GET /mgmt/shared/bigstats_exporter'`);
       });
     });
   });

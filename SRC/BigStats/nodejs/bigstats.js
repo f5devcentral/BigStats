@@ -83,7 +83,6 @@ BigStats.prototype.onPost = function (restOperation) {
     });
 
   // Acknowledge the Scheduler Task
-  restOperation.setBody('BigStats says, Thanks!!');
   this.completeRestOperation(restOperation);
 };
 

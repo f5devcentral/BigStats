@@ -15,7 +15,8 @@ const Producer = kafka.Producer;
 
 function BigStatsExporter () {
   util.init('BigStatsExporter');
-  util.debugEnabled = true;
+  util.debugEnabled = false;
+  this.data = {};
 }
 
 BigStatsExporter.prototype.WORKER_URI_PATH = 'shared/bigstats_exporter';
@@ -23,41 +24,46 @@ BigStatsExporter.prototype.isPublic = true;
 BigStatsExporter.prototype.isSingleton = true;
 
 /**
+ * handle HTTP GET request
+ */
+BigStatsExporter.prototype.onGet = function (restOperation) {
+  restOperation.setBody(this.data.stats);
+  this.completeRestOperation(restOperation);
+};
+
+/**
  * handle HTTP POST request
  */
 BigStatsExporter.prototype.onPost = function (restOperation) {
   util.logInfo('\n\n\n**************************\n\n[BigStatsExporter] got some data.....\n\n**************************\n\n');
+  this.data = restOperation.getBody();
+  if (this.data.config.debug === true) {
+    util.debugEnabled = true;
+  }
 
-  var onPostdata = restOperation.getBody();
+  util.logDebug('onPost received data: ' + this.data);
 
-  util.logDebug('onPost received data: ' + onPostdata);
+  const protocol = this.data.config.destination.protocol;
 
-  var protocol = onPostdata.config.destination.protocol;
-
-  if (typeof protocol !== 'undefined') {
-    switch (protocol) {
-      // If the destination is 'http' OR 'https'
-      case 'http':
-      case 'https':
-        this.httpExporter(onPostdata);
-        break;
-      // If the destination is StatsD
-      case 'statsd':
-        this.statsdExporter(onPostdata);
-        break;
-      // If the destination is an Apache Kafka Broker
-      case 'kafka':
-        this.kafkaExporter(onPostdata);
-        break;
-      default:
-        util.logError('Unrecognized \'protocol\'');
-    }
-  } else { // If the desintation protocol is unrecognized
-    util.logError('A destination \'protocol\' must be defined');
+  switch (protocol) {
+    // If the destination is 'http' OR 'https'
+    case 'http':
+    case 'https':
+      this.httpExporter(this.data);
+      break;
+    // If the destination is StatsD
+    case 'statsd':
+      this.statsdExporter(this.data);
+      break;
+    // If the destination is an Apache Kafka Broker
+    case 'kafka':
+      this.kafkaExporter(this.data);
+      break;
+    default:
+      util.logDebug(`polling mode enabled. Fetch stats with: 'GET /mgmt/${BigStatsExporter.prototype.WORKER_URI_PATH}'`);
   }
 
   // Acknowledge the Scheduler Task
-  restOperation.setBody('BigStatsExporter says, Thanks!!');
   this.completeRestOperation(restOperation);
 };
 
@@ -91,20 +97,24 @@ BigStatsExporter.prototype.httpExporter = function (data) {
   var req = http.request(options, function (res) {
     var chunks = [];
 
-    res.on('data', function (chunk) {
+    res.on('data', (chunk) => {
       chunks.push(chunk);
     });
 
-    res.on('end', function () {
+    res.on('end', () => {
       var body = Buffer.concat(chunks);
-      util.logDebug('httpExporter() resp: ' + body.toString());
+      util.logDebug(`httpExporter() resp: ${body.toString()}`);
     });
   });
 
   req.write(JSON.stringify(data.stats));
 
-  req.on('error', (error) => {
-    util.logInfo('***************Error pushing stats): ' + error);
+  req.on('error', (err) => {
+    util.logError(`***************error pushing stats: ${err}`);
+  });
+
+  req.on('uncaughtException', (err) => {
+    util.logError(`***************uncaughtException pushing stats: ${err}`);
   });
 
   req.end();
@@ -123,7 +133,7 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
 
   // Export device data
   Object.keys(deviceData).map((level1) => {
-    util.logDebug('exportStats() - statsd: Device Mtric Category: ' + level1);
+    util.logDebug('exportStats() - statsd: Device Metric Category: ' + level1);
 
     Object.keys(deviceData[level1]).map((level2) => {
       util.logDebug('exportStats() - statsd: Device Metric Sub-Category: ' + level1 + '.' + level2);
@@ -200,7 +210,7 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
 
   var producer = new Producer(client);
 
-  if (data.config.destination.kafka.topic === 'all') {
+  if (typeof data.config.destination.kafka === 'undefined' || data.config.destination.kafka.topic === 'all') {
     producer.on('ready', function () {
       var payload = [
         {
@@ -210,15 +220,14 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
       ];
 
       producer.send(payload, function (err, resp) {
-        util.logDebug('Kafka producer response: ' + JSON.stringify(resp));
-        if (err) { util.logError('Kafka producer response:' + err); }
+        util.logDebug(`Kafka producer response: ${JSON.stringify(resp)}`);
+        if (err) { util.logError(`Kafka producer response: ${err}`); }
       });
     });
-  } else if (data.config.destination.kafka.topic === 'partition') {
-    var that = this;
-    var stats = data.stats[hostname];
-    var message;
-    var safeTopic;
+  } else if (typeof data.config.destination.kafka === 'undefined' || data.config.destination.kafka.topic === 'partition') {
+    const stats = data.stats[hostname];
+    let message;
+    let safeTopic;
 
     producer.on('ready', function () {
       Object.keys(stats).map((level1) => {
@@ -228,7 +237,7 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
 
           message = {
             [hostname]: {
-              device: stats[level1]
+              service: stats[level1][level2]
             }
           };
 
@@ -245,34 +254,6 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
           producer.send(payload, function (err, resp) {
             util.logDebug('Kafka producer response: ' + JSON.stringify(resp));
             if (err) { util.logError('Kafka producer response:' + err); }
-          });
-        } else { // Iterate through 'services' building service messages and sending.
-          Object.keys(stats[level1]).map((level2) => {
-            let safePartitionName = that.replaceDotsSlashesColons(level2);
-            safeTopic = hostname + '-' + safePartitionName;
-
-            // Ready the stats for topic-based export - Apply stats prefix: 'hostname.services.data[level1]'
-
-            message = {
-              [hostname]: {
-                service: stats[level1][level2]
-              }
-            };
-
-            var payload = [
-              {
-                topic: safeTopic,
-                messages: JSON.stringify(message)
-              }
-            ];
-
-            util.logDebug('exportStats() - kafka: topic: ' + safeTopic);
-            util.logDebug('exportStats() - kafka: message: ' + JSON.stringify(message));
-
-            producer.send(payload, function (err, resp) {
-              util.logDebug('Kafka producer response: ' + JSON.stringify(resp));
-              if (err) { util.logError('Kafka producer response:' + err); }
-            });
           });
         }
       });

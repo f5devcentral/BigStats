@@ -35,13 +35,12 @@ BigStatsExporter.prototype.onGet = function (restOperation) {
  * handle HTTP POST request
  */
 BigStatsExporter.prototype.onPost = function (restOperation) {
-  util.logInfo('\n\n\n**************************\n\n[BigStatsExporter] got some data.....\n\n**************************\n\n');
   this.data = restOperation.getBody();
   if (this.data.config.debug === true) {
     util.debugEnabled = true;
   }
 
-  util.logDebug('onPost received data: ' + this.data);
+  util.logDebug(`onPost received data: ${this.data}`);
 
   const protocol = this.data.config.destination.protocol;
 
@@ -133,15 +132,15 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
 
   // Export device data
   Object.keys(deviceData).map((level1) => {
-    util.logDebug('exportStats() - statsd: Device Metric Category: ' + level1);
+    util.logDebug(`exportStats() - statsd: Device Metric Category: ${level1}`);
 
     Object.keys(deviceData[level1]).map((level2) => {
-      util.logDebug('exportStats() - statsd: Device Metric Sub-Category: ' + level1 + '.' + level2);
+      util.logDebug(`exportStats() - statsd: Device Metric Sub-Category: ${level1}.${level2}`);
 
-      let namespace = data.config.hostname + '.device.' + level1 + '.' + level2;
+      let namespace = `${data.config.hostname}.device.${level1}.${level2}`;
       let value = deviceData[level1][level2];
 
-      util.logDebug('exportStats() - statsd - Device Sub-Category Stats: ' + namespace + ' value: ' + value);
+      util.logDebug(`exportStats() - statsd - Device Sub-Category Stats: ${namespace} value: ${value}`);
       sdc.gauge(namespace, value);
     });
   });
@@ -150,39 +149,39 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
   Object.keys(servicesData).map((level1) => {
     var l1 = this.replaceDotsSlashesColons(level1);
 
-    util.logDebug('exportStats() - statsd: Administrative Partition: ' + l1);
+    util.logDebug(`exportStats() - statsd: Administrative Partition: ${l1}`);
 
     Object.keys(servicesData[level1]).map((level2) => {
       var l2 = this.replaceDotsSlashesColons(level2);
 
-      util.logDebug('exportStats() - statsd - Virtual Server: ' + l1 + '.' + l2);
+      util.logDebug(`exportStats() - statsd - Virtual Server: ${l1}.${l2}`);
 
       Object.keys(servicesData[level1][level2]).map((level3) => {
         var l3 = this.replaceDotsSlashesColons(level3);
 
         // If the value is a number, send it to statsd.
         if (typeof servicesData[level1][level2][level3] === 'number') {
-          let namespace = data.config.hostname + '.services.' + l1 + '.' + l2 + '.' + l3;
+          let namespace = `${data.config.hostname}.services.${l1}.${l2}.${l3}`;
           let value = servicesData[level1][level2][level3];
 
-          util.logDebug('exportStats() - statsd - Virtual Server Stats: ' + namespace + ' value: ' + value);
+          util.logDebug(`exportStats() - statsd - Virtual Server Stats: ${namespace} value: ${value}`);
           sdc.gauge(namespace, value);
         } else if (typeof servicesData[level1][level2][level3] === 'object') {
           // If the value is an object, process the child object...
-          util.logDebug('exportStats() - statsd: Pool: ' + l3);
+          util.logDebug(`exportStats() - statsd: Pool: ${l3}`);
 
           Object.keys(servicesData[level1][level2][level3]).map((level4) => {
             Object.keys(servicesData[level1][level2][level3][level4]).map((level5) => {
               var l5 = this.replaceDotsSlashesColons(level5);
-              util.logDebug('exportStats() - statsd: Pool Member: ' + l5);
+              util.logDebug(`exportStats() - statsd: Pool Member: ${l5}`);
 
               Object.keys(servicesData[level1][level2][level3][level4][level5]).map((level6) => {
                 var l6 = this.replaceDotsSlashesColons(level6);
 
-                let namespace = data.config.hostname + '.services.' + l1 + '.' + l2 + '.' + l3 + '.' + l5 + '.' + l6;
+                let namespace = `${data.config.hostname}.services.${l1}.${l2}.${l3}.${l5}.${l6}`;
                 let value = servicesData[level1][level2][level3][level4][level5][level6];
 
-                util.logDebug('exportStats() - statsd - Pool Member Stats: ' + namespace + ' value: ' + value);
+                util.logDebug(`exportStats() - statsd - Pool Member Stats: ${namespace} value: ${value}`);
                 sdc.gauge(namespace, value);
               });
             });
@@ -204,7 +203,7 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
 
   var client = new kafka.KafkaClient(
     {
-      kafkaHost: data.config.destination.address + ':' + data.config.destination.port
+      kafkaHost: `${data.config.destination.address}:${data.config.destination.port}`
     }
   );
 
@@ -233,11 +232,10 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
       Object.keys(stats).map((level1) => {
         // Build 'device' stats message and send
         if (level1 === 'device') {
-          safeTopic = hostname + '-device_stats';
-
+          safeTopic = `${hostname}-device_stats`;
           message = {
             [hostname]: {
-              service: stats[level1][level2]
+              device: stats[level1]
             }
           };
 
@@ -248,12 +246,40 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
             }
           ];
 
-          util.logDebug('exportStats() - kafka: topic: ' + safeTopic);
-          util.logDebug('exportStats() - kafka: message: ' + JSON.stringify(message));
+          util.logDebug(`exportStats() - kafka: topic: ${safeTopic}`);
+          util.logDebug(`exportStats() - kafka: message: ${JSON.stringify(message)}`);
 
           producer.send(payload, function (err, resp) {
-            util.logDebug('Kafka producer response: ' + JSON.stringify(resp));
-            if (err) { util.logError('Kafka producer response:' + err); }
+            util.logDebug(`Kafka producer response: ${JSON.stringify(resp)}`);
+            if (err) { util.logError(`Kafka producer response: ${err}`); };
+          });
+        } else { // Iterate through 'services' building service messages and sending.
+          Object.keys(stats[level1]).map((level2) => {
+            let safePartitionName = this.replaceDotsSlashesColons(level2);
+            safeTopic = hostname + '-' + safePartitionName;
+
+            // Ready the stats for topic-based export - Apply stats prefix: 'hostname.services.data[level1]'
+
+            message = {
+              [hostname]: {
+                service: stats[level1][level2]
+              }
+            };
+
+            var payload = [
+              {
+                topic: safeTopic,
+                messages: JSON.stringify(message)
+              }
+            ];
+
+            util.logDebug(`exportStats() - kafka: topic: ${safeTopic}`);
+            util.logDebug(`exportStats() - kafka: message: ${JSON.stringify(message)}`);
+
+            producer.send(payload, function (err, resp) {
+              util.logDebug(`Kafka producer response: ${JSON.stringify(resp)}`);
+              if (err) { util.logError(`Kafka producer response: ${err}`); }
+            });
           });
         }
       });

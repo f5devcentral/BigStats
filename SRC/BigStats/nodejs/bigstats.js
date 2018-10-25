@@ -293,7 +293,6 @@ BigStats.prototype.pullStats = function () {
         }
       };
 
-      // TODO: Refactor this to somehow use the util formatting function
       util.logDebug('\n\n*******************************************\n* BEGIN Stats Object *\n*******************************************\n\n');
       util.logDebug(JSON.stringify(statsExpObj, '', '\t'));
       util.logDebug('\n\n*******************************************\n* END Stats Object  *\n*******************************************\n\n');
@@ -695,8 +694,6 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
  */
 // Push stats to a remote destination
 BigStats.prototype.exportStats = function (statsObj) {
-  util.logDebug('exportStats():');
-
   var data = { config: this.config, stats: statsObj };
 
   util.logDebug(`exportStats() w/:  ${JSON.stringify(data, '', '\t')}`);
@@ -707,11 +704,10 @@ BigStats.prototype.exportStats = function (statsObj) {
 
   this.restRequestSender.sendPost(restOp)
     .then((resp) => {
-      util.logInfo('exportStats(): Got a response!!!');
-      util.logInfo(`exportStats():  ${JSON.stringify(resp.body)}`);
+      util.logDebug(`exportStats() response: ${JSON.stringify(resp.body)}`);
     })
     .catch((err) => {
-      util.logError(`- Exporter: err: ${err}`);
+      util.logError(`exportStats() err: ${err}`);
     });
 };
 

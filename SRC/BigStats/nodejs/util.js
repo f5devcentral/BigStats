@@ -9,13 +9,19 @@
 
 'use strict';
 const logger = require('f5-logger');
+const handlebars = require('handlebars');
+const moment = require('moment');
 
-var Util = { };
+var Util = {};
 
 Util.init = function (moduleName) {
   this.moduleName = moduleName;
   this.debugEnabled = false;
   this.loggerInstance = logger.getInstance();
+
+  handlebars.registerHelper('format_date', function (format) {
+    return new handlebars.SafeString(moment().format(format));
+  });
 };
 
 Util.debugEnabled = this.debugEnabled;
@@ -63,6 +69,20 @@ Util.safeAccess = function (func, fallbackValue) {
     return func();
   } catch (e) {
     return fallbackValue;
+  }
+};
+
+/**
+ * Format a string with an input template and JSON object of referenced values.
+ * @param {*} data A flat JSON object of named parameters to be used in template transformation
+ * @param {*} template A valid string that complies with the Handlebars templating standard
+ */
+Util.transformTemplateString = function (data, template) {
+  try {
+    let compiledTemplate = handlebars.compile(template);
+    return compiledTemplate(data);
+  } catch (err) {
+    this.logError(`Error while transforming template string`);
   }
 };
 

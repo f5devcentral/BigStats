@@ -14,7 +14,7 @@ let settings;
 describe('BigStatsSettings', function () {
   describe('validateConfiguration', function () {
     // runs once before all tests in this block
-    mocha.before(function (done) {
+    mocha.beforeEach(function (done) {
       let moduleUnderTest = '../../SRC/BigStats/nodejs/bigstats-settings';
       utilStub = sinon.createStubInstance(util);
       const BigStatsSettings = proxyquire(moduleUnderTest, { './util': utilStub });
@@ -22,7 +22,8 @@ describe('BigStatsSettings', function () {
       done();
     });
 
-    mocha.after(function (done) {
+    mocha.afterEach(function (done) {
+      sinon.resetHistory();
       done();
     });
 
@@ -151,11 +152,15 @@ describe('BigStatsSettings', function () {
       sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination/protocol should be equal to one of the allowed values. Specified value: blah (allowed value(s) are http,https,statsd,kafka`);
     });
 
-    it('should fail validation if the protocol property is set to kafka, but the topic property is missing', function () {
+    it('should fail validation if the protocol property is set to kafka, but the topic is set to an invalid value', function () {
       let json = {
         'config': {
           'destination': {
             'protocol': 'kafka',
+            'kafka': {
+              'topic': 'bob'
+            },
+            'address': '192.168.1.42',
             'port': 8080,
             'uri': '/stats'
           },
@@ -167,7 +172,7 @@ describe('BigStatsSettings', function () {
       };
 
       assert.strictEqual(settings.validateConfiguration(json), false);
-      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination should have required property 'address'`);
+      sinon.assert.calledWith(utilStub.logInfo, `${defaultValidationHeader} /config/destination/kafka/topic should be equal to one of the allowed values. Specified value: bob (allowed value(s) are all,partition`);
     });
 
     it('should fail validation if the address property is missing', function () {

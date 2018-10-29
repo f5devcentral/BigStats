@@ -30,28 +30,23 @@
                 "kafka"
               ]
             },
-            "if": {
-              "protocol": "kafka"
-            },
-            "then": {
-              "kafka": {
-                "$id": "/properties/config/properties/destination/properties/kafka",
-                "type": "object",
-                "required": [
-                  "topic"
-                ],
-                "properties": {
-                  "topic": {
-                    "$id": "/properties/config/properties/destination/properties/kafka/properties/topic",
-                    "type": "string",
-                    "title": "The Kafka Topic Schema",
-                    "description": "Specifies what data constitutes a Kafka Topic",
-                    "default": "all",
-                    "enum": [
-                      "all",
-                      "partition"
-                    ]
-                  }
+            "kafka": {
+              "$id": "/properties/config/properties/destination/properties/kafka",
+              "type": "object",
+              "required": [
+                "topic"
+              ],
+              "properties": {
+                "topic": {
+                  "$id": "/properties/config/properties/destination/properties/kafka/properties/topic",
+                  "type": "string",
+                  "title": "The Kafka Topic Schema",
+                  "description": "Specifies what data constitutes a Kafka Topic",
+                  "default": "all",
+                  "enum": [
+                    "all",
+                    "partition"
+                  ]
                 }
               }
             },
@@ -88,6 +83,20 @@
                 "/stats"
               ]
             }
+          },
+          "if": {
+            "properties": {
+              "protocol": {
+                "enum": [
+                  "kafka"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "kafka"
+            ]
           }
         },
         "interval": {

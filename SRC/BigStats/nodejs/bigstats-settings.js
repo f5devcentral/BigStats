@@ -158,6 +158,7 @@ BigStatsSettings.prototype.translateAjvError = function (errorDetail) {
     case 'format':
     case 'minimum':
     case 'maximum':
+    case 'type':
       return `${errorDetail.dataPath} ${errorDetail.message}`;
     default:
       return errorDetail.message;

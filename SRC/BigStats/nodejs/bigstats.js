@@ -189,7 +189,7 @@ BigStats.prototype.getSchedulerId = function () {
 };
 
 /**
- * Patches the 'interval' value of a task-shceduler job
+ * Patches the 'interval' value of a task-scheduler job
  *
  * @param {String} id Unique identifier of existing task-scheduler task
  * @param {Integer} interval Stat exporting interval
@@ -278,7 +278,7 @@ BigStats.prototype.pullStats = function () {
         case 'medium':
           return this.buildMediumStatsObject(vipResourceList);
         case 'large':
-          util.logInfo('[BigStats - ERROR] - largeStats not yet implemented');
+          util.logError('pullStats() - largeStats not yet implemented');
           break;
         default:
           return this.buildSmallStatsObject(vipResourceList);
@@ -399,7 +399,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
           }
         })
         .catch((err) => {
-          util.logError(`buildSmallStatsObject(): ${JSON.stringify(err)}`);
+          util.logError(`buildSmallStatsObject(): ${err}`);
           reject(err);
         });
     });
@@ -461,13 +461,13 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
                 }
               })
               .catch((err) => {
-                util.logError(`buildSmallStatsObject(): ${JSON.stringify(err)}`);
+                util.logError(`buildMediumStatsObject(): ${err}`);
                 reject(err);
               });
           });
         })
         .catch((err) => {
-          util.logError(`buildMediumStatsObject(): ${JSON.stringify(err)}`);
+          util.logError(`buildMediumStatsObject(): ${err}`);
           reject(err);
         });
     });
@@ -511,7 +511,7 @@ BigStats.prototype.getVipResourceList = function () {
         resolve(resp.body);
       })
       .catch((err) => {
-        util.logError(`getVipResourceList(): ${JSON.stringify(err)}`);
+        util.logError(`getVipResourceList(): ${err}`);
         reject(err);
       });
   });
@@ -643,7 +643,7 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
 
     if (poolMemberResource.path.indexOf(PREFIX) === 0) {
       // PREFIX is exactly at the beginning
-      // Remove any trailing querstrings
+      // Remove any trailing querystrings
       path = poolMemberResource.path.slice(PREFIX.length).split('?').shift();
     }
 

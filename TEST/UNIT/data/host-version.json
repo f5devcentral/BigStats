@@ -1,0 +1,32 @@
+{
+  "body": {
+    "kind": "tm:sys:version:versionstats",
+    "selfLink": "https://localhost/mgmt/tm/sys/version?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/sys/version/0": {
+        "nestedStats": {
+          "entries": {
+            "Build": {
+              "description": "0.0.4"
+            },
+            "Date": {
+              "description": "Fri Jul 20 17:55:49 PDT 2018"
+            },
+            "Edition": {
+              "description": "Final"
+            },
+            "Product": {
+              "description": "BIG-IP"
+            },
+            "Title": {
+              "description": "Main Package"
+            },
+            "Version": {
+              "description": "13.1.1"
+            }
+          }
+        }
+      }
+    }
+  }
+}

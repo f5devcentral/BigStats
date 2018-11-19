@@ -1,0 +1,92 @@
+{
+  "body": {
+    "kind": "tm:ltm:pool:members:membersstats",
+    "generation": 1,
+    "selfLink": "https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80/~DVWA~10.1.20.17:80/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:pool:members:membersstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80/~DVWA~10.1.20.17:80/stats?ver=13.1.1",
+          "entries": {
+            "addr": {
+              "description": "10.1.20.17"
+            },
+            "connq.ageEdm": {
+              "value": 0
+            },
+            "connq.ageEma": {
+              "value": 0
+            },
+            "connq.ageHead": {
+              "value": 0
+            },
+            "connq.ageMax": {
+              "value": 0
+            },
+            "connq.depth": {
+              "value": 0
+            },
+            "connq.serviced": {
+              "value": 0
+            },
+            "curSessions": {
+              "value": 0
+            },
+            "monitorRule": {
+              "description": "min 1 of /DVWA/Application_1/http_dvwa (pool monitor)"
+            },
+            "monitorStatus": {
+              "description": "down"
+            },
+            "nodeName": {
+              "description": "/DVWA/10.1.20.17"
+            },
+            "poolName": {
+              "description": "/DVWA/Application_1/web_pool"
+            },
+            "port": {
+              "value": 80
+            },
+            "serverside.bitsIn": {
+              "value": 0
+            },
+            "serverside.bitsOut": {
+              "value": 0
+            },
+            "serverside.curConns": {
+              "value": 0
+            },
+            "serverside.maxConns": {
+              "value": 0
+            },
+            "serverside.pktsIn": {
+              "value": 0
+            },
+            "serverside.pktsOut": {
+              "value": 0
+            },
+            "serverside.totConns": {
+              "value": 0
+            },
+            "sessionStatus": {
+              "description": "enabled"
+            },
+            "status.availabilityState": {
+              "description": "offline"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "/DVWA/Application_1/http_dvwa:  Response Code: 302 (Found) @2018/10/05 07:38:18. "
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -61,7 +61,8 @@ BigStatsSettings.prototype.getHostVersion = function () {
         resolve(version);
       })
       .catch((err) => {
-        reject('\n\ngetHostVersion(): ERR' + err);
+        util.logError(`getHostVersion(): Error: ${err}`);
+        reject(err);
       });
   });
 };
@@ -100,9 +101,9 @@ BigStatsSettings.prototype.validateConfiguration = function (input) {
     if (valid === false) {
       const error = util.safeAccess(() => validate.errors[0].message, '');
       if (error !== '') {
-        util.logInfo(`Validation error: ${this.translateAjvError(validate.errors[0])}`);
+        util.logError(`Validation error: ${this.translateAjvError(validate.errors[0])}`);
       } else {
-        util.logInfo('Unknown validation error.');
+        util.logError('Unknown validation error.');
       }
       return false;
     }

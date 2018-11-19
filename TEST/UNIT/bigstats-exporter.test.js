@@ -2,9 +2,11 @@
 
 var proxyquire = require('proxyquire').noCallThru();
 
-const assert = require('assert');
-const mocha = require('mocha');
 const sinon = require('sinon');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
+chai.should();
 
 const http = require('http');
 const kafka = require('kafka-node');
@@ -20,7 +22,7 @@ let completeRestOperationStub;
 
 describe('BigStatsExporter', function () {
   // runs once before all tests in this block
-  mocha.before(function (done) {
+  before(function (done) {
     utilStub = sinon.createStubInstance(util);
 
     const BigStatsExporter = proxyquire(moduleUnderTest,
@@ -58,8 +60,8 @@ describe('BigStatsExporter', function () {
     done();
   });
 
-  mocha.afterEach(function (done) {
-    // reset stub behavior and history
+  afterEach(function (done) {
+    // reset stub history
     sinon.resetHistory();
     done();
   });
@@ -67,13 +69,13 @@ describe('BigStatsExporter', function () {
   describe('replaceDotsSlashesColons', function () {
     it('should replace . / : with -', function () {
       const input = 'https://support.f5.com:80/kb/en-us/products/big-ip_apm/manuals/product/apm-visual-policy-editor-13-1-0/3.html#guid-bb209ab6-68ab-4bf0-9c82-ac5e767f5816';
-      assert.strictEqual(bigStatsExporter.replaceDotsSlashesColons(input), 'https---support-f5-com-80-kb-en-us-products-big-ip_apm-manuals-product-apm-visual-policy-editor-13-1-0-3-html#guid-bb209ab6-68ab-4bf0-9c82-ac5e767f5816');
+      bigStatsExporter.replaceDotsSlashesColons(input).should.be.equal('https---support-f5-com-80-kb-en-us-products-big-ip_apm-manuals-product-apm-visual-policy-editor-13-1-0-3-html#guid-bb209ab6-68ab-4bf0-9c82-ac5e767f5816');
     });
   });
 
   describe('onPost', function () {
     describe('http-based exporters', function () {
-      mocha.before(function (done) {
+      before(function (done) {
         httpStub = sinon.stub(http);
         httpStub.request.returns({ write: function () { }, on: function () { }, end: function () { } });
 
@@ -104,7 +106,7 @@ describe('BigStatsExporter', function () {
         sinon.assert.calledOnce(completeRestOperationStub);
       });
 
-      mocha.afterEach(function (done) {
+      afterEach(function (done) {
         sinon.assert.calledWith(utilStub.logDebug, 'onPost received data: ' + httpPost.getBody());
         done();
       });
@@ -112,7 +114,7 @@ describe('BigStatsExporter', function () {
 
     describe('statsd exporter', function () {
       // runs once before all tests in this block
-      mocha.before(function (done) {
+      before(function (done) {
         const StatsD = function () { return { gauge: function () { } }; };
         const statsdSpy = sinon.spy(StatsD);
 
@@ -139,7 +141,7 @@ describe('BigStatsExporter', function () {
 
     describe('kafka exporter', function () {
       // runs once before all tests in this block
-      mocha.before(function (done) {
+      before(function (done) {
         const producer = function () { return { on: function () { } }; };
         const kafkaStub = sinon.stub(kafka);
         const producerSpy = sinon.spy(producer);
@@ -167,7 +169,7 @@ describe('BigStatsExporter', function () {
     });
 
     describe('unknown or undefined exporter', function () {
-      mocha.before(function (done) {
+      before(function (done) {
         const BigStatsExporter = proxyquire(moduleUnderTest,
           {
             './util': utilStub

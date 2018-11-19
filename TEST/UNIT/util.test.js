@@ -2,8 +2,11 @@
 
 const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
-const assert = require('assert');
-const mocha = require('mocha');
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
+const should = chai.should();
+
 const moment = require('moment');
 const logger = require('./f5-logger-fake');
 
@@ -13,7 +16,7 @@ let f5LoggerInfoSpy;
 
 describe('Util', function () {
   // runs once before all tests in this block
-  mocha.before(function (done) {
+  before(function (done) {
     // create stub for f5-logger dependency since it isn't available to the tests
     let moduleUnderTest = '../../SRC/BigStats/nodejs/util';
 
@@ -27,9 +30,35 @@ describe('Util', function () {
     done();
   });
 
+  describe('safeAccess', function () {
+    it('should return value if interrogated property is defined', function () {
+      let testValue = { };
+      testValue.childValue = 'has a value';
+      util.safeAccess(() => testValue.childValue, 'interesting').should.be.equal('has a value');
+    });
+
+    it('should return default value if interrogated property is undefined', function () {
+      let testValue = { };
+      testValue.childValue = undefined;
+      util.safeAccess(() => testValue.childValue, 'interesting').should.be.equal('interesting');
+    });
+
+    it('when called without a default value, should return value if interrogated property is defined', function () {
+      let testValue = { };
+      testValue.childValue = 'has a value';
+      util.safeAccess(() => testValue.childValue).should.be.equal('has a value');
+    });
+
+    it('when called without a default value, should return undefined if interrogated property is undefined', function () {
+      let testValue = { };
+      testValue.childValue = undefined;
+      should.not.exist(util.safeAccess(() => testValue.childValue));
+    });
+  });
+
   describe('formatMessage', function () {
     it('should emit expected string', function () {
-      assert.strictEqual(util.formatMessage('something happened'), '[TestModule] - something happened');
+      util.formatMessage('something happened').should.be.equal('[TestModule] - something happened');
     });
   });
 
@@ -44,7 +73,19 @@ describe('Util', function () {
       };
       const template = 'vs_stats,VIP={{name}},Device={{hostname}},[{{metric}}={{value}}],Date: {{format_date dateFormat}}';
 
-      assert.strictEqual(util.transformTemplateString(data, template), `vs_stats,VIP=picard,Device=localhost,[assimilations=42],Date: ${moment().format('YYYYMMDD')}`);
+      util.transformTemplateString(data, template).should.be.equal(`vs_stats,VIP=picard,Device=localhost,[assimilations=42],Date: ${moment().format('YYYYMMDD')}`);
+    });
+
+    it('should transform data and template into expected string when date format is undefined', function () {
+      const data = {
+        name: 'picard',
+        hostname: 'localhost',
+        metric: 'assimilations',
+        value: 42
+      };
+      const template = 'vs_stats,VIP={{name}},Device={{hostname}},[{{metric}}={{value}}],Date: {{format_date dateFormat}}';
+
+      util.transformTemplateString(data, template).should.be.equal(`vs_stats,VIP=picard,Device=localhost,[assimilations=42],Date: ${moment().format(undefined)}`);
     });
 
     it('should attempt to transform if an invalid property is referenced in the template', function () {
@@ -53,7 +94,7 @@ describe('Util', function () {
       };
       const template = 'VIP={{wrongName}},otherstuff';
 
-      assert.strictEqual(util.transformTemplateString(data, template), `VIP=,otherstuff`);
+      util.transformTemplateString(data, template).should.be.equal(`VIP=,otherstuff`);
     });
 
     it('should log an error and return undefined when the template contains syntax errors', function () {
@@ -63,7 +104,7 @@ describe('Util', function () {
       };
       const template = 'vs_stats,VIP={{name} Date: {{format_date dateFormat}}';
 
-      assert.strictEqual(util.transformTemplateString(data, template), undefined);
+      should.not.exist(util.transformTemplateString(data, template));
       sinon.assert.calledWith(f5LoggerInfoSpy, '[TestModule - ERROR] - Error while transforming template string');
     });
   });

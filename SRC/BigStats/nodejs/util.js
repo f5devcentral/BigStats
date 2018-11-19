@@ -62,11 +62,12 @@ Util.formatMessage = function (message, classifier) {
 /**
  * Safely access object and property values without having to stack up safety checks for undefined values
  * @param {*} func A function that encloses the value to check
- * @param {*} fallbackValue A default value that is returned if any of the values in the object heirarchy are undefined
+ * @param {*} fallbackValue An optional default value that is returned if any of the values in the object heirarchy are undefined. If this parameter isn't supplied, undefined will be returned instead of a default fallback value.
  */
 Util.safeAccess = function (func, fallbackValue) {
   try {
-    return func();
+    var value = func();
+    return (value === null || value === undefined) ? fallbackValue : value;
   } catch (e) {
     return fallbackValue;
   }

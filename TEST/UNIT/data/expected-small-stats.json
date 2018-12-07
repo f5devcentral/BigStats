@@ -1,0 +1,70 @@
+{
+  "services": {
+    "DVWA/Application_1": {
+      "/DVWA/10.1.10.46:80": {
+        "clientside_curConns": 0,
+        "clientside_maxConns": 0,
+        "clientside_bitsIn": 0,
+        "clientside_bitsOut": 0,
+        "clientside_pktsIn": 0,
+        "clientside_pktsOut": 0
+      }
+    },
+    "Monitor_Sample_01/Application_1": {
+      "/Monitor_Sample_01/10.1.10.40:80": {
+        "clientside_curConns": 0,
+        "clientside_maxConns": 0,
+        "clientside_bitsIn": 0,
+        "clientside_bitsOut": 0,
+        "clientside_pktsIn": 0,
+        "clientside_pktsOut": 0
+      }
+    },
+    "Sample_01/Application_1": {
+      "/Sample_01/10.1.10.45:80": {
+        "clientside_curConns": 0,
+        "clientside_maxConns": 0,
+        "clientside_bitsIn": 0,
+        "clientside_bitsOut": 0,
+        "clientside_pktsIn": 0,
+        "clientside_pktsOut": 0
+      }
+    },
+    "Sample_01/testapp.app": {
+      "/Sample_01/10.1.10.101:80": {
+        "clientside_curConns": 0,
+        "clientside_maxConns": 0,
+        "clientside_bitsIn": 0,
+        "clientside_bitsOut": 0,
+        "clientside_pktsIn": 0,
+        "clientside_pktsOut": 0
+      },
+      "/Sample_01/10.1.10.101:443": {
+        "clientside_curConns": 0,
+        "clientside_maxConns": 0,
+        "clientside_bitsIn": 0,
+        "clientside_bitsOut": 0,
+        "clientside_pktsIn": 0,
+        "clientside_pktsOut": 0
+      }
+    },
+    "Sample_04/A1_01": {
+      "/Sample_04/10.0.2.13:443": {
+        "clientside_curConns": 0,
+        "clientside_maxConns": 0,
+        "clientside_bitsIn": 0,
+        "clientside_bitsOut": 0,
+        "clientside_pktsIn": 0,
+        "clientside_pktsOut": 0
+      },
+      "/Sample_04/10.0.2.13:80": {
+        "clientside_curConns": 0,
+        "clientside_maxConns": 0,
+        "clientside_bitsIn": 0,
+        "clientside_bitsOut": 0,
+        "clientside_pktsIn": 0,
+        "clientside_pktsOut": 0
+      }
+    }
+  }
+}

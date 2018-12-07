@@ -30,6 +30,12 @@
                 "kafka"
               ]
             },
+            "messageTemplate": {
+              "$id": "/properties/config/properties/destination/properties/messageTemplate",
+              "type": "string",
+              "title": "The string formatting template",
+              "description": "Specifies the formatting of the exported message using Handlebars templating syntax"
+            },
             "kafka": {
               "$id": "/properties/config/properties/destination/properties/kafka",
               "type": "object",

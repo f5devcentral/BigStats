@@ -5,6 +5,7 @@ var proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
+
 chai.use(chaiAsPromised);
 chai.should();
 
@@ -24,27 +25,42 @@ let getPoolResourceStub;
 let getPoolMemberStatsStub;
 let vipInfoStats = require('./data/vs-stats.json');
 let hostInfoStats = require('./data/host-info-stats.json');
-let vipResourceList = require('./data/vip-resource-list.json');
+let vipResourceList = require('./data/filtered-vip-resource-list.json');
 let poolMemberStats = require('./data/pool-member-stats.json');
 
 describe('BigStats', function () {
+  beforeEach(function (done) {
+    utilStub = sinon.createStubInstance(util);
+    const BigStats = proxyquire(moduleUnderTest,
+      {
+        './util': utilStub
+      });
+    bigStats = new BigStats();
+    bigStats.restHelper = {};
+    bigStats.restHelper.makeRestnodedUri = sinon.spy();
+    bigStats.createRestOperation = sinon.spy();
+    bigStats.restRequestSender = { sendGet: function () { }, sendPost: function () { } };
+    done();
+  });
+
+  afterEach(function (done) {
+    // reset stub behavior and history
+    sinon.restore();
+    // delete cached json test files that were imported using 'require'
+    Object.keys(require.cache).forEach(function (key) {
+      if (key.endsWith('.json')) {
+        delete require.cache[key];
+      }
+    });
+    done();
+  });
+
   describe('pullStats', function () {
     // runs once before each test in this block
     beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-
       getDeviceStatsStub = sinon.stub(bigStats, 'getDeviceStats').resolves();
       buildSmallStatsObjectStub = sinon.stub(bigStats, 'buildSmallStatsObject').resolves();
       exportStatsStub = sinon.stub(bigStats, 'exportStats').returns();
-
-      let vipResourceList = require('./data/vip-resource-list.json');
 
       getVipResourceListStub = sinon.stub(bigStats, 'getVipResourceList').resolves(vipResourceList);
 
@@ -68,7 +84,7 @@ describe('BigStats', function () {
       done();
     });
 
-    it('pullStats should return formatted device statistics in a small size', function () {
+    it('should return formatted device statistics in a small size', function () {
       bigStats.config = config;
       let getSettingsStub = sinon.stub(bigStats, 'getSettings').resolves(config);
 
@@ -85,7 +101,7 @@ describe('BigStats', function () {
       });
     });
 
-    it('pullStats should return formatted device statistics in a medium size', function () {
+    it('should return formatted device statistics in a medium size', function () {
       config.size = 'medium';
       bigStats.config = config;
       let getSettingsStub = sinon.stub(bigStats, 'getSettings').resolves(config);
@@ -105,7 +121,7 @@ describe('BigStats', function () {
       });
     });
 
-    it('pullStats should error when requesting a large size', function () {
+    it('should error when requesting a large size', function () {
       config.size = 'large';
       bigStats.config = config;
       let getSettingsStub = sinon.stub(bigStats, 'getSettings').resolves(config);
@@ -122,7 +138,7 @@ describe('BigStats', function () {
       });
     });
 
-    it('pullStats should not return when error occurs', function () {
+    it('should not return when error occurs', function () {
       config.size = 'medium';
       bigStats.config = config;
       let getSettingsStub = sinon.stub(bigStats, 'getSettings').rejects('problem getting settings');
@@ -138,31 +154,7 @@ describe('BigStats', function () {
   });
 
   describe('getDeviceStats', function () {
-    // runs once before all tests in this block
-    before(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-      bigStats.restHelper = {};
-      bigStats.restHelper.makeRestnodedUri = sinon.spy();
-      bigStats.createRestOperation = sinon.spy();
-      bigStats.restRequestSender = { sendGet: function () { } };
-      done();
-    });
-
-    afterEach(function (done) {
-      // reset stub behavior and history
-      sinon.reset();
-      bigStats.restRequestSender.sendGet.restore();
-      done();
-    });
-
-    it('getDeviceStats should return formatted device statistics', function (done) {
+    it('should return formatted device statistics', function (done) {
       const expectedStats = JSON.parse('{"device":{"memory":{"memoryTotal":8373641216,"memoryUsed":4419657280},"cpu0":{"fiveSecAvgIdle":85,"fiveSecAvgIowait":0,"fiveSecAvgIrq":0,"fiveSecAvgNiced":0,"fiveSecAvgRatio":11,"fiveSecAvgSoftirq":0,"fiveSecAvgStolen":0,"fiveSecAvgSystem":3,"fiveSecAvgUser":8},"cpu1":{"fiveSecAvgIdle":75,"fiveSecAvgIowait":0,"fiveSecAvgIrq":0,"fiveSecAvgNiced":0,"fiveSecAvgRatio":22,"fiveSecAvgSoftirq":0,"fiveSecAvgStolen":0,"fiveSecAvgSystem":7,"fiveSecAvgUser":14}}}');
 
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(hostInfoStats);
@@ -174,7 +166,7 @@ describe('BigStats', function () {
       }).should.notify(done);
     });
 
-    it('getDeviceStats should not return when error occurs', function (done) {
+    it('should not return when error occurs', function (done) {
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects();
 
       const promise = bigStats.getDeviceStats();
@@ -186,32 +178,11 @@ describe('BigStats', function () {
   });
 
   describe('buildSmallStatsObject', function () {
-    // runs once before each test in this block
-    beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-      done();
-    });
-
-    afterEach(function (done) {
-      // reset stub behavior and history
-      sinon.reset();
-      done();
-    });
-
-    it('buildSmallStatsObject should return formatted device statistics', function (done) {
-      let vipResourceList = require('./data/vip-resource-list.json');
-
-      const expectedStats = JSON.parse('{"services":{"DVWA/Application_1":{"/DVWA/10.1.10.46:80":{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}},"Monitor_Sample_01/Application_1":{"/Monitor_Sample_01/10.1.10.40:80":{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}},"Sample_01/Application_1":{"/Sample_01/10.1.10.45:80":{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}},"Sample_01/testapp.app":{"/Sample_01/10.1.10.101:80":{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0},"/Sample_01/10.1.10.101:443":{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}},"Sample_04/A1_01":{"/Sample_04/10.0.2.13:443":{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0},"/Sample_04/10.0.2.13:80":{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}}}}');
+    it('should return formatted device statistics', function (done) {
+      const expectedStats = require('./data/expected-small-stats.json');
       getVipStatsStub = sinon.stub(bigStats, 'getVipStats').resolves(JSON.parse('{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}'));
 
-      const promise = bigStats.buildSmallStatsObject(vipResourceList);
+      const promise = bigStats.buildSmallStatsObject(vipResourceList.body);
       promise.should.be.fulfilled.then(() => {
         bigStats.stats.should.be.deep.equal(expectedStats);
         sinon.assert.callCount(getVipStatsStub, 7);
@@ -219,9 +190,9 @@ describe('BigStats', function () {
       }).should.notify(done);
     });
 
-    it('buildSmallStatsObject should not return when error occurs', function (done) {
+    it('should not return when error occurs', function (done) {
       getVipStatsStub = sinon.stub(bigStats, 'getVipStats').rejects('something bad happened');
-      const promise = bigStats.buildSmallStatsObject(vipResourceList);
+      const promise = bigStats.buildSmallStatsObject(vipResourceList.body);
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'buildSmallStatsObject(): something bad happened');
         sinon.assert.callCount(getVipStatsStub, 7);
@@ -229,63 +200,52 @@ describe('BigStats', function () {
     });
   });
 
-  describe('buildMediumStatsObject', function () {
+  describe.skip('buildMediumStatsObject', function () {
     // runs once before each test in this block
     beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
       getVipStatsStub = sinon.stub(bigStats, 'getVipStats').resolves(JSON.parse('{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}'));
+
       getPoolResourceStub = sinon.stub(bigStats, 'getPoolResourceList').resolves(JSON.parse('[{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]'));
-      getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats').resolves(JSON.parse('{"10.1.20.17:80":{"serverside_curConns":0,"serverside_maxConns":0,"serverside_bitsIn":0,"serverside_bitsOut":0,"serverside_pktsIn":0,"serverside_pktsOut":0,"monitorStatus":0}}'));
+      getPoolResourceStub.withArgs(undefined).resolves();
 
+      getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats').callsFake((poolMemberResource) => {
+        return new Promise((resolve, reject) => {
+          const stats = { 'serverside_curConns': 0, 'serverside_maxConns': 0, 'serverside_bitsIn': 0, 'serverside_bitsOut': 0, 'serverside_pktsIn': 0, 'serverside_pktsOut': 0, 'monitorStatus': 0 };
+          resolve(poolMemberResource.name === '10.1.20.17:80' ? { '10.1.20.17:80': stats } : { '10.1.20.18:80': stats });
+        });
+      });
       done();
     });
 
-    afterEach(function (done) {
-      // reset stub behavior and history
-      sinon.reset();
-      done();
-    });
-
-    it('buildMediumStatsObject should return formatted device statistics', function (done) {
-      let vipResourceList = require('./data/vip-resource-list.json');
-
+    it('should return formatted device statistics', function (done) {
       const expectedStats = require('./data/expected-medium-stats.json');
 
-      const promise = bigStats.buildMediumStatsObject(vipResourceList);
+      const promise = bigStats.buildMediumStatsObject(vipResourceList.body);
       promise.should.be.fulfilled.then(() => {
         bigStats.stats.should.be.deep.equal(expectedStats);
         sinon.assert.callCount(getVipStatsStub, 7);
         sinon.assert.callCount(getPoolResourceStub, 7);
-        sinon.assert.callCount(getPoolMemberStatsStub, 14);
+        sinon.assert.callCount(getPoolMemberStatsStub, 10);
         sinon.assert.callCount(utilStub.logDebug, 4);
       }).should.notify(done);
     });
 
-    it('buildMediumStatsObject should not return when getVipStats error occurs', function (done) {
-      let vipResourceList = require('./data/vip-resource-list.json');
+    it('should not return when getVipStats error occurs', function (done) {
       getVipStatsStub.restore();
       getVipStatsStub = sinon.stub(bigStats, 'getVipStats').rejects('something bad happened');
 
-      const promise = bigStats.buildMediumStatsObject(vipResourceList);
+      const promise = bigStats.buildMediumStatsObject(vipResourceList.body);
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'buildMediumStatsObject(): something bad happened');
         sinon.assert.callCount(getVipStatsStub, 7);
       }).should.notify(done);
     });
 
-    it('buildMediumStatsObject should not return when getPoolMemberStats error occurs', function (done) {
-      let vipResourceList = require('./data/vip-resource-list.json');
+    it('should not return when getPoolMemberStats error occurs', function (done) {
       getPoolMemberStatsStub.restore();
       getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats').rejects('something bad happened');
 
-      const promise = bigStats.buildMediumStatsObject(vipResourceList);
+      const promise = bigStats.buildMediumStatsObject(vipResourceList.body);
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'buildMediumStatsObject(): something bad happened');
         sinon.assert.callCount(getVipStatsStub, 7);
@@ -294,29 +254,7 @@ describe('BigStats', function () {
   });
 
   describe('buildLargeStatsObject', function () {
-    // runs once before each test in this block
-    beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-
-      done();
-    });
-
-    afterEach(function (done) {
-      // reset stub behavior and history
-      sinon.reset();
-      done();
-    });
-
-    it('buildLargeStatsObject should log an error when called', function () {
-      let vipResourceList = require('./data/vip-resource-list.json');
-
+    it('should log an error when called', function () {
       bigStats.buildLargeStatsObject(vipResourceList);
 
       sinon.assert.calledWith(utilStub.logDebug, 'buildLargeStatsObject() with vipResourceList: [object Object]');
@@ -325,30 +263,8 @@ describe('BigStats', function () {
   });
 
   describe('getPoolMemberStats', function () {
-    // runs once before each test in this block
-    beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-      bigStats.restHelper = {};
-      bigStats.restHelper.makeRestnodedUri = sinon.spy();
-      bigStats.createRestOperation = sinon.spy();
-      bigStats.restRequestSender = { sendGet: function () { } };
-      done();
-    });
-
-    afterEach(function (done) {
-      // reset stub behavior and history
-      sinon.reset();
-      done();
-    });
-
-    it('getPoolMemberStats should return a list of pool members', function (done) {
+    // TODO: modify the mocks to sequentially return different results about each pool member each time it is called
+    it('should return stats for a specific pool member', function (done) {
       const expectedStats = JSON.parse('{"10.1.20.17:80":{"serverside_curConns":0,"serverside_maxConns":0,"serverside_bitsIn":0,"serverside_bitsOut":0,"serverside_pktsIn":0,"serverside_pktsOut":0,"monitorStatus":0}}');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(poolMemberStats);
 
@@ -359,7 +275,7 @@ describe('BigStats', function () {
       }).should.notify(done);
     });
 
-    it('getPoolMemberStats should not return when error occurs', function (done) {
+    it('should not return when error occurs', function (done) {
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects('something bad happened');
       const promise = bigStats.getPoolMemberStats(JSON.parse('{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"}'));
       promise.should.be.rejected.then(() => {
@@ -369,45 +285,20 @@ describe('BigStats', function () {
   });
 
   describe('getPoolResourceList', function () {
-    // runs once before each test in this block
-    beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-      bigStats.restHelper = {};
-      bigStats.restHelper.makeRestnodedUri = sinon.spy();
-      bigStats.createRestOperation = sinon.spy();
-      bigStats.restRequestSender = { sendGet: function () { } };
-      done();
-    });
-
-    afterEach(function (done) {
-      // reset stub behavior and history
-      sinon.reset();
-      done();
-    });
-
-    it('getPoolResourceList should return a list of pool members', function (done) {
-      let vipResourceList = require('./data/vip-resource-list.json');
-
+    it('should return a list of pool members', function (done) {
       const expectedStats = JSON.parse('[{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(JSON.parse('{"body":{"kind":"tm:ltm:pool:members:memberscollectionstate","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members?$select=name%2CselfLink&ver=13.1.1","items":[{"name":"10.1.20.17:80","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]}}'));
 
-      const promise = bigStats.getPoolResourceList(vipResourceList.items[0]);
+      const promise = bigStats.getPoolResourceList(vipResourceList.body.items[0]);
       promise.should.be.fulfilled.then((poolMemberList) => {
         poolMemberList.should.be.deep.equal(expectedStats);
         sinon.assert.calledThrice(utilStub.logDebug);
       }).should.notify(done);
     });
 
-    it('getPoolResourceList should not return when error occurs', function (done) {
+    it('should not return when error occurs', function (done) {
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects('something bad happened');
-      const promise = bigStats.getPoolResourceList(vipResourceList.items[0]);
+      const promise = bigStats.getPoolResourceList(vipResourceList.body.items[0]);
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'getPoolResourceList(): something bad happened');
       }).should.notify(done);
@@ -415,32 +306,7 @@ describe('BigStats', function () {
   });
 
   describe('getVipResourceList', function () {
-    // runs once before each test in this block
-    beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-      bigStats.restHelper = {};
-      bigStats.restHelper.makeRestnodedUri = sinon.spy();
-      bigStats.createRestOperation = sinon.spy();
-      bigStats.restRequestSender = { sendGet: function () { } };
-      done();
-    });
-
-    afterEach(function (done) {
-      // reset stub behavior and history
-      sinon.reset();
-      done();
-    });
-
-    it('getVipResourceList should return a list of vip resources', function (done) {
-      let vipResourceList = require('./data/filtered-vip-resource-list.json');
-
+    it('should return a list of vip resources', function (done) {
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(vipResourceList);
 
       const promise = bigStats.getVipResourceList();
@@ -450,7 +316,7 @@ describe('BigStats', function () {
       }).should.notify(done);
     });
 
-    it('getVipResourceList should not return when error occurs', function (done) {
+    it('should not return when error occurs', function (done) {
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects('something bad happened');
       const promise = bigStats.getVipResourceList();
       promise.should.be.rejected.then(() => {
@@ -462,19 +328,6 @@ describe('BigStats', function () {
   describe('getVipStats', function () {
     // runs before each test in this block
     beforeEach(function (done) {
-      utilStub = sinon.createStubInstance(util);
-
-      const BigStats = proxyquire(moduleUnderTest,
-        {
-          './util': utilStub
-        });
-
-      bigStats = new BigStats();
-      bigStats.restHelper = {};
-      bigStats.restHelper.makeRestnodedUri = sinon.spy();
-      bigStats.createRestOperation = sinon.spy();
-      bigStats.restRequestSender = { sendGet: function () { }, sendPost: function () { } };
-
       config = {
         'hostVersion': '13.1.1',
         'hostname': 'server.f5.com',
@@ -496,22 +349,22 @@ describe('BigStats', function () {
       done();
     });
 
-    it('getVipStats should return formatted vip statistics', function (done) {
+    it('should return formatted vip statistics', function (done) {
       const expectedStats = JSON.parse('{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(vipInfoStats);
       bigStats.config = config;
 
-      const promise = bigStats.getVipStats(vipResourceList.items[0]);
+      const promise = bigStats.getVipStats(vipResourceList.body.items[0]);
       promise.should.be.fulfilled.then((stats) => {
         stats.should.be.deep.equal(expectedStats);
         sinon.assert.calledOnce(sendGetStub);
       }).should.notify(done);
     });
 
-    it('getVipStats should not return when error occurs', function (done) {
+    it('should not return when error occurs', function (done) {
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects('something bad happened');
 
-      const promise = bigStats.getVipStats(vipResourceList.items[0]);
+      const promise = bigStats.getVipStats(vipResourceList.body.items[0]);
 
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'getVipStats() - Error retrieving vipResourceStats: something bad happened');

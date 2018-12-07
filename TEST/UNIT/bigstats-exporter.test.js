@@ -8,21 +8,54 @@ const chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 chai.should();
 
+const EventEmitter = require('events').EventEmitter;
 const http = require('http');
+const https = require('https');
 const kafka = require('kafka-node');
 const util = require('./util-fake');
 
 let moduleUnderTest = '../../SRC/BigStats/nodejs/bigstats-exporter';
 let utilStub;
 let httpStub;
+let httpsStub;
+let StatsD;
+let kafkaStub;
+let producerStub;
+let gaugeStub;
+let requestStub;
 let bigStatsExporter;
 let httpPost;
 let testProtocol;
 let completeRestOperationStub;
 
+const producer = function () { return { on: function () { }, send: function () { } }; };
+
+function convertStatsToExportFormat (device, services, config) {
+  return {
+    config: config,
+    stats: {
+      [config.hostname]: {
+        services: services,
+        device: device
+      }
+    }
+  };
+}
+
 describe('BigStatsExporter', function () {
-  // runs once before all tests in this block
-  before(function (done) {
+  // runs before all tests in this block
+  beforeEach(function (done) {
+    requestStub = sinon.stub();
+    requestStub.write = sinon.stub();
+    requestStub.on = sinon.stub();
+    requestStub.end = sinon.stub();
+
+    httpStub = sinon.stub(http);
+    httpStub.request = function () { return requestStub; };
+
+    httpsStub = sinon.stub(https);
+    httpsStub.request = function () { return requestStub; };
+
     utilStub = sinon.createStubInstance(util);
 
     const BigStatsExporter = proxyquire(moduleUnderTest,
@@ -61,8 +94,14 @@ describe('BigStatsExporter', function () {
   });
 
   afterEach(function (done) {
-    // reset stub history
-    sinon.resetHistory();
+    // reset stub behavior and history
+    sinon.restore();
+    // delete cached json test files that were imported using 'require'
+    Object.keys(require.cache).forEach(function (key) {
+      if (key.endsWith('.json')) {
+        delete require.cache[key];
+      }
+    });
     done();
   });
 
@@ -74,16 +113,13 @@ describe('BigStatsExporter', function () {
   });
 
   describe('onPost', function () {
-    describe('http-based exporters', function () {
-      before(function (done) {
-        httpStub = sinon.stub(http);
-        httpStub.request.returns({ write: function () { }, on: function () { }, end: function () { } });
-
+    describe('http/s exporter dispatch', function () {
+      beforeEach(function (done) {
         const BigStatsExporter = proxyquire(moduleUnderTest,
           {
             './util': utilStub,
             'http': httpStub,
-            'https': httpStub
+            'https': httpsStub
           });
 
         bigStatsExporter = new BigStatsExporter();
@@ -112,16 +148,17 @@ describe('BigStatsExporter', function () {
       });
     });
 
-    describe('statsd exporter', function () {
-      // runs once before all tests in this block
-      before(function (done) {
-        const StatsD = function () { return { gauge: function () { } }; };
-        const statsdSpy = sinon.spy(StatsD);
+    describe('statsd exporter dispatch', function () {
+      // runs before all tests in this block
+      beforeEach(function (done) {
+        StatsD = sinon.stub();
+        gaugeStub = sinon.stub();
+        StatsD.prototype.gauge = gaugeStub;
 
         const BigStatsExporter = proxyquire(moduleUnderTest,
           {
             './util': utilStub,
-            'node-statsd': statsdSpy
+            'node-statsd': StatsD
           });
 
         bigStatsExporter = new BigStatsExporter();
@@ -139,13 +176,12 @@ describe('BigStatsExporter', function () {
       });
     });
 
-    describe('kafka exporter', function () {
-      // runs once before all tests in this block
-      before(function (done) {
-        const producer = function () { return { on: function () { } }; };
-        const kafkaStub = sinon.stub(kafka);
-        const producerSpy = sinon.spy(producer);
-        kafkaStub.Producer = producerSpy;
+    describe('kafka exporter dispatch', function () {
+      // runs before all tests in this block
+      beforeEach(function (done) {
+        kafkaStub = sinon.stub(kafka);
+        producerStub = sinon.spy(producer);
+        kafkaStub.Producer = producerStub;
 
         const BigStatsExporter = proxyquire(moduleUnderTest,
           {
@@ -169,7 +205,8 @@ describe('BigStatsExporter', function () {
     });
 
     describe('unknown or undefined exporter', function () {
-      before(function (done) {
+      // runs before all tests in this block
+      beforeEach(function (done) {
         const BigStatsExporter = proxyquire(moduleUnderTest,
           {
             './util': utilStub
@@ -193,6 +230,158 @@ describe('BigStatsExporter', function () {
         bigStatsExporter.onPost(httpPost);
         sinon.assert.calledWith(utilStub.logDebug, `polling mode enabled. Fetch stats with: 'GET /mgmt/shared/bigstats_exporter'`);
       });
+    });
+  });
+
+  describe('http/s Exporters', function () {
+    // runs before all tests in this block
+    beforeEach(function (done) {
+      const BigStatsExporter = proxyquire(moduleUnderTest,
+        {
+          './util': utilStub,
+          'http': httpStub,
+          'https': httpsStub
+        });
+      bigStatsExporter = new BigStatsExporter();
+      done();
+    });
+
+    it('httpExporter sends a request', function () {
+      const config = {
+        'hostname': 'myhostname',
+        'destination': {
+          'protocol': 'http',
+          'address': '192.168.1.42',
+          'port': 8080,
+          'uri': '/stats'
+        },
+        'size': 'small',
+        'interval': 10,
+        'enabled': true,
+        'debug': false
+      };
+
+      let testData = convertStatsToExportFormat('deviceinfo', require('./data/expected-small-stats.json').services, config);
+      bigStatsExporter.httpExporter(testData);
+      sinon.assert.calledWith(requestStub.write, JSON.stringify(testData.stats));
+      sinon.assert.calledOnce(requestStub.end);
+    });
+
+    it('httpsExporter sends a request', function () {
+      const config = {
+        'hostname': 'myhostname',
+        'destination': {
+          'protocol': 'https',
+          'address': '192.168.1.42',
+          'port': 8080,
+          'uri': '/stats'
+        },
+        'size': 'small',
+        'interval': 10,
+        'enabled': true,
+        'debug': false
+      };
+
+      let testData = convertStatsToExportFormat('deviceinfo', require('./data/expected-small-stats.json').services, config);
+      bigStatsExporter.httpExporter(testData);
+      sinon.assert.calledWith(requestStub.write, JSON.stringify(testData.stats));
+      sinon.assert.calledOnce(requestStub.end);
+    });
+  });
+
+  describe('statsd Exporter', function () {
+    // runs before all tests in this block
+    beforeEach(function (done) {
+      StatsD = sinon.stub();
+      gaugeStub = sinon.stub();
+      StatsD.prototype.gauge = gaugeStub;
+
+      const BigStatsExporter = proxyquire(moduleUnderTest,
+        {
+          './util': utilStub,
+          'node-statsd': StatsD
+        });
+
+      bigStatsExporter = new BigStatsExporter();
+
+      done();
+    });
+
+    it('exports stats to statsd', function () {
+      const config = {
+        'hostname': 'myhostname',
+        'destination': {
+          'protocol': 'statsd',
+          'address': '192.168.1.42',
+          'port': 8080
+        },
+        'size': 'small',
+        'interval': 10,
+        'enabled': true,
+        'debug': false
+      };
+
+      let testData = convertStatsToExportFormat('deviceinfo', require('./data/expected-small-stats.json').services, config);
+      bigStatsExporter.statsdExporter(testData);
+      sinon.assert.callCount(gaugeStub, 52);
+      sinon.assert.calledWith(gaugeStub, 'myhostname.device.0.0', 'd');
+      sinon.assert.callCount(utilStub.logDebug, 84);
+    });
+  });
+
+  describe.skip('kafka Exporter', function () {
+    // runs before all tests in this block
+    beforeEach(function (done) {
+      kafkaStub = sinon.stub(kafka);
+
+      producerStub = sinon.stub();
+      producerStub.prototype.send = sinon.stub();
+      producerStub.prototype.on = sinon.stub();
+      producerStub.prototype.ready = sinon.stub();
+
+      let kafkaClientStub = sinon.stub();
+
+      const BigStatsExporter = proxyquire(moduleUnderTest,
+        {
+          './util': utilStub,
+          'kafka-node': {
+            Producer: producerStub,
+            KafkaClient: kafkaClientStub
+          }
+        });
+
+      bigStatsExporter = new BigStatsExporter();
+
+      done();
+    });
+
+    it('exports stats to kafka topic all', function () {
+      const config = {
+        'hostname': 'myhostname',
+        'destination': {
+          'protocol': 'kafka',
+          'address': '192.168.1.42',
+          'port': 8080,
+          'kafka': {
+            'topic': 'all'
+          }
+        },
+        'size': 'small',
+        'interval': 10,
+        'enabled': true,
+        'debug': false
+      };
+
+      let testData = convertStatsToExportFormat('deviceinfo', require('./data/expected-small-stats.json').services, config);
+      bigStatsExporter.kafkaExporter(testData);
+
+      var emitter = new EventEmitter();
+
+      emitter.on('ready', producerStub);
+      emitter.emit('ready');
+
+      sinon.assert.callCount(producerStub.prototype.send, 1);
+      sinon.assert.calledWith(producerStub.prototype.send, '1');
     });
   });
 });

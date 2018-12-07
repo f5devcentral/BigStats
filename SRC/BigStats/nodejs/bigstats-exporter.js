@@ -9,7 +9,7 @@
 'use strict';
 
 const StatsD = require('node-statsd');
-const kafka = require('kafka-node'); // FIXME: this is causing errors
+const kafka = require('kafka-node');
 const util = require('./util');
 const Producer = kafka.Producer;
 

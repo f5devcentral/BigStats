@@ -10,7 +10,6 @@
 'use strict';
 const logger = require('f5-logger');
 const handlebars = require('handlebars');
-const moment = require('moment');
 
 var Util = {};
 
@@ -18,10 +17,6 @@ Util.init = function (moduleName) {
   this.moduleName = moduleName;
   this.debugEnabled = false;
   this.loggerInstance = logger.getInstance();
-
-  handlebars.registerHelper('format_date', function (format) {
-    return new handlebars.SafeString(moment().format(format));
-  });
 };
 
 Util.debugEnabled = this.debugEnabled;

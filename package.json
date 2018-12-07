@@ -27,7 +27,6 @@
     "ajv": "~6.5.3",
     "handlebars": "~4.0.12",
     "kafka-node": "2.6.1",
-    "moment": "~2.22.2",
     "node-statsd": "~0.1.1"
   },
   "devDependencies": {

@@ -1,0 +1,989 @@
+[
+  {
+    "kind": "tm:ltm:virtual:virtualstats",
+    "generation": 1,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~DVWA~Application_1~serviceMain/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/virtual/~DVWA~Application_1~serviceMain/~DVWA~Application_1~serviceMain/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:virtual:virtualstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~DVWA~Application_1~serviceMain/~DVWA~Application_1~serviceMain/stats?ver=13.1.1",
+          "entries": {
+            "clientside.bitsIn": {
+              "value": 0
+            },
+            "clientside.bitsOut": {
+              "value": 0
+            },
+            "clientside.curConns": {
+              "value": 0
+            },
+            "clientside.evictedConns": {
+              "value": 0
+            },
+            "clientside.maxConns": {
+              "value": 0
+            },
+            "clientside.pktsIn": {
+              "value": 0
+            },
+            "clientside.pktsOut": {
+              "value": 0
+            },
+            "clientside.slowKilled": {
+              "value": 0
+            },
+            "clientside.totConns": {
+              "value": 0
+            },
+            "cmpEnableMode": {
+              "description": "all-cpus"
+            },
+            "cmpEnabled": {
+              "description": "enabled"
+            },
+            "csMaxConnDur": {
+              "value": 0
+            },
+            "csMeanConnDur": {
+              "value": 0
+            },
+            "csMinConnDur": {
+              "value": 0
+            },
+            "destination": {
+              "description": "10.1.10.46:80"
+            },
+            "ephemeral.bitsIn": {
+              "value": 0
+            },
+            "ephemeral.bitsOut": {
+              "value": 0
+            },
+            "ephemeral.curConns": {
+              "value": 0
+            },
+            "ephemeral.evictedConns": {
+              "value": 0
+            },
+            "ephemeral.maxConns": {
+              "value": 0
+            },
+            "ephemeral.pktsIn": {
+              "value": 0
+            },
+            "ephemeral.pktsOut": {
+              "value": 0
+            },
+            "ephemeral.slowKilled": {
+              "value": 0
+            },
+            "ephemeral.totConns": {
+              "value": 0
+            },
+            "fiveMinAvgUsageRatio": {
+              "value": 0
+            },
+            "fiveSecAvgUsageRatio": {
+              "value": 0
+            },
+            "tmName": {
+              "description": "/DVWA/Application_1/serviceMain"
+            },
+            "oneMinAvgUsageRatio": {
+              "value": 0
+            },
+            "status.availabilityState": {
+              "description": "offline"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "The children pool member(s) are down"
+            },
+            "syncookieStatus": {
+              "description": "not-activated"
+            },
+            "syncookie.accepts": {
+              "value": 0
+            },
+            "syncookie.hwAccepts": {
+              "value": 0
+            },
+            "syncookie.hwSyncookies": {
+              "value": 0
+            },
+            "syncookie.hwsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.rejects": {
+              "value": 0
+            },
+            "syncookie.swsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.syncacheCurr": {
+              "value": 0
+            },
+            "syncookie.syncacheOver": {
+              "value": 0
+            },
+            "syncookie.syncookies": {
+              "value": 0
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "kind": "tm:ltm:virtual:virtualstats",
+    "generation": 1,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Monitor_Sample_01~Application_1~serviceMain/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/virtual/~Monitor_Sample_01~Application_1~serviceMain/~Monitor_Sample_01~Application_1~serviceMain/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:virtual:virtualstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Monitor_Sample_01~Application_1~serviceMain/~Monitor_Sample_01~Application_1~serviceMain/stats?ver=13.1.1",
+          "entries": {
+            "clientside.bitsIn": {
+              "value": 0
+            },
+            "clientside.bitsOut": {
+              "value": 0
+            },
+            "clientside.curConns": {
+              "value": 0
+            },
+            "clientside.evictedConns": {
+              "value": 0
+            },
+            "clientside.maxConns": {
+              "value": 0
+            },
+            "clientside.pktsIn": {
+              "value": 0
+            },
+            "clientside.pktsOut": {
+              "value": 0
+            },
+            "clientside.slowKilled": {
+              "value": 0
+            },
+            "clientside.totConns": {
+              "value": 0
+            },
+            "cmpEnableMode": {
+              "description": "all-cpus"
+            },
+            "cmpEnabled": {
+              "description": "enabled"
+            },
+            "csMaxConnDur": {
+              "value": 0
+            },
+            "csMeanConnDur": {
+              "value": 0
+            },
+            "csMinConnDur": {
+              "value": 0
+            },
+            "destination": {
+              "description": "10.1.10.40:80"
+            },
+            "ephemeral.bitsIn": {
+              "value": 0
+            },
+            "ephemeral.bitsOut": {
+              "value": 0
+            },
+            "ephemeral.curConns": {
+              "value": 0
+            },
+            "ephemeral.evictedConns": {
+              "value": 0
+            },
+            "ephemeral.maxConns": {
+              "value": 0
+            },
+            "ephemeral.pktsIn": {
+              "value": 0
+            },
+            "ephemeral.pktsOut": {
+              "value": 0
+            },
+            "ephemeral.slowKilled": {
+              "value": 0
+            },
+            "ephemeral.totConns": {
+              "value": 0
+            },
+            "fiveMinAvgUsageRatio": {
+              "value": 0
+            },
+            "fiveSecAvgUsageRatio": {
+              "value": 0
+            },
+            "tmName": {
+              "description": "/Monitor_Sample_01/Application_1/serviceMain"
+            },
+            "oneMinAvgUsageRatio": {
+              "value": 0
+            },
+            "status.availabilityState": {
+              "description": "offline"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "The children pool member(s) are down"
+            },
+            "syncookieStatus": {
+              "description": "not-activated"
+            },
+            "syncookie.accepts": {
+              "value": 0
+            },
+            "syncookie.hwAccepts": {
+              "value": 0
+            },
+            "syncookie.hwSyncookies": {
+              "value": 0
+            },
+            "syncookie.hwsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.rejects": {
+              "value": 0
+            },
+            "syncookie.swsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.syncacheCurr": {
+              "value": 0
+            },
+            "syncookie.syncacheOver": {
+              "value": 0
+            },
+            "syncookie.syncookies": {
+              "value": 0
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "kind": "tm:ltm:virtual:virtualstats",
+    "generation": 1,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~Application_1~serviceMain/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~Application_1~serviceMain/~Sample_01~Application_1~serviceMain/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:virtual:virtualstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~Application_1~serviceMain/~Sample_01~Application_1~serviceMain/stats?ver=13.1.1",
+          "entries": {
+            "clientside.bitsIn": {
+              "value": 0
+            },
+            "clientside.bitsOut": {
+              "value": 0
+            },
+            "clientside.curConns": {
+              "value": 0
+            },
+            "clientside.evictedConns": {
+              "value": 0
+            },
+            "clientside.maxConns": {
+              "value": 0
+            },
+            "clientside.pktsIn": {
+              "value": 0
+            },
+            "clientside.pktsOut": {
+              "value": 0
+            },
+            "clientside.slowKilled": {
+              "value": 0
+            },
+            "clientside.totConns": {
+              "value": 0
+            },
+            "cmpEnableMode": {
+              "description": "all-cpus"
+            },
+            "cmpEnabled": {
+              "description": "enabled"
+            },
+            "csMaxConnDur": {
+              "value": 0
+            },
+            "csMeanConnDur": {
+              "value": 0
+            },
+            "csMinConnDur": {
+              "value": 0
+            },
+            "destination": {
+              "description": "10.1.10.45:80"
+            },
+            "ephemeral.bitsIn": {
+              "value": 0
+            },
+            "ephemeral.bitsOut": {
+              "value": 0
+            },
+            "ephemeral.curConns": {
+              "value": 0
+            },
+            "ephemeral.evictedConns": {
+              "value": 0
+            },
+            "ephemeral.maxConns": {
+              "value": 0
+            },
+            "ephemeral.pktsIn": {
+              "value": 0
+            },
+            "ephemeral.pktsOut": {
+              "value": 0
+            },
+            "ephemeral.slowKilled": {
+              "value": 0
+            },
+            "ephemeral.totConns": {
+              "value": 0
+            },
+            "fiveMinAvgUsageRatio": {
+              "value": 0
+            },
+            "fiveSecAvgUsageRatio": {
+              "value": 0
+            },
+            "tmName": {
+              "description": "/Sample_01/Application_1/serviceMain"
+            },
+            "oneMinAvgUsageRatio": {
+              "value": 0
+            },
+            "status.availabilityState": {
+              "description": "offline"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "The children pool member(s) are down"
+            },
+            "syncookieStatus": {
+              "description": "not-activated"
+            },
+            "syncookie.accepts": {
+              "value": 0
+            },
+            "syncookie.hwAccepts": {
+              "value": 0
+            },
+            "syncookie.hwSyncookies": {
+              "value": 0
+            },
+            "syncookie.hwsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.rejects": {
+              "value": 0
+            },
+            "syncookie.swsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.syncacheCurr": {
+              "value": 0
+            },
+            "syncookie.syncacheOver": {
+              "value": 0
+            },
+            "syncookie.syncookies": {
+              "value": 0
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "kind": "tm:ltm:virtual:virtualstats",
+    "generation": 1,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~testapp.app~testapp_redir_vs/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~testapp.app~testapp_redir_vs/~Sample_01~testapp.app~testapp_redir_vs/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:virtual:virtualstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~testapp.app~testapp_redir_vs/~Sample_01~testapp.app~testapp_redir_vs/stats?ver=13.1.1",
+          "entries": {
+            "clientside.bitsIn": {
+              "value": 0
+            },
+            "clientside.bitsOut": {
+              "value": 0
+            },
+            "clientside.curConns": {
+              "value": 0
+            },
+            "clientside.evictedConns": {
+              "value": 0
+            },
+            "clientside.maxConns": {
+              "value": 0
+            },
+            "clientside.pktsIn": {
+              "value": 0
+            },
+            "clientside.pktsOut": {
+              "value": 0
+            },
+            "clientside.slowKilled": {
+              "value": 0
+            },
+            "clientside.totConns": {
+              "value": 0
+            },
+            "cmpEnableMode": {
+              "description": "all-cpus"
+            },
+            "cmpEnabled": {
+              "description": "enabled"
+            },
+            "csMaxConnDur": {
+              "value": 0
+            },
+            "csMeanConnDur": {
+              "value": 0
+            },
+            "csMinConnDur": {
+              "value": 0
+            },
+            "destination": {
+              "description": "10.1.10.101:80"
+            },
+            "ephemeral.bitsIn": {
+              "value": 0
+            },
+            "ephemeral.bitsOut": {
+              "value": 0
+            },
+            "ephemeral.curConns": {
+              "value": 0
+            },
+            "ephemeral.evictedConns": {
+              "value": 0
+            },
+            "ephemeral.maxConns": {
+              "value": 0
+            },
+            "ephemeral.pktsIn": {
+              "value": 0
+            },
+            "ephemeral.pktsOut": {
+              "value": 0
+            },
+            "ephemeral.slowKilled": {
+              "value": 0
+            },
+            "ephemeral.totConns": {
+              "value": 0
+            },
+            "fiveMinAvgUsageRatio": {
+              "value": 0
+            },
+            "fiveSecAvgUsageRatio": {
+              "value": 0
+            },
+            "tmName": {
+              "description": "/Sample_01/testapp.app/testapp_redir_vs"
+            },
+            "oneMinAvgUsageRatio": {
+              "value": 0
+            },
+            "status.availabilityState": {
+              "description": "unknown"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "The children pool member(s) either don't have service checking enabled, or service check results are not available yet"
+            },
+            "syncookieStatus": {
+              "description": "not-activated"
+            },
+            "syncookie.accepts": {
+              "value": 0
+            },
+            "syncookie.hwAccepts": {
+              "value": 0
+            },
+            "syncookie.hwSyncookies": {
+              "value": 0
+            },
+            "syncookie.hwsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.rejects": {
+              "value": 0
+            },
+            "syncookie.swsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.syncacheCurr": {
+              "value": 0
+            },
+            "syncookie.syncacheOver": {
+              "value": 0
+            },
+            "syncookie.syncookies": {
+              "value": 0
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "kind": "tm:ltm:virtual:virtualstats",
+    "generation": 1,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~testapp.app~testapp_vs/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~testapp.app~testapp_vs/~Sample_01~testapp.app~testapp_vs/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:virtual:virtualstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~testapp.app~testapp_vs/~Sample_01~testapp.app~testapp_vs/stats?ver=13.1.1",
+          "entries": {
+            "clientside.bitsIn": {
+              "value": 0
+            },
+            "clientside.bitsOut": {
+              "value": 0
+            },
+            "clientside.curConns": {
+              "value": 0
+            },
+            "clientside.evictedConns": {
+              "value": 0
+            },
+            "clientside.maxConns": {
+              "value": 0
+            },
+            "clientside.pktsIn": {
+              "value": 0
+            },
+            "clientside.pktsOut": {
+              "value": 0
+            },
+            "clientside.slowKilled": {
+              "value": 0
+            },
+            "clientside.totConns": {
+              "value": 0
+            },
+            "cmpEnableMode": {
+              "description": "all-cpus"
+            },
+            "cmpEnabled": {
+              "description": "enabled"
+            },
+            "csMaxConnDur": {
+              "value": 0
+            },
+            "csMeanConnDur": {
+              "value": 0
+            },
+            "csMinConnDur": {
+              "value": 0
+            },
+            "destination": {
+              "description": "10.1.10.101:443"
+            },
+            "ephemeral.bitsIn": {
+              "value": 0
+            },
+            "ephemeral.bitsOut": {
+              "value": 0
+            },
+            "ephemeral.curConns": {
+              "value": 0
+            },
+            "ephemeral.evictedConns": {
+              "value": 0
+            },
+            "ephemeral.maxConns": {
+              "value": 0
+            },
+            "ephemeral.pktsIn": {
+              "value": 0
+            },
+            "ephemeral.pktsOut": {
+              "value": 0
+            },
+            "ephemeral.slowKilled": {
+              "value": 0
+            },
+            "ephemeral.totConns": {
+              "value": 0
+            },
+            "fiveMinAvgUsageRatio": {
+              "value": 0
+            },
+            "fiveSecAvgUsageRatio": {
+              "value": 0
+            },
+            "tmName": {
+              "description": "/Sample_01/testapp.app/testapp_vs"
+            },
+            "oneMinAvgUsageRatio": {
+              "value": 0
+            },
+            "status.availabilityState": {
+              "description": "offline"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "The children pool member(s) are down"
+            },
+            "syncookieStatus": {
+              "description": "not-activated"
+            },
+            "syncookie.accepts": {
+              "value": 0
+            },
+            "syncookie.hwAccepts": {
+              "value": 0
+            },
+            "syncookie.hwSyncookies": {
+              "value": 0
+            },
+            "syncookie.hwsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.rejects": {
+              "value": 0
+            },
+            "syncookie.swsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.syncacheCurr": {
+              "value": 0
+            },
+            "syncookie.syncacheOver": {
+              "value": 0
+            },
+            "syncookie.syncookies": {
+              "value": 0
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "kind": "tm:ltm:virtual:virtualstats",
+    "generation": 1744,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_04~A1_01~serviceMain/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/virtual/~Sample_04~A1_01~serviceMain/~Sample_04~A1_01~serviceMain/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:virtual:virtualstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_04~A1_01~serviceMain/~Sample_04~A1_01~serviceMain/stats?ver=13.1.1",
+          "entries": {
+            "clientside.bitsIn": {
+              "value": 0
+            },
+            "clientside.bitsOut": {
+              "value": 0
+            },
+            "clientside.curConns": {
+              "value": 0
+            },
+            "clientside.evictedConns": {
+              "value": 0
+            },
+            "clientside.maxConns": {
+              "value": 0
+            },
+            "clientside.pktsIn": {
+              "value": 0
+            },
+            "clientside.pktsOut": {
+              "value": 0
+            },
+            "clientside.slowKilled": {
+              "value": 0
+            },
+            "clientside.totConns": {
+              "value": 0
+            },
+            "cmpEnableMode": {
+              "description": "all-cpus"
+            },
+            "cmpEnabled": {
+              "description": "enabled"
+            },
+            "csMaxConnDur": {
+              "value": 0
+            },
+            "csMeanConnDur": {
+              "value": 0
+            },
+            "csMinConnDur": {
+              "value": 0
+            },
+            "destination": {
+              "description": "10.0.2.13:443"
+            },
+            "ephemeral.bitsIn": {
+              "value": 0
+            },
+            "ephemeral.bitsOut": {
+              "value": 0
+            },
+            "ephemeral.curConns": {
+              "value": 0
+            },
+            "ephemeral.evictedConns": {
+              "value": 0
+            },
+            "ephemeral.maxConns": {
+              "value": 0
+            },
+            "ephemeral.pktsIn": {
+              "value": 0
+            },
+            "ephemeral.pktsOut": {
+              "value": 0
+            },
+            "ephemeral.slowKilled": {
+              "value": 0
+            },
+            "ephemeral.totConns": {
+              "value": 0
+            },
+            "fiveMinAvgUsageRatio": {
+              "value": 0
+            },
+            "fiveSecAvgUsageRatio": {
+              "value": 0
+            },
+            "tmName": {
+              "description": "/Sample_04/A1_01/serviceMain"
+            },
+            "oneMinAvgUsageRatio": {
+              "value": 0
+            },
+            "status.availabilityState": {
+              "description": "unknown"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "The children pool member(s) either don't have service checking enabled, or service check results are not available yet"
+            },
+            "syncookieStatus": {
+              "description": "not-activated"
+            },
+            "syncookie.accepts": {
+              "value": 0
+            },
+            "syncookie.hwAccepts": {
+              "value": 0
+            },
+            "syncookie.hwSyncookies": {
+              "value": 0
+            },
+            "syncookie.hwsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.rejects": {
+              "value": 0
+            },
+            "syncookie.swsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.syncacheCurr": {
+              "value": 0
+            },
+            "syncookie.syncacheOver": {
+              "value": 0
+            },
+            "syncookie.syncookies": {
+              "value": 0
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "kind": "tm:ltm:virtual:virtualstats",
+    "generation": 1744,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_04~A1_01~serviceMain-Redirect/stats?ver=13.1.1",
+    "entries": {
+      "https://localhost/mgmt/tm/ltm/virtual/~Sample_04~A1_01~serviceMain-Redirect/~Sample_04~A1_01~serviceMain-Redirect/stats": {
+        "nestedStats": {
+          "kind": "tm:ltm:virtual:virtualstats",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_04~A1_01~serviceMain-Redirect/~Sample_04~A1_01~serviceMain-Redirect/stats?ver=13.1.1",
+          "entries": {
+            "clientside.bitsIn": {
+              "value": 0
+            },
+            "clientside.bitsOut": {
+              "value": 0
+            },
+            "clientside.curConns": {
+              "value": 0
+            },
+            "clientside.evictedConns": {
+              "value": 0
+            },
+            "clientside.maxConns": {
+              "value": 0
+            },
+            "clientside.pktsIn": {
+              "value": 0
+            },
+            "clientside.pktsOut": {
+              "value": 0
+            },
+            "clientside.slowKilled": {
+              "value": 0
+            },
+            "clientside.totConns": {
+              "value": 0
+            },
+            "cmpEnableMode": {
+              "description": "all-cpus"
+            },
+            "cmpEnabled": {
+              "description": "enabled"
+            },
+            "csMaxConnDur": {
+              "value": 0
+            },
+            "csMeanConnDur": {
+              "value": 0
+            },
+            "csMinConnDur": {
+              "value": 0
+            },
+            "destination": {
+              "description": "10.0.2.13:80"
+            },
+            "ephemeral.bitsIn": {
+              "value": 0
+            },
+            "ephemeral.bitsOut": {
+              "value": 0
+            },
+            "ephemeral.curConns": {
+              "value": 0
+            },
+            "ephemeral.evictedConns": {
+              "value": 0
+            },
+            "ephemeral.maxConns": {
+              "value": 0
+            },
+            "ephemeral.pktsIn": {
+              "value": 0
+            },
+            "ephemeral.pktsOut": {
+              "value": 0
+            },
+            "ephemeral.slowKilled": {
+              "value": 0
+            },
+            "ephemeral.totConns": {
+              "value": 0
+            },
+            "fiveMinAvgUsageRatio": {
+              "value": 0
+            },
+            "fiveSecAvgUsageRatio": {
+              "value": 0
+            },
+            "tmName": {
+              "description": "/Sample_04/A1_01/serviceMain-Redirect"
+            },
+            "oneMinAvgUsageRatio": {
+              "value": 0
+            },
+            "status.availabilityState": {
+              "description": "unknown"
+            },
+            "status.enabledState": {
+              "description": "enabled"
+            },
+            "status.statusReason": {
+              "description": "The children pool member(s) either don't have service checking enabled, or service check results are not available yet"
+            },
+            "syncookieStatus": {
+              "description": "not-activated"
+            },
+            "syncookie.accepts": {
+              "value": 0
+            },
+            "syncookie.hwAccepts": {
+              "value": 0
+            },
+            "syncookie.hwSyncookies": {
+              "value": 0
+            },
+            "syncookie.hwsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.rejects": {
+              "value": 0
+            },
+            "syncookie.swsyncookieInstance": {
+              "value": 0
+            },
+            "syncookie.syncacheCurr": {
+              "value": 0
+            },
+            "syncookie.syncacheOver": {
+              "value": 0
+            },
+            "syncookie.syncookies": {
+              "value": 0
+            },
+            "totRequests": {
+              "value": 0
+            }
+          }
+        }
+      }
+    }
+  }
+]

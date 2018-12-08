@@ -186,3 +186,15 @@ Running on the F5 BIG-IP (physical or virtual), BigStats crawls the running conf
 ```
 
 Then, depending on the configuration, BigStats re-formats the object to match the desired destination (none/http/https/StatsD/Kafka) and sends the data.
+
+With BigStats you can insert your valuable BIG-IP data into your telemetry pipeline solutions, like this:
+
+![BigStats Architecture](BigStats_Arch.png)
+
+
+## CONTRIBUTING
+
+**Unit Tests**
+
+Unit tests for this project have been written in [Mocha](https://mochajs.org/) with support from [Sinon.JS](https://sinonjs.org/) and [ProxyQuire](https://github.com/thlorenz/proxyquire) for mocking and stubbing.
+Use `npm test` from the root directory of the project to run all unit tests.

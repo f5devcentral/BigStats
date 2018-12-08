@@ -8,33 +8,78 @@
 */
 
 'use strict';
+const logger = require('f5-logger');
+const handlebars = require('handlebars');
 
-class Util {
-  constructor (moduleName) {
-    this.moduleName = moduleName;
-  }
+var Util = {};
 
-  /**
-   * String formatting helper for log messages per module
-   * @param {*} message The message to log
-   */
-  formatLogMessage (message) {
-//    return `[${this.moduleName}] - ${message}`;
-    return `[${this.moduleName}] - ${message}`;
-  }
+Util.init = function (moduleName) {
+  this.moduleName = moduleName;
+  this.debugEnabled = false;
+  this.loggerInstance = logger.getInstance();
+};
 
-  /**
-   * Safely access object and property values without having to stack up safety checks for undefined values
-   * @param {*} func A function that encloses the value to check
-   * @param {*} fallbackValue A default value that is returned if any of the values in the object heirarchy are undefined
-   */
-  safeAccess (func, fallbackValue) {
-    try {
-      return func();
-    } catch (e) {
-      return fallbackValue;
-    }
+Util.debugEnabled = this.debugEnabled;
+
+/**
+ * Logging helper used to log info messages
+ * @param {*} message The info message to log
+ */
+Util.logInfo = function (message) {
+  this.loggerInstance.info(this.formatMessage(message));
+};
+
+/**
+ * Logging helper used to log debug messages
+ * @param {*} message The debug message to log
+ */
+Util.logDebug = function (message) {
+  this.loggerInstance.info(this.formatMessage(message, 'DEBUG'));
+};
+
+/**
+ * Logging helper used to log error messages
+ * @param {*} message The error message to log
+ */
+Util.logError = function (message) {
+  this.loggerInstance.info(this.formatMessage(message, 'ERROR'));
+};
+
+/**
+ * String formatting helper for log messages
+ * @param {*} message The message to format
+ */
+Util.formatMessage = function (message, classifier) {
+  classifier = typeof classifier !== 'undefined' ? ` - ${classifier}` : '';
+  return `[${this.moduleName}${classifier}] - ${message}`;
+};
+
+/**
+ * Safely access object and property values without having to stack up safety checks for undefined values
+ * @param {*} func A function that encloses the value to check
+ * @param {*} fallbackValue An optional default value that is returned if any of the values in the object heirarchy are undefined. If this parameter isn't supplied, undefined will be returned instead of a default fallback value.
+ */
+Util.safeAccess = function (func, fallbackValue) {
+  try {
+    var value = func();
+    return (value === null || value === undefined) ? fallbackValue : value;
+  } catch (e) {
+    return fallbackValue;
   }
-}
+};
+
+/**
+ * Format a string with an input template and JSON object of referenced values.
+ * @param {*} data A flat JSON object of named parameters to be used in template transformation
+ * @param {*} template A valid string that complies with the Handlebars templating standard
+ */
+Util.transformTemplateString = function (data, template) {
+  try {
+    let compiledTemplate = handlebars.compile(template);
+    return compiledTemplate(data);
+  } catch (err) {
+    this.logError(`Error while transforming template string`);
+  }
+};
 
 module.exports = Util;

@@ -6,3 +6,5 @@ BigStats_Arch.pptx
 modules.tgz
 ~$BigStats_Arch.pptx
 .gitignore
+coverage
+.nyc_output

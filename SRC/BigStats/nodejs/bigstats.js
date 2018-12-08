@@ -470,7 +470,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
                 }
               })
               .catch((err) => {
-                logger.info(`[BigStats - ERROR] buildSmallStatsObject(): ${JSON.stringify(err)}`);
+                logger.info(`[BigStats - ERROR] buildMediumStatsObject(): ${JSON.stringify(err)}`);
                 reject(err);
               });
           });
@@ -696,6 +696,94 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
         logger.info(`[BigStats - ERROR] getPoolMemberStats(): ${err}`);
         reject(err);
       });
+  });
+};
+
+/**
+ * Fetches SSL stats
+ *
+ * @returns {Promise} Promise Object representing individual pool member stats
+ */
+BigStats.prototype.getSslStats = function () {
+
+
+  this.getSslProfileList()
+  .then((sslProfileList) => {
+
+    return this.getSslProfileVipList(sslProfileList);
+    // /mgmt/tm/ltm/profile/client-ssl/~Tenant_03~App3~webtls/stats
+
+  });
+};
+
+/**
+ * Fetches SSL profile list
+ *
+ * @returns {Promise} Promise Object representing individual pool member stats
+ */
+BigStats.prototype.getSslProfileList = function () {
+  return new Promise((resolve, reject) => {
+
+    var uri = '/mgmt/tm/ltm/profile/ssl/client-ssl';
+    var url = this.restHelper.makeRestnodedUri(uri);
+    var restOp = this.createRestOperation(url);
+
+    this.restRequestSender.sendGet(restOp)
+    .then((resp) => {
+
+      logger.info('SSL profile list: '+resp.body.name);
+
+      let ssl_profile_names = [];
+
+      resp.body.items.foreach((name) => {
+        ssl_profile_names.push(name);
+      });
+      resolve(ssl_profile_names);
+    });
+
+
+    // req:
+    // /mgmt/tm/ltm/profile/ssl
+    //
+    // resp:
+    // items: [
+    //        "name": "http",
+    // ]
+    //
+    // /mgmt/tm/ltm/virtual/~Tenant_03~App3~serviceMain/profiles
+    //
+    resolve(sslProfileList);
+
+  });
+};
+
+/**
+ * Fetches VIP's that have SSL profiles list
+ *
+ * @returns {Promise} Promise Object representing individual pool member stats
+ */
+BigStats.prototype.getSslProfileVipList = function () {
+
+  // Called after getSslProfileList();
+
+};
+
+/**
+ * Fetches http profile list
+ *
+ * @returns {Promise} Promise Object representing individual pool member stats
+ */
+BigStats.prototype.getHttpProfileList = function () {
+  return new Promise((resolve, reject) => {
+
+    // /mgmt/tm/ltm/profile/http
+    // items: [
+    //        "name": "http",
+    //        "partition": "Common",
+    //        "fullPath": "/Common/http"
+    // ]
+    resolve(httpProfileList);
+
   });
 };
 

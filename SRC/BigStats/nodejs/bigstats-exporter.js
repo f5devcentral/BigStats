@@ -299,7 +299,7 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
             if (DEBUG === true) {
               logger.info('[BigStatsExporter - DEBUG] - exportStats() - kafka: topic: ' +safeTopic);
               logger.info('[BigStatsExporter - DEBUG] - exportStats() - kafka: message: ' +JSON.stringify(message));
-            }  
+            }
 
             producer.send(payload, function (err, resp) {
     

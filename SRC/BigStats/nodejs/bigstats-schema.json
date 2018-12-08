@@ -23,7 +23,9 @@
               "type": "string",
               "title": "The Protocol Schema",
               "description": "Protocol used to export statistics",
+              "default": "none",
               "enum": [
+                "none",
                 "http",
                 "https",
                 "statsd",

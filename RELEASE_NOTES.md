@@ -1,5 +1,14 @@
 # RELEASE NOTES
 
+## v0.5.0-release
+
+### Features
+
+* Added Support for scrapers/pollers through `GET /mgmt/shared/bigstats_exporter`
+* 
+
+---
+
 ## v0.4.1-release
 
 Bug fix release:

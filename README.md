@@ -4,7 +4,15 @@
 
 BigStats pushes BIG-IP telemetry to remote logging services/pipelines. It supports HTTP, HTTPS, StatsD, and Apache Kafka destinations.
 
+With BgStats you can insert your valuable BIG-IP stats into your telemetry pipeline solutions, like this:
+
+![BigStats Architecture](BigStats_Arch.png)
+
 Learn more about BigStats [here](https://REDtalks.live/BigStats) (videos and stuff)
+
+## REQUIREMENTS
+
+BIG-IP v13, or newer.
 
 ## INSTALL
 
@@ -14,7 +22,7 @@ You can find BigStats installation instructions here: [DOCS/BIGSTATS_INSTALL.md]
 
 Configuring BigStats is as simple as POSTing the appropriate settings to `/mgmt/shared/bigstats_settings`. It requires the following information:
 
-* **protocol:** [http|https|statsd|kafka]
+* **protocol:** [none|http|https|statsd|kafka]
 * **address** ip address or resolvable domain name
 * **port** destination port
 * **uri** [OPTIONAL] End-point to post data to. Can be blank. Used only for http or https destinations.
@@ -26,6 +34,7 @@ You can view the full BigStats Configuration Schema here, [bigstats-schema.json]
 
 Configure BigStats exporter for:
 
+* [Scrapers (no desintation)](DOCS/SETUP_SCRAPER-MODE.md)
 * [HTTP(S)](DOCS/SETUP_HTTP.md)
 * [StatsD](DOCS/SETUP_STATSD.md)
 * [Kafka](DOCS/SETUP_KAFKA.md)
@@ -146,28 +155,34 @@ Running on the F5 BIG-IP (physical or virtual), BigStats crawls the running conf
                 },
                 "device": {
                         "memory": {
-                                "memoryTotal": 7574732800,
-                                "memoryUsed": 1525312880
+                                "memoryTotal": 8063365120,
+                                "memoryUsed": 1509008040
                         },
                         "cpu0": {
-                                "cpuIdle": 161495459,
-                                "cpuIowait": 169763,
-                                "cpuSystem": 292088,
-                                "cpuUser": 973939
+                                "fiveSecAvgIdle": 99,
+                                "fiveSecAvgIowait": 0,
+                                "fiveSecAvgIrq": 0,
+                                "fiveSecAvgNiced": 0,
+                                "fiveSecAvgRatio": 1,
+                                "fiveSecAvgSoftirq": 0,
+                                "fiveSecAvgStolen": 0,
+                                "fiveSecAvgSystem": 0,
+                                "fiveSecAvgUser": 0
                         },
                         "cpu1": {
-                                "cpuIdle": 160343033,
-                                "cpuIowait": 68690,
-                                "cpuSystem": 426881,
-                                "cpuUser": 992052
-                        }
+                                "fiveSecAvgIdle": 99,
+                                "fiveSecAvgIowait": 0,
+                                "fiveSecAvgIrq": 0,
+                                "fiveSecAvgNiced": 0,
+                                "fiveSecAvgRatio": 1,
+                                "fiveSecAvgSoftirq": 0,
+                                "fiveSecAvgStolen": 0,
+                                "fiveSecAvgSystem": 0,
+                                "fiveSecAvgUser": 0
+                    }
                 }
         }
 }
 ```
 
-Then, depending on the configuration, BigStats re-formats the object to match the desired destination (http/https/StatsD/Kafka) and sends the data.
-
-With BgStats you can insert your valuable BIG-IP data into your telemetry pipeline solutions, like this:
-
-![BigStats Architecture](BigStats_Arch.png)
+Then, depending on the configuration, BigStats re-formats the object to match the desired destination (none/http/https/StatsD/Kafka) and sends the data.

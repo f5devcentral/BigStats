@@ -1,3 +1,8 @@
-
 .DS_Store
 node_modules
+SRC/rpmbuild.spec
+BigStats-300dpi_white_bg.png
+BigStats_Arch.pptx
+modules.tgz
+~$BigStats_Arch.pptx
+.gitignore

@@ -1,6 +1,6 @@
 {
   "name": "bigstats",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Push BIG-IP stats to remote logging services. Supports http, https, statsd, and Apache Kafka destinations.",
   "main": "bigstats.js",
   "scripts": {

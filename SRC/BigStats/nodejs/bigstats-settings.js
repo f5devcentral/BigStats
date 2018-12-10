@@ -73,7 +73,7 @@ BigStatsSettings.prototype.getHostVersion = function () {
 BigStatsSettings.prototype.onPost = function (restOperation) {
   let input = restOperation.getBody();
   let newState = this.validateConfiguration(input);
-  if (newState) {
+  if (newState) {    // HANDLE !input   - you are calling validate.
     this.state = newState;
     util.logInfo('Settings updated.');
     restOperation.setBody(this.state);
@@ -93,25 +93,20 @@ BigStatsSettings.prototype.onPost = function (restOperation) {
  */
 BigStatsSettings.prototype.validateConfiguration = function (input) {
   let jsonInput = this.isJson(input);
-  if (jsonInput && typeof jsonInput.config !== 'undefined') {
-    // Validate the input against the schema
-    let ajv = new Ajv({ jsonPointers: true, allErrors: false, verbose: true, useDefaults: true });
-    let validate = ajv.compile(BigStatsSettingsSchema);
-    let valid = validate(jsonInput);
-    if (valid === false) {
-      const error = util.safeAccess(() => validate.errors[0].message, '');
-      if (error !== '') {
-        util.logError(`Validation error: ${this.translateAjvError(validate.errors[0])}`);
-      } else {
-        util.logError('Unknown validation error.');
-      }
-      return false;
+  // Validate the input against the schema
+  let ajv = new Ajv({ jsonPointers: true, allErrors: false, verbose: true, useDefaults: true });
+  let validate = ajv.compile(BigStatsSettingsSchema);
+  let valid = validate(jsonInput);
+  if (valid === false) {
+    const error = util.safeAccess(() => validate.errors[0].message, '');
+    if (error !== '') {
+      util.logError(`Validation error: ${this.translateAjvError(validate.errors[0])}`);
+    } else {
+      util.logError('Unknown validation error.');
     }
-    return jsonInput;
-  } else {
-    // isJson() returned false. Is ths even valid JSON??
     return false;
   }
+  return jsonInput;
 };
 
 /**

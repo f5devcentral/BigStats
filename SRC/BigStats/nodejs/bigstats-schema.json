@@ -1,21 +1,63 @@
 {
   "$id": "https://github.com/f5devcentral/BigStats",
   "type": "object",
+  "default": { "config": {} },
+  "required": [
+    "config"
+  ],
+  "if": {
+    "properties": {
+      "config": { 
+        "properties": {
+          "destination": { 
+            "properties": {
+              "protocol": { 
+                "enum": [ 
+                  "http",
+                  "https",
+                  "statsd",
+                  "kafka"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "config": { 
+        "properties": {
+          "destination": { 
+            "required": [
+              "address",
+              "port"
+            ]
+          }
+        }
+      }
+    }
+  },
   "properties": {
     "config": {
       "$id": "/properties/config",
       "type": "object",
+      "default": { "destination": {} },
       "required": [
-        "destination"
+        "destination",
+        "size",
+        "interval",
+        "enabled",
+        "debug"
       ],
       "properties": {
         "destination": {
           "$id": "/properties/config/properties/destination",
           "type": "object",
+          "default": { "protocol": "poll" },
           "required": [
-            "protocol",
-            "address",
-            "port"
+            "protocol"
           ],
           "properties": {
             "protocol": {
@@ -23,40 +65,20 @@
               "type": "string",
               "title": "The Protocol Schema",
               "description": "Protocol used to export statistics",
-              "default": "none",
+              "default": "poll",
               "enum": [
-                "none",
+                "poll",
                 "http",
                 "https",
                 "statsd",
                 "kafka"
               ]
-            },
+            },     
             "messageTemplate": {
               "$id": "/properties/config/properties/destination/properties/messageTemplate",
               "type": "string",
               "title": "The string formatting template",
               "description": "Specifies the formatting of the exported message using Handlebars templating syntax"
-            },
-            "kafka": {
-              "$id": "/properties/config/properties/destination/properties/kafka",
-              "type": "object",
-              "required": [
-                "topic"
-              ],
-              "properties": {
-                "topic": {
-                  "$id": "/properties/config/properties/destination/properties/kafka/properties/topic",
-                  "type": "string",
-                  "title": "The Kafka Topic Schema",
-                  "description": "Specifies what data constitutes a Kafka Topic",
-                  "default": "all",
-                  "enum": [
-                    "all",
-                    "partition"
-                  ]
-                }
-              }
             },
             "address": {
               "$id": "/properties/config/properties/destination/properties/address",
@@ -86,25 +108,30 @@
               "$id": "/properties/config/properties/destination/properties/uri",
               "type": "string",
               "title": "The Uri Schema ",
-              "default": "/",
               "examples": [
                 "/stats"
               ]
-            }
-          },
-          "if": {
-            "properties": {
-              "protocol": {
-                "enum": [
-                  "kafka"
-                ]
+            },
+            "kafka": {
+              "$id": "/properties/config/properties/destination/properties/kafka",
+              "type": "object",
+              "required": [
+                "topic"
+              ],
+              "properties": {
+                "topic": {
+                  "$id": "/properties/config/properties/destination/properties/kafka/properties/topic",
+                  "type": "string",
+                  "title": "The Kafka Topic Schema",
+                  "description": "Specifies what data constitutes a Kafka Topic",
+                  "default": "all",
+                  "enum": [
+                    "all",
+                    "partition"
+                  ]
+                }
               }
-            }
-          },
-          "then": {
-            "required": [
-              "kafka"
-            ]
+            } 
           }
         },
         "interval": {

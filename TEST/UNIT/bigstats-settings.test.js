@@ -115,25 +115,13 @@ describe('BigStatsSettings', function () {
       settings.validateConfiguration(json).should.be.equal(false);
     });
 
-    it('should use default values if not provided', function () {
-      let json = {
-        'config': {
-          'destination': {
-            'protocol': 'http',
-            'address': '192.168.1.42',
-            'port': 8080,
-            'uri': '/stats'
-          }
-        }
-      };
+    it('should use default config values if not provided', function () {
+      let json = {};
 
       let expectedJson = {
         'config': {
           'destination': {
-            'protocol': 'http',
-            'address': '192.168.1.42',
-            'port': 8080,
-            'uri': '/stats'
+            'protocol': 'poll'
           },
           'size': 'small',
           'interval': 10,
@@ -143,39 +131,6 @@ describe('BigStatsSettings', function () {
       };
 
       settings.validateConfiguration(json).should.be.deep.equal(expectedJson);
-    });
-
-    it('should fail validation if the destination object is missing', function () {
-      let json = {
-        'config': {
-          'size': 'small',
-          'interval': 10,
-          'enabled': true,
-          'debug': false
-        }
-      };
-
-      settings.validateConfiguration(json).should.be.equal(false);
-      sinon.assert.calledWith(utilStub.logError, `${defaultValidationHeader} /config should have required property 'destination'`);
-    });
-
-    it('should fail validation if the protocol property is missing', function () {
-      let json = {
-        'config': {
-          'destination': {
-            'address': '192.168.1.42',
-            'port': 8080,
-            'uri': '/stats'
-          },
-          'size': 'small',
-          'interval': 10,
-          'enabled': true,
-          'debug': false
-        }
-      };
-
-      settings.validateConfiguration(json).should.be.equal(false);
-      sinon.assert.calledWith(utilStub.logError, `${defaultValidationHeader} /config/destination should have required property 'protocol'`);
     });
 
     it('should fail validation if the protocol property is not set to an expected value', function () {
@@ -195,7 +150,7 @@ describe('BigStatsSettings', function () {
       };
 
       settings.validateConfiguration(json).should.be.equal(false);
-      sinon.assert.calledWith(utilStub.logError, `${defaultValidationHeader} /config/destination/protocol should be equal to one of the allowed values. Specified value: blah (allowed value(s) are http,https,statsd,kafka`);
+      sinon.assert.calledWith(utilStub.logError, `${defaultValidationHeader} /config/destination/protocol should be equal to one of the allowed values. Specified value: blah (allowed value(s) are poll,http,https,statsd,kafka`);
     });
 
     it('should fail validation if the messageTemplate property is set to an incorrect type', function () {
@@ -242,7 +197,7 @@ describe('BigStatsSettings', function () {
       sinon.assert.calledWith(utilStub.logError, `${defaultValidationHeader} /config/destination/kafka/topic should be equal to one of the allowed values. Specified value: bob (allowed value(s) are all,partition`);
     });
 
-    it('should fail validation if the address property is missing', function () {
+    it('should fail validation if the protocol property is not set to poll, and the address property is missing', function () {
       let json = {
         'config': {
           'destination': {
@@ -281,7 +236,7 @@ describe('BigStatsSettings', function () {
       sinon.assert.calledWith(utilStub.logError, `${defaultValidationHeader} /config/destination/address should match format "ipv4"`);
     });
 
-    it('should fail validation if the port property is missing', function () {
+    it('should fail validation if the protocol property is not set to poll, and the port property is missing', function () {
       let json = {
         'config': {
           'destination': {

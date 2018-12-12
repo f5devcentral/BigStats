@@ -278,8 +278,7 @@ BigStats.prototype.pullStats = function () {
         case 'medium':
           return this.buildMediumStatsObject(vipResourceList);
         case 'large':
-          util.logError('pullStats() - largeStats not yet implemented');
-          break;
+          return this.buildLargeStatsObject(vipResourceList);
         default:
           return this.buildSmallStatsObject(vipResourceList);
       }
@@ -287,9 +286,10 @@ BigStats.prototype.pullStats = function () {
     .then(() => {
       // Ready the stats for export - Apply stats prefix: 'hostname.services.stats'
       let statsExpObj = {
-        [this.config.hostname]: {
-          services: this.stats.services,
-          device: this.stats.device
+        device: {
+          id: this.config.hostname,
+          tenants: [this.stats.device.tenants],
+          global: this.stats.device.global
         }
       };
 
@@ -309,6 +309,8 @@ BigStats.prototype.pullStats = function () {
 *
 */
 BigStats.prototype.getDeviceStats = function () {
+  this.stats.device = {};
+
   return new Promise((resolve, reject) => {
     var path = '/mgmt/tm/sys/hostInfo/';
     var uri = this.restHelper.makeRestnodedUri(path);
@@ -318,16 +320,20 @@ BigStats.prototype.getDeviceStats = function () {
       .then((resp) => {
         util.logDebug(`getDeviceStats() - resp.statusCode: ${JSON.stringify(resp.statusCode)}`);
 
-        this.stats.device = {
+        this.stats.device.global = {
           memory: {
             memoryTotal: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries.memoryTotal.value,
             memoryUsed: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries.memoryUsed.value
           }
         };
 
+        this.stats.device.global.cpu = [];
+
         // Iterate through the BIG-IP CPU's
         Object.keys(resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries).map((cpu) => {
-          let cpuStats = {
+          let cpuId = `cpu${resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.cpuId.value}`;
+          this.stats.device.global.cpu.push({
+            id: cpuId,
             fiveSecAvgIdle: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgIdle.value,
             fiveSecAvgIowait: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgIowait.value,
             fiveSecAvgIrq: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgIrq.value,
@@ -337,12 +343,7 @@ BigStats.prototype.getDeviceStats = function () {
             fiveSecAvgStolen: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgStolen.value,
             fiveSecAvgSystem: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgSystem.value,
             fiveSecAvgUser: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgUser.value
-          };
-
-          let cpuId = resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.cpuId.value;
-
-          let cpuNum = 'cpu' + cpuId;
-          this.stats.device[cpuNum] = cpuStats;
+          });
         });
 
         resolve();
@@ -365,7 +366,7 @@ BigStats.prototype.getDeviceStats = function () {
 */
 BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
   // Initialize services object
-  this.stats.services = {};
+  this.stats.device.tenants = [];
 
   return new Promise((resolve, reject) => {
     // Fetch list of deployed services
@@ -384,13 +385,20 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
             servicePath = element.partition;
           }
 
-          // Initialize object on first run
-          if (typeof this.stats.services[servicePath] === 'undefined') {
-            this.stats.services[servicePath] = {};
-          }
+          // Check if a tenant entry for this VIP already exists 
+          const exists = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
 
-          // Build JavaScript object of stats for each service
-          this.stats.services[servicePath][element.destination] = values;
+          if (exists === -1) {  //FIXME: this is not working........
+            // Tenant doesn't exist, push to array
+            this.stats.device.tenants.push({
+              id: servicePath,
+              services: [values]
+            });  
+          }
+          else {
+            // Tenant does exist, splice into Tenant array entry
+            this.stats.device.tenants[exists].services.splice(exists, 0, values); 
+          }
 
           util.logDebug(`buildSmallStatsObject() - Processing: ${index} of: ${(vipResourceList.items.length - 1)}`);
 
@@ -488,7 +496,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
   // Not yet implemented
   util.logDebug(`buildLargeStatsObject() with vipResourceList: ${vipResourceList}`);
-  util.logInfo('buildLargeStatsObject() is not yet implemented.');
+
 };
 
 /**
@@ -558,6 +566,7 @@ BigStats.prototype.getVipStats = function (vipResource) {
         }
 
         let vipResourceStats = {
+          id: vipResource.destination,
           clientside_curConns: resp.body.entries[entryUrl].nestedStats.entries['clientside.curConns'].value,
           clientside_maxConns: resp.body.entries[entryUrl].nestedStats.entries['clientside.maxConns'].value,
           clientside_bitsIn: resp.body.entries[entryUrl].nestedStats.entries['clientside.bitsIn'].value,
@@ -686,6 +695,7 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
       });
   });
 };
+
 
 /**
  * Push the stats object to the desired destinations

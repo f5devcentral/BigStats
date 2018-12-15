@@ -288,7 +288,7 @@ BigStats.prototype.pullStats = function () {
       let statsExpObj = {
         device: {
           id: this.config.hostname,
-          tenants: [this.stats.device.tenants],
+          tenants: this.stats.device.tenants,
           global: this.stats.device.global
         }
       };
@@ -327,12 +327,12 @@ BigStats.prototype.getDeviceStats = function () {
           }
         };
 
-        this.stats.device.global.cpu = [];
+        this.stats.device.global.cpus = [];
 
         // Iterate through the BIG-IP CPU's
         Object.keys(resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries).map((cpu) => {
           let cpuId = `cpu${resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.cpuId.value}`;
-          this.stats.device.global.cpu.push({
+          this.stats.device.global.cpus.push({
             id: cpuId,
             fiveSecAvgIdle: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgIdle.value,
             fiveSecAvgIowait: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgIowait.value,
@@ -386,9 +386,9 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
           }
 
           // Check if a tenant entry for this VIP already exists 
-          const exists = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
+          const tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
 
-          if (exists === -1) {  //FIXME: this is not working........
+          if (tenantIndex === -1) {
             // Tenant doesn't exist, push to array
             this.stats.device.tenants.push({
               id: servicePath,
@@ -397,7 +397,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
           }
           else {
             // Tenant does exist, splice into Tenant array entry
-            this.stats.device.tenants[exists].services.splice(exists, 0, values); 
+            this.stats.device.tenants[tenantIndex].services.splice(tenantIndex, 0, values); 
           }
 
           util.logDebug(`buildSmallStatsObject() - Processing: ${index} of: ${(vipResourceList.items.length - 1)}`);
@@ -426,7 +426,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
 */
 BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
   // Initialize services object
-  this.stats.services = {};
+  this.stats.device.tenants = [];
 
   return new Promise((resolve, reject) => {
     // Fetch stats from each resource, based on config.size
@@ -434,7 +434,6 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
       Promise.all([this.getVipStats(vipResource), this.getPoolResourceList(vipResource)])
         .then((values) => {
           var servicePath;
-
           // Check if subPath is un use.
           if ('subPath' in vipResource) {
             // Merge 'tenant' name and 'subPath' name as '/' delimited string.
@@ -444,20 +443,38 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
             servicePath = vipResource.partition;
           }
 
-          // Initialize object on first run
-          if (typeof this.stats.services[servicePath] === 'undefined') {
-            this.stats.services[servicePath] = {};
-          }
-
-          // Adding VIP data to the 'medium' stats object
-          this.stats.services[servicePath][vipResource.destination] = values[0];
-          this.stats.services[servicePath][vipResource.destination][vipResource.pool] = [];
+          util.logDebug(`buildMediumStatsObject() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
 
           values[1].map((poolMemberResource, poolMemberResourceIndex) => {
             this.getPoolMemberStats(poolMemberResource)
               .then((stats) => {
                 // Adding Pool data to the 'medium' stats object
-                this.stats.services[servicePath][vipResource.destination][vipResource.pool].push(stats);
+                util.logDebug(`getPoolMemberStats(poolMemberResource).(stats): ${JSON.stringify(stats)}`);
+                const tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
+                // Check if a tenant entry for this VIP already exists 
+                if ((this.stats.device.tenants.length === 0) || (tenantIndex === -1)) {
+                  util.logDebug(`this.stats.device.tenants.length: ${this.stats.device.tenants.length}\ntenantIndex: ${tenantIndex}`);
+                  // Tenant doesn't exist, push to array
+                  this.stats.device.tenants.push({
+                    id: servicePath,
+                    services: [values[0]]
+                  });
+
+                }
+                else {
+                  const serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+                  if (typeof this.stats.device.tenants[tenantIndex].services[serviceIndex].pool === 'undefined') {
+                    this.stats.device.tenants[tenantIndex].services[serviceIndex].pool = {};
+                    this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
+                    this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members = [];
+                  }
+
+                  this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members.push(stats);
+
+                  // Tenant does exist, check if service exists
+                  util.logDebug(`tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}`);
+
+                }
 
                 if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
                   util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
@@ -676,8 +693,8 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
           serverStatus = 0;
         }
 
-        let poolMemberStats = {};
-        poolMemberStats[poolMemberResource.name] = {
+        let poolMemberStats = {
+          id: poolMemberResource.name,
           serverside_curConns: resp.body.entries[entryUrl].nestedStats.entries['serverside.curConns'].value,
           serverside_maxConns: resp.body.entries[entryUrl].nestedStats.entries['serverside.maxConns'].value,
           serverside_bitsIn: resp.body.entries[entryUrl].nestedStats.entries['serverside.bitsIn'].value,
@@ -695,7 +712,6 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
       });
   });
 };
-
 
 /**
  * Push the stats object to the desired destinations

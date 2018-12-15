@@ -251,7 +251,7 @@ BigStatsExporter.prototype.kafkaExporter = function (data) {
 
           producer.send(payload, function (err, resp) {
             util.logDebug(`Kafka producer response: ${JSON.stringify(resp)}`);
-            if (err) { util.logError(`Kafka producer response: ${err}`); };
+            if (err) { util.logError(`Kafka producer response: ${err}`); }
           });
         } else { // Iterate through 'services' building service messages and sending.
           Object.keys(stats[level1]).map((level2) => {

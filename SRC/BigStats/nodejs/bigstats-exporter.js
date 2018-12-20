@@ -127,29 +127,80 @@ BigStatsExporter.prototype.httpExporter = function (data) {
  */
 BigStatsExporter.prototype.statsdExporter = function (data) {
   var sdc = new StatsD(data.config.destination.address, data.config.destination.port);
-  var servicesData = data.stats[data.config.hostname].services;
-  var deviceData = data.stats[data.config.hostname].device;
+  var servicesData = data.stats.device.tenants;
+  var deviceData = data.stats.device.global;
 
-  // Export device data
-  Object.keys(deviceData).map((level1) => {
-    util.logDebug(`exportStats() - statsd: Device Metric Category: ${level1}`);
+  // Export device memory data
+  Object.keys(deviceData.memory).map((metric) => {
+    util.logDebug(`exportStats() - statsd: Device Memory Topic: ${metric}`);
+    let namespace = `device.${data.config.hostname}.global.memory.${metric}`;
+    let value = deviceData.memory[metric];
+    util.logDebug(`exportStats() - statsd - Device Memory Metric: ${namespace} value: ${value}`);
+    sdc.gauge(namespace, value);
+  });
 
-    Object.keys(deviceData[level1]).map((level2) => {
-      util.logDebug(`exportStats() - statsd: Device Metric Sub-Category: ${level1}.${level2}`);
-
-      let namespace = `${data.config.hostname}.device.${level1}.${level2}`;
-      let value = deviceData[level1][level2];
-
-      util.logDebug(`exportStats() - statsd - Device Sub-Category Stats: ${namespace} value: ${value}`);
-      sdc.gauge(namespace, value);
+  // Export device cpu data
+  Object.keys(deviceData.cpus).map((cpuIdx) => {
+    util.logDebug(`exportStats() - statsd: CPU: ${cpuIdx}`);
+      Object.keys(deviceData.cpus[cpuIdx]).map((metric) => {
+        if (metric !== 'id') {
+          let namespace = `device.${data.config.hostname}.global.cpus.${deviceData.cpus[cpuIdx].id}.${metric}`;
+          let value = deviceData.cpus[cpuIdx][metric];
+          util.logDebug(`exportStats() - statsd - Device CPU Metric: ${namespace} value: ${value}`);
+          sdc.gauge(namespace, value);    
+        }
     });
   });
 
   // Export services data
-  Object.keys(servicesData).map((level1) => {
-    var l1 = this.replaceDotsSlashesColons(level1);
+  Object.keys(servicesData).map((tenantIdx) => {
+    util.logDebug(`exportStats() - Tenant Index: ${tenantIdx}, Tenant Id: ${servicesData[tenantIdx].id}`);
+    Object.keys(servicesData[tenantIdx].services).map((serviceIdx) => {
+      let tenantId = this.replaceDotsSlashesColons(servicesData[tenantIdx].id);
+      let serviceId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].id);
+      util.logDebug(`exportStats() - Service Index: ${serviceIdx}, Service Id: ${servicesData[tenantIdx].services[serviceIdx].id}`);
+      Object.keys(servicesData[tenantIdx].services[serviceIdx]).map((metric) => {
+        if (metric !== 'id' && metric !== 'pool' && metric !== 'ssl') {
+          util.logDebug(`exportStats() - statsd: Service: ${servicesData[tenantIdx].services[serviceIdx].id} - ${metric} = ${servicesData[tenantIdx].services[serviceIdx][metric]}`);
+          let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.${metric}`;
+          let value = servicesData[tenantIdx].services[serviceIdx][metric];
+          util.logDebug(`exportStats() - statsd - Service '${servicesData[tenantIdx].id}' Metric: ${namespace} value: ${value}`);
+          sdc.gauge(namespace, value);              
+        }
+        else if (metric === 'pool') {
+          util.logDebug(`servicesData[tenantIdx].services[serviceIdx].pool.id: ${servicesData[tenantIdx].services[serviceIdx].pool.id}`);
+          Object.keys(servicesData[tenantIdx].services[serviceIdx].pool.members).map((memberIdx) => {
+            Object.keys(servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx]).map((metric) => {
+              if (metric !== 'id') {
+                let poolId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].pool.id);
+                let poolMemberId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx].id);
+                util.logDebug(`pool member: ${poolMemberId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric]}`);
+                let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.pool.${poolId}.members.${poolMemberId}.${metric}`;
+                let value = servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric];
+                sdc.gauge(namespace, value);    
 
-    util.logDebug(`exportStats() - statsd: Administrative Partition: ${l1}`);
+              }
+            });
+          });
+        }
+        else if (metric === 'ssl') {
+          util.logDebug(`servicesData[tenantIdx].services[serviceIdx].ssl.id: ${servicesData[tenantIdx].services[serviceIdx].ssl.id}`);
+          Object.keys(servicesData[tenantIdx].services[serviceIdx].ssl).map((metric) => {
+            if (metric !== 'id') {
+              let sslId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].ssl.id);
+              util.logDebug(`ssl metric: ${sslId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].ssl[metric]}`);
+              let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.ssl.${sslId}.${metric}`;
+              let value = servicesData[tenantIdx].services[serviceIdx].ssl[metric];      
+              sdc.gauge(namespace, value);    
+            }
+          });
+        }
+      });
+    });
+  });
+
+/*
+    var l1 = this.replaceDotsSlashesColons(level1);
 
     Object.keys(servicesData[level1]).map((level2) => {
       var l2 = this.replaceDotsSlashesColons(level2);
@@ -190,6 +241,7 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
       });
     });
   });
+  */
 };
 
 /**

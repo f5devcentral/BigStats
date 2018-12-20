@@ -433,7 +433,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
     vipResourceList.items.map((vipResource, vipResourceListIndex) => {
       this.getVipStats(vipResource)
         .then((results) => {
-          var servicePath;
+          let servicePath;
           var tenantIndex;
           var serviceIndex;
           // Check if subPath is un use.
@@ -464,23 +464,25 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
             if (serviceIndex === -1) {
               // Service does not exist, creating.
               this.stats.device.tenants[tenantIndex].services.push(results);
+              serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
             }
           }
           util.logDebug(`this.stats.device.tenants.length: ${this.stats.device.tenants.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, this.stats.device.tenants[tenantIndex]: ${JSON.stringify(this.stats.device.tenants[tenantIndex])}`);
 
           // Verify VIP has a pool attached
           if (typeof vipResource.poolReference !== 'undefined') {
+            // initialize objects on first run
+            if (typeof this.stats.device.tenants[tenantIndex].services[serviceIndex].pool === 'undefined') {
+              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool = {};
+              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
+              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members = [];
+            }
+            
             this.getPoolResourceList(vipResource)
             .then((poolResourceList) => {
               poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
                 this.getPoolMemberStats(poolMemberResource)
                   .then((stats) => {
-                    // initialize objects on first run
-                    if (typeof this.stats.device.tenants[tenantIndex].services[serviceIndex].pool === 'undefined') {
-                      this.stats.device.tenants[tenantIndex].services[serviceIndex].pool = {};
-                      this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
-                      this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members = [];
-                    }
                     this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members.push(stats);
 
                     if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
@@ -488,7 +490,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
                       util.logDebug(`getPoolMemberStats() - Processing: ${poolMemberResourceIndex} of: ${(poolResourceList.length - 1)}`);
 
                       if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
-                        util.logDebug(`Processed BOTH VIP & POOL ARRAYs: this.stats: ${JSON.stringify(this.stats, '', '\t')}`);
+                        util.logDebug('VIP & POOL ARRAYs Complete');
                         resolve();
                       }
                     }
@@ -523,20 +525,15 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
   // Initialize services object
   this.stats.device.tenants = [];
-  var lastVIP = false;
-  var lastPoolMember = false;
 
   return new Promise((resolve, reject) => {
     // Fetch stats from each resource, based on config.size
     vipResourceList.items.map((vipResource, vipResourceListIndex) => {
-      Promise.all([this.getVipStats(vipResource), this.getPoolResourceList(vipResource), this.getSslStats(vipResource)])
-        .then((values) => {
-
-          util.logDebug(`\n\nvalues[0]: ${JSON.stringify(values[0])}\ntypeof values[0]: ${typeof values[0]}\n`);
-          util.logDebug(`\n\nvalues[1]: ${JSON.stringify(values[1])}\ntypeof values[1]: ${typeof values[1]}\n`);
-          util.logDebug(`\n\nvalues[2]: ${JSON.stringify(values[2])}\ntypeof values[2]: ${typeof values[2]}\n`);
-
-          var servicePath;
+      this.getVipStats(vipResource)
+        .then((results) => {
+          let servicePath;
+          var tenantIndex;
+          var serviceIndex;
           // Check if subPath is un use.
           if ('subPath' in vipResource) {
             // Merge 'tenant' name and 'subPath' name as '/' delimited string.
@@ -545,58 +542,71 @@ BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
             // 'subPath' is NOT used, use 'tenant' name on its own.
             servicePath = vipResource.partition;
           }
+          util.logDebug(`buildlargeStatsObject() - Processing VIP: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
 
-          util.logDebug(`pushing vipResource: ${JSON.stringify(values[0], '', '\t')}`);
+          // Check if the tenant and service entries exist 
+          tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
+          if (tenantIndex === -1) {
+            // Tenant & Service don't exist, creating.
+            this.stats.device.tenants.push({
+              id: servicePath,
+              services: [results]
+            });
+            // Update tenantIndex & serviceIndex for newly created objects.
+            tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
+            serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+          }
+          else {
+            // Tenant exists, check if service exists 
+            serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+            if (serviceIndex === -1) {
+              // Service does not exist, creating.
+              this.stats.device.tenants[tenantIndex].services.push(results);
+              serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+            }
+          }
+          util.logDebug(`this.stats.device.tenants.length: ${this.stats.device.tenants.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, this.stats.device.tenants[tenantIndex]: ${JSON.stringify(this.stats.device.tenants[tenantIndex])}`);
 
-          this.stats.device.tenants.push({
-            id: servicePath,
-            services: [values[0]]             
+          this.getSslStats(vipResource)
+          .then((sslStats) => {
+            if (Object.keys(sslStats).length !== 0) {
+              this.stats.device.tenants[tenantIndex].services[serviceIndex].ssl = sslStats;
+            }
           });
 
-          var tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
-          var serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
-          util.logDebug(`tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}`);
-          this.stats.device.tenants[tenantIndex].services[serviceIndex].ssl = values[2];
+          // Verify VIP has a pool attached
+          if (typeof vipResource.poolReference !== 'undefined') {
+            // initialize objects on first run
+            if (typeof this.stats.device.tenants[tenantIndex].services[serviceIndex].pool === 'undefined') {
+              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool = {};
+              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
+              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members = [];
+            }
+            
+            this.getPoolResourceList(vipResource)
+            .then((poolResourceList) => {
+              poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
+                this.getPoolMemberStats(poolMemberResource)
+                  .then((stats) => {
+                    this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members.push(stats);
 
-          if (typeof this.stats.device.tenants[tenantIndex].services[serviceIndex].pool === 'undefined') {
-            this.stats.device.tenants[tenantIndex].services[serviceIndex].pool = {};
-            this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
-            this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members = [];
-          }
-          util.logDebug(`1. ######### JSON.stringify(this.stats.device.tenants): ${JSON.stringify(this.stats.device.tenants)}`);
+                    if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
+                      util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
+                      util.logDebug(`getPoolMemberStats() - Processing: ${poolMemberResourceIndex} of: ${(poolResourceList.length - 1)}`);
 
-          util.logDebug(`Counting VIPs - Processing VIPs: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
-          if (vipResourceListIndex === (vipResourceList.items.length - 1)) {  //FIXME: Should only count VIPs with Pools. Finding 5, only three have pools so stopping at 3 VIPs.
-            lastVIP = true;
-            util.logDebug(`last VIP reached`);
-          }
-
-          values[1].map((poolMemberResource, poolMemberResourceIndex) => {
-            this.getPoolMemberStats(poolMemberResource)
-              .then((stats) => {
-                util.logDebug(`getPoolMemberStats(poolMemberResource) - stats: ${JSON.stringify(stats)}`);
-                this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members.push(stats);
-
-                util.logDebug(`2. ######### JSON.stringify(this.stats.device.tenants): ${JSON.stringify(this.stats.device.tenants)}`);
-
-                util.logDebug(`getPoolMemberStats() - Processing VIPs: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
-                util.logDebug(`getPoolMemberStats() - Processing Pools: ${poolMemberResourceIndex} of: ${(values[1].length - 1)}`);
-
-                if (poolMemberResourceIndex === (values[1].length -1)) {
-                  util.logDebug(`Last Pool Memebr...`);
-                  lastPoolMember = true;
-                }
-              })
-              .catch((err) => {
-                util.logError(`buildLargeStatsObject(): ${err}`);
-                reject(err);
+                      if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
+                        util.logDebug('VIP & POOL ARRAYs Complete');
+                        resolve();
+                      }
+                    }
+                  })
+                  .catch((err) => {
+                    util.logError(`buildLargeStatsObject(): ${err}`);
+                    reject(err);
+                  });
               });
-          });
-          if (lastVIP === true && lastPoolMember ===true) {
-            util.logDebug(`\n##############################################\n Finished buiting large stats object. Resolving now.\n##############################################\n${JSON.stringify(this.stats, '', '\t')}\n##############################################\n`);
-            resolve();
+            });
           }
-
         })
         .catch((err) => {
           util.logError(`buildLargeStatsObject(): ${err}`);
@@ -615,7 +625,6 @@ BigStats.prototype.getVipResourceList = function () {
   return new Promise((resolve, reject) => {
     var path = '/mgmt/tm/ltm/virtual/';
     var query = '$select=partition,subPath,fullPath,destination,selfLink,pool';
-
     var uri = this.restHelper.makeRestnodedUri(path, query);
     var restOp = this.createRestOperation(uri);
 
@@ -649,9 +658,7 @@ BigStats.prototype.getVipStats = function (vipResource) {
     }
 
     var uri = slicedPath + '/stats';
-
     util.logDebug(`getVipStats() - Stats URI: ${uri}`);
-
     var url = this.restHelper.makeRestnodedUri(uri);
     var restOp = this.createRestOperation(url);
 
@@ -712,9 +719,7 @@ BigStats.prototype.getPoolResourceList = function (vipResource) {
 
       var query = '$select=name,selfLink';
       var path = `${cleanPath}/members`;
-
       util.logDebug(`getPoolResourceList() - Pool Members URI: ${path}`);
-
       var uri = this.restHelper.makeRestnodedUri(path, query);
       var restOp = this.createRestOperation(uri);
       var poolMemberListObj = [];
@@ -764,7 +769,6 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
 
     var uri = `${path}/stats`;
     util.logDebug(`getPoolMemberStats() - Stats URI: ${uri}`);
-
     var url = this.restHelper.makeRestnodedUri(uri);
     var restOp = this.createRestOperation(url);
 

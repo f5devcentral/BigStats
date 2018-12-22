@@ -76,7 +76,11 @@ BigStats.prototype.onPost = function (restOperation) {
         return;
       }
       // Execute stats collection
-      this.pullStats();
+      return this.pullStats();
+    })
+    .then((statsObj) => {
+      return this.exportStats(statsObj);
+
     })
     .catch((err) => {
       util.logError(`onPost() - Error handling POST: ${err}`);
@@ -265,43 +269,46 @@ BigStats.prototype.getSettings = function () {
  * Collect the required statistics from the appropriate BIG-IP Objects
  */
 BigStats.prototype.pullStats = function () {
-  // Execute the BIG-IP stats-scraping workflow
-  this.getSettings()
-    .then(() => {
-      return this.getDeviceStats();
-    })
-    .then(() => {
-      return this.getVipResourceList();
-    })
-    .then((vipResourceList) => {
-      switch (this.config.size) {
-        case 'medium':
-          return this.buildMediumStatsObject(vipResourceList);
-        case 'large':
-          return this.buildLargeStatsObject(vipResourceList);
-        default:
-          return this.buildSmallStatsObject(vipResourceList);
-      }
-    })
-    .then(() => {
-      // Ready the stats for export - Apply stats prefix: 'hostname.services.stats'
-      let statsExpObj = {
-        device: {
-          id: this.config.hostname,
-          tenants: this.stats.device.tenants,
-          global: this.stats.device.global
+  return new Promise((resolve, reject) => {
+
+    // Execute the BIG-IP stats-scraping workflow
+    this.getSettings()
+      .then(() => {
+        return this.getDeviceStats();
+      })
+      .then(() => {
+        return this.getVipResourceList();
+      })
+      .then((vipResourceList) => {
+        switch (this.config.size) {
+          case 'medium':
+            return this.buildMediumStatsObject(vipResourceList);
+          case 'large':
+            return this.buildLargeStatsObject(vipResourceList);
+          default:
+            return this.buildSmallStatsObject(vipResourceList);
         }
-      };
+      })
+      .then(() => {
+        // Ready the stats for export - Apply stats prefix: 'hostname.services.stats'
+        let statsExpObj = {
+          device: {
+            id: this.config.hostname,
+            tenants: this.stats.device.tenants,
+            global: this.stats.device.global
+          }
+        };
 
-      util.logDebug('\n\n*******************************************\n* BEGIN Stats Object *\n*******************************************\n\n');
-      util.logDebug(JSON.stringify(statsExpObj, '', '\t'));
-      util.logDebug('\n\n*******************************************\n* END Stats Object  *\n*******************************************\n\n');
+        util.logDebug('\n\n*******************************************\n* BEGIN Stats Object *\n*******************************************\n\n');
+        util.logDebug(JSON.stringify(statsExpObj, '', '\t'));
+        util.logDebug('\n\n*******************************************\n* END Stats Object  *\n*******************************************\n\n');
 
-      this.exportStats(statsExpObj, this.config.destination.protocol);
-    })
-    .catch((err) => {
-      util.logError(`pullStats() - Promise Chain Error: ${err}`);
-    });
+        resolve(statsExpObj);
+      })
+      .catch((err) => {
+        util.logError(`pullStats() - Promise Chain Error: ${err}`);
+      });
+  });
 };
 
 /**

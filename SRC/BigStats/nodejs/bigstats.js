@@ -522,7 +522,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 * For 'large' stats size (config.size: large), fetch:
 *   - Virtual IP in/out data
 *   - Individual Pool Member data
-*   - // TODO: Some HTTP stats, maybe??
+*   - SSL stats
 *
 * @param {Object} vipResourceList representing an individual vip resource
 *
@@ -819,10 +819,6 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
  * @returns {Promise} Promise Object representing individual pool member stats
  */
 BigStats.prototype.getSslStats = function (vipResource) {
-
-  // 1. It gets the list off SSL profile names.
-  // 2. It gets the profile names attached to each VIP.
-  // 3. It compares the lists to find the SSL VIPs.
   return new Promise((resolve, reject) => {
 
     var servicePath;

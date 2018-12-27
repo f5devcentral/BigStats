@@ -4,15 +4,6 @@
     "tenants": [{
         "id": "Common",
         "services": [{
-            "id": "/Common/172.31.10.20:8081",
-            "clientside_curConns": 0,
-            "clientside_maxConns": 0,
-            "clientside_bitsIn": 0,
-            "clientside_bitsOut": 0,
-            "clientside_pktsIn": 0,
-            "clientside_pktsOut": 0
-          },
-          {
             "id": "/Common/172.31.10.20:80",
             "clientside_curConns": 0,
             "clientside_maxConns": 0,

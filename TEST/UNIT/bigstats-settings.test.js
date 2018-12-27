@@ -40,7 +40,7 @@ describe('BigStatsSettings', function () {
     it('getHostVersion should return version 13.1.1', function (done) {
       sendGetStub = sinon.stub(settings.restRequestSender, 'sendGet').resolves(hostVersionInfo);
 
-      const promise = settings.getHostVersion(vipResourceList.items[0]);
+      const promise = settings.getHostVersion();
       promise.should.be.fulfilled.then((version) => {
         version.should.equal('13.1.1');
         sinon.assert.calledOnce(sendGetStub);
@@ -50,7 +50,7 @@ describe('BigStatsSettings', function () {
     it('getHostVersion should not return when error occurs', function (done) {
       sendGetStub = sinon.stub(settings.restRequestSender, 'sendGet').rejects('something bad happened');
 
-      const promise = settings.getHostVersion(vipResourceList.items[0]);
+      const promise = settings.getHostVersion();
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'getHostVersion(): Error: something bad happened');
         sinon.assert.calledOnce(sendGetStub);

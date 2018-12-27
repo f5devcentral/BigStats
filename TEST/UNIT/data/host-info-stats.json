@@ -4,249 +4,249 @@
     "kind": "tm:sys:host-info:host-infostats",
     "selfLink": "https://localhost/mgmt/tm/sys/host-info?ver=13.1.1",
     "entries": {
-      "https://localhost/mgmt/tm/sys/host-info/0": {
-        "nestedStats": {
-          "entries": {
-            "activeCpuCount": {
-              "value": 2
-            },
-            "cpuCount": {
-              "value": 2
-            },
-            "https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo": {
-              "nestedStats": {
+        "https://localhost/mgmt/tm/sys/host-info/0": {
+            "nestedStats": {
                 "entries": {
-                  "https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo/0": {
-                    "nestedStats": {
-                      "entries": {
-                        "cpuId": {
-                          "value": 0
-                        },
-                        "fiveMinAvgIdle": {
-                          "value": 86
-                        },
-                        "fiveMinAvgIowait": {
-                          "value": 0
-                        },
-                        "fiveMinAvgIrq": {
-                          "value": 0
-                        },
-                        "fiveMinAvgNiced": {
-                          "value": 0
-                        },
-                        "fiveMinAvgSoftirq": {
-                          "value": 0
-                        },
-                        "fiveMinAvgStolen": {
-                          "value": 0
-                        },
-                        "fiveMinAvgSystem": {
-                          "value": 2
-                        },
-                        "fiveMinAvgUser": {
-                          "value": 7
-                        },
-                        "fiveSecAvgIdle": {
-                          "value": 85
-                        },
-                        "fiveSecAvgIowait": {
-                          "value": 0
-                        },
-                        "fiveSecAvgIrq": {
-                          "value": 0
-                        },
-                        "fiveSecAvgNiced": {
-                          "value": 0
-                        },
-                        "fiveSecAvgRatio": {
-                          "value": 11
-                        },
-                        "fiveSecAvgSoftirq": {
-                          "value": 0
-                        },
-                        "fiveSecAvgStolen": {
-                          "value": 0
-                        },
-                        "fiveSecAvgSystem": {
-                          "value": 3
-                        },
-                        "fiveSecAvgUser": {
-                          "value": 8
-                        },
-                        "idle": {
-                          "value": 4255828
-                        },
-                        "iowait": {
-                          "value": 7248
-                        },
-                        "irq": {
-                          "value": 0
-                        },
-                        "niced": {
-                          "value": 197090
-                        },
-                        "oneMinAvgIdle": {
-                          "value": 83
-                        },
-                        "oneMinAvgIowait": {
-                          "value": 0
-                        },
-                        "oneMinAvgIrq": {
-                          "value": 0
-                        },
-                        "oneMinAvgNiced": {
-                          "value": 0
-                        },
-                        "oneMinAvgSoftirq": {
-                          "value": 0
-                        },
-                        "oneMinAvgStolen": {
-                          "value": 0
-                        },
-                        "oneMinAvgSystem": {
-                          "value": 3
-                        },
-                        "oneMinAvgUser": {
-                          "value": 9
-                        },
-                        "softirq": {
-                          "value": 5276
-                        },
-                        "stolen": {
-                          "value": 0
-                        },
-                        "system": {
-                          "value": 193778
-                        },
-                        "user": {
-                          "value": 439363
+                    "activeCpuCount": {
+                        "value": 2
+                    },
+                    "cpuCount": {
+                        "value": 2
+                    },
+                    "https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo": {
+                        "nestedStats": {
+                            "entries": {
+                                "https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo/0": {
+                                    "nestedStats": {
+                                        "entries": {
+                                            "cpuId": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgIdle": {
+                                                "value": 93
+                                            },
+                                            "fiveMinAvgIowait": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgIrq": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgNiced": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgSoftirq": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgStolen": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgSystem": {
+                                                "value": 1
+                                            },
+                                            "fiveMinAvgUser": {
+                                                "value": 6
+                                            },
+                                            "fiveSecAvgIdle": {
+                                                "value": 92
+                                            },
+                                            "fiveSecAvgIowait": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgIrq": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgNiced": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgRatio": {
+                                                "value": 7
+                                            },
+                                            "fiveSecAvgSoftirq": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgStolen": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgSystem": {
+                                                "value": 2
+                                            },
+                                            "fiveSecAvgUser": {
+                                                "value": 5
+                                            },
+                                            "idle": {
+                                                "value": 18048033
+                                            },
+                                            "iowait": {
+                                                "value": 11467
+                                            },
+                                            "irq": {
+                                                "value": 0
+                                            },
+                                            "niced": {
+                                                "value": 9416
+                                            },
+                                            "oneMinAvgIdle": {
+                                                "value": 96
+                                            },
+                                            "oneMinAvgIowait": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgIrq": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgNiced": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgSoftirq": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgStolen": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgSystem": {
+                                                "value": 1
+                                            },
+                                            "oneMinAvgUser": {
+                                                "value": 3
+                                            },
+                                            "softirq": {
+                                                "value": 3937
+                                            },
+                                            "stolen": {
+                                                "value": 40
+                                            },
+                                            "system": {
+                                                "value": 136587
+                                            },
+                                            "user": {
+                                                "value": 347331
+                                            }
+                                        }
+                                    }
+                                },
+                                "https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo/1": {
+                                    "nestedStats": {
+                                        "entries": {
+                                            "cpuId": {
+                                                "value": 1
+                                            },
+                                            "fiveMinAvgIdle": {
+                                                "value": 95
+                                            },
+                                            "fiveMinAvgIowait": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgIrq": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgNiced": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgSoftirq": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgStolen": {
+                                                "value": 0
+                                            },
+                                            "fiveMinAvgSystem": {
+                                                "value": 1
+                                            },
+                                            "fiveMinAvgUser": {
+                                                "value": 3
+                                            },
+                                            "fiveSecAvgIdle": {
+                                                "value": 93
+                                            },
+                                            "fiveSecAvgIowait": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgIrq": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgNiced": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgRatio": {
+                                                "value": 7
+                                            },
+                                            "fiveSecAvgSoftirq": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgStolen": {
+                                                "value": 0
+                                            },
+                                            "fiveSecAvgSystem": {
+                                                "value": 1
+                                            },
+                                            "fiveSecAvgUser": {
+                                                "value": 5
+                                            },
+                                            "idle": {
+                                                "value": 17969016
+                                            },
+                                            "iowait": {
+                                                "value": 4191
+                                            },
+                                            "irq": {
+                                                "value": 0
+                                            },
+                                            "niced": {
+                                                "value": 21327
+                                            },
+                                            "oneMinAvgIdle": {
+                                                "value": 96
+                                            },
+                                            "oneMinAvgIowait": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgIrq": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgNiced": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgSoftirq": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgStolen": {
+                                                "value": 0
+                                            },
+                                            "oneMinAvgSystem": {
+                                                "value": 1
+                                            },
+                                            "oneMinAvgUser": {
+                                                "value": 3
+                                            },
+                                            "softirq": {
+                                                "value": 4476
+                                            },
+                                            "stolen": {
+                                                "value": 53
+                                            },
+                                            "system": {
+                                                "value": 147684
+                                            },
+                                            "user": {
+                                                "value": 347029
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                      }
+                    },
+                    "hostId": {
+                        "description": "0"
+                    },
+                    "memoryTotal": {
+                        "value": 8063369216
+                    },
+                    "memoryUsed": {
+                        "value": 2178806560
                     }
-                  },
-                  "https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo/1": {
-                    "nestedStats": {
-                      "entries": {
-                        "cpuId": {
-                          "value": 1
-                        },
-                        "fiveMinAvgIdle": {
-                          "value": 86
-                        },
-                        "fiveMinAvgIowait": {
-                          "value": 0
-                        },
-                        "fiveMinAvgIrq": {
-                          "value": 0
-                        },
-                        "fiveMinAvgNiced": {
-                          "value": 0
-                        },
-                        "fiveMinAvgSoftirq": {
-                          "value": 0
-                        },
-                        "fiveMinAvgStolen": {
-                          "value": 0
-                        },
-                        "fiveMinAvgSystem": {
-                          "value": 3
-                        },
-                        "fiveMinAvgUser": {
-                          "value": 7
-                        },
-                        "fiveSecAvgIdle": {
-                          "value": 75
-                        },
-                        "fiveSecAvgIowait": {
-                          "value": 0
-                        },
-                        "fiveSecAvgIrq": {
-                          "value": 0
-                        },
-                        "fiveSecAvgNiced": {
-                          "value": 0
-                        },
-                        "fiveSecAvgRatio": {
-                          "value": 22
-                        },
-                        "fiveSecAvgSoftirq": {
-                          "value": 0
-                        },
-                        "fiveSecAvgStolen": {
-                          "value": 0
-                        },
-                        "fiveSecAvgSystem": {
-                          "value": 7
-                        },
-                        "fiveSecAvgUser": {
-                          "value": 14
-                        },
-                        "idle": {
-                          "value": 4255379
-                        },
-                        "iowait": {
-                          "value": 7985
-                        },
-                        "irq": {
-                          "value": 0
-                        },
-                        "niced": {
-                          "value": 188086
-                        },
-                        "oneMinAvgIdle": {
-                          "value": 78
-                        },
-                        "oneMinAvgIowait": {
-                          "value": 0
-                        },
-                        "oneMinAvgIrq": {
-                          "value": 0
-                        },
-                        "oneMinAvgNiced": {
-                          "value": 0
-                        },
-                        "oneMinAvgSoftirq": {
-                          "value": 0
-                        },
-                        "oneMinAvgStolen": {
-                          "value": 0
-                        },
-                        "oneMinAvgSystem": {
-                          "value": 6
-                        },
-                        "oneMinAvgUser": {
-                          "value": 12
-                        },
-                        "softirq": {
-                          "value": 7404
-                        },
-                        "stolen": {
-                          "value": 0
-                        },
-                        "system": {
-                          "value": 216092
-                        },
-                        "user": {
-                          "value": 447068
-                        }
-                      }
-                    }
-                  }
                 }
-              }
-            },
-            "hostId": {
-              "description": "0"
-            },
-            "memoryTotal": {
-              "value": 8373641216
-            },
-            "memoryUsed": {
-              "value": 4419657280
             }
-          }
         }
-      }
     }
   }
 }

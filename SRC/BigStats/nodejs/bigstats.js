@@ -270,13 +270,15 @@ BigStats.prototype.getSettings = function () {
  */
 BigStats.prototype.pullStats = function () {
   return new Promise((resolve, reject) => {
+    let stats = {};
 
     // Execute the BIG-IP stats-scraping workflow
     this.getSettings()
       .then(() => {
         return this.getDeviceStats();
       })
-      .then(() => {
+      .then((deviceGlobalStats) => {
+        stats.global = deviceGlobalStats;
         return this.getVipResourceList();
       })
       .then((vipResourceList) => {
@@ -289,13 +291,14 @@ BigStats.prototype.pullStats = function () {
             return this.buildSmallStatsObject(vipResourceList);
         }
       })
-      .then(() => {
+      .then((tenantStats) => {
+        stats.tenants = tenantStats;
         // Ready the stats for export - Apply stats prefix: 'hostname.services.stats'
         let statsExpObj = {
           device: {
             id: this.config.hostname,
-            tenants: this.stats.device.tenants,
-            global: this.stats.device.global
+            tenants: stats.tenants,
+            global: stats.global
           }
         };
 
@@ -316,7 +319,8 @@ BigStats.prototype.pullStats = function () {
 *
 */
 BigStats.prototype.getDeviceStats = function () {
-  this.stats.device = {};
+
+  let deviceGlobalStats = {};
 
   return new Promise((resolve, reject) => {
     var path = '/mgmt/tm/sys/hostInfo/';
@@ -327,19 +331,19 @@ BigStats.prototype.getDeviceStats = function () {
       .then((resp) => {
         util.logDebug(`getDeviceStats() - resp.statusCode: ${JSON.stringify(resp.statusCode)}`);
 
-        this.stats.device.global = {
+        deviceGlobalStats = {
           memory: {
             memoryTotal: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries.memoryTotal.value,
             memoryUsed: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries.memoryUsed.value
           }
         };
 
-        this.stats.device.global.cpus = [];
+        deviceGlobalStats.cpus = [];
 
         // Iterate through the BIG-IP CPU's
         Object.keys(resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries).map((cpu) => {
           let cpuId = `cpu${resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.cpuId.value}`;
-          this.stats.device.global.cpus.push({
+          deviceGlobalStats.cpus.push({
             id: cpuId,
             fiveSecAvgIdle: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgIdle.value,
             fiveSecAvgIowait: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgIowait.value,
@@ -352,8 +356,7 @@ BigStats.prototype.getDeviceStats = function () {
             fiveSecAvgUser: resp.body.entries['https://localhost/mgmt/tm/sys/host-info/0'].nestedStats.entries['https://localhost/mgmt/tm/sys/hostInfo/0/cpuInfo'].nestedStats.entries[cpu].nestedStats.entries.fiveSecAvgUser.value
           });
         });
-
-        resolve();
+        resolve(deviceGlobalStats);
       })
       .catch((err) => {
         util.logError(`getDeviceStats(): ${JSON.stringify(err)}`);
@@ -373,7 +376,7 @@ BigStats.prototype.getDeviceStats = function () {
 */
 BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
   // Initialize services object
-  this.stats.device.tenants = [];
+  let tenantStats = [];
 
   return new Promise((resolve, reject) => {
     // Fetch list of deployed services
@@ -393,24 +396,25 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
           }
 
           // Check if a tenant entry for this VIP already exists 
-          const tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
+          const tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
 
           if (tenantIndex === -1) {
             // Tenant doesn't exist, push to array
-            this.stats.device.tenants.push({
+            tenantStats.push({
               id: servicePath,
               services: [values]
             });  
           }
           else {
             // Tenant does exist, splice into Tenant array entry
-            this.stats.device.tenants[tenantIndex].services.splice(tenantIndex, 0, values); 
+            tenantStats[tenantIndex].services.splice(tenantIndex, 0, values); 
           }
 
           util.logDebug(`buildSmallStatsObject() - Processing: ${index} of: ${(vipResourceList.items.length - 1)}`);
 
           if (index === (vipResourceList.items.length - 1)) {
-            resolve();
+            this.stats = { device: { "tenants": [tenantStats] }};
+            resolve(tenantStats);
           }
         })
         .catch((err) => {
@@ -433,7 +437,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
 */
 BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
   // Initialize services object
-  this.stats.device.tenants = [];
+  let tenantStats = [];
 
   return new Promise((resolve, reject) => {
     // Fetch stats from each resource, based on config.size
@@ -454,35 +458,35 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
           util.logDebug(`buildMediumStatsObject() - Processing VIP: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
 
           // Check if the tenant and service entries exist 
-          tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
+          tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
           if (tenantIndex === -1) {
             // Tenant & Service don't exist, creating.
-            this.stats.device.tenants.push({
+            tenantStats.push({
               id: servicePath,
               services: [results]
             });
             // Update tenantIndex & serviceIndex for newly created objects.
-            tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
-            serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+            tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
+            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
           }
           else {
             // Tenant exists, check if service exists 
-            serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
             if (serviceIndex === -1) {
               // Service does not exist, creating.
-              this.stats.device.tenants[tenantIndex].services.push(results);
-              serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+              tenantStats[tenantIndex].services.push(results);
+              serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
             }
           }
-          util.logDebug(`this.stats.device.tenants.length: ${this.stats.device.tenants.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, this.stats.device.tenants[tenantIndex]: ${JSON.stringify(this.stats.device.tenants[tenantIndex])}`);
+          util.logDebug(`tenantStats.length: ${tenantStats.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, tenantStats[tenantIndex]: ${JSON.stringify(tenantStats[tenantIndex])}`);
 
           // Verify VIP has a pool attached
           if (typeof vipResource.poolReference !== 'undefined') {
             // initialize objects on first run
-            if (typeof this.stats.device.tenants[tenantIndex].services[serviceIndex].pool === 'undefined') {
-              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool = {};
-              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
-              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members = [];
+            if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
+              tenantStats[tenantIndex].services[serviceIndex].pool = {};
+              tenantStats[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
+              tenantStats[tenantIndex].services[serviceIndex].pool.members = [];
             }
             
             this.getPoolResourceList(vipResource)
@@ -490,7 +494,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
               poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
                 this.getPoolMemberStats(poolMemberResource)
                   .then((stats) => {
-                    this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members.push(stats);
+                    tenantStats[tenantIndex].services[serviceIndex].pool.members.push(stats);
 
                     if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
                       util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
@@ -498,7 +502,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 
                       if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
                         util.logDebug('VIP & POOL ARRAYs Complete');
-                        resolve();
+                        resolve(tenantStats);
                       }
                     }
                   })
@@ -531,7 +535,7 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 */
 BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
   // Initialize services object
-  this.stats.device.tenants = [];
+  let tenantStats = [];
 
   return new Promise((resolve, reject) => {
     // Fetch stats from each resource, based on config.size
@@ -552,42 +556,42 @@ BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
           util.logDebug(`buildlargeStatsObject() - Processing VIP: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
 
           // Check if the tenant and service entries exist 
-          tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
+          tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
           if (tenantIndex === -1) {
             // Tenant & Service don't exist, creating.
-            this.stats.device.tenants.push({
+            tenantStats.push({
               id: servicePath,
               services: [results]
             });
             // Update tenantIndex & serviceIndex for newly created objects.
-            tenantIndex = this.stats.device.tenants.findIndex(tenant => tenant.id === servicePath);
-            serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+            tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
+            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
           }
           else {
             // Tenant exists, check if service exists 
-            serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
             if (serviceIndex === -1) {
               // Service does not exist, creating.
-              this.stats.device.tenants[tenantIndex].services.push(results);
-              serviceIndex = this.stats.device.tenants[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
+              tenantStats[tenantIndex].services.push(results);
+              serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
             }
           }
-          util.logDebug(`this.stats.device.tenants.length: ${this.stats.device.tenants.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, this.stats.device.tenants[tenantIndex]: ${JSON.stringify(this.stats.device.tenants[tenantIndex])}`);
+          util.logDebug(`tenantStats.length: ${tenantStats.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, tenantStats[tenantIndex]: ${JSON.stringify(tenantStats[tenantIndex])}`);
 
           this.getSslStats(vipResource)
           .then((sslStats) => {
             if (Object.keys(sslStats).length !== 0) {
-              this.stats.device.tenants[tenantIndex].services[serviceIndex].ssl = sslStats;
+              tenantStats[tenantIndex].services[serviceIndex].ssl = sslStats;
             }
           });
 
           // Verify VIP has a pool attached
           if (typeof vipResource.poolReference !== 'undefined') {
             // initialize objects on first run
-            if (typeof this.stats.device.tenants[tenantIndex].services[serviceIndex].pool === 'undefined') {
-              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool = {};
-              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
-              this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members = [];
+            if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
+              tenantStats[tenantIndex].services[serviceIndex].pool = {};
+              tenantStats[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
+              tenantStats[tenantIndex].services[serviceIndex].pool.members = [];
             }
             
             this.getPoolResourceList(vipResource)
@@ -595,7 +599,7 @@ BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
               poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
                 this.getPoolMemberStats(poolMemberResource)
                   .then((stats) => {
-                    this.stats.device.tenants[tenantIndex].services[serviceIndex].pool.members.push(stats);
+                    tenantStats[tenantIndex].services[serviceIndex].pool.members.push(stats);
 
                     if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
                       util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
@@ -603,7 +607,7 @@ BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
 
                       if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
                         util.logDebug('VIP & POOL ARRAYs Complete');
-                        resolve();
+                        resolve(tenantStats);
                       }
                     }
                   })

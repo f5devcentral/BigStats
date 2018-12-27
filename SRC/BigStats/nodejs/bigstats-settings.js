@@ -10,7 +10,7 @@
 
 const os = require('os');
 const Ajv = require('ajv');
-const BigStatsSettingsSchema = require('./bigstats-schema.json');
+const BigStatsSettingsSchema = require('./bigstats-schema-0.5.0.json');
 const util = require('./util');
 
 function BigStatsSettings () {
@@ -50,6 +50,9 @@ BigStatsSettings.prototype.onGet = function (restOperation) {
     });
 };
 
+/**
+ * Indetify the host version that BigStats is running on
+ */
 BigStatsSettings.prototype.getHostVersion = function () {
   return new Promise((resolve, reject) => {
     let path = '/mgmt/tm/sys/version';

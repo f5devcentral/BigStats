@@ -4,13 +4,14 @@
 
 ### Features
 
-* Added Support for SSL Statistics
+* Added Support for SSL Statistics ("size":"large")
 * Added Support for scrapers/pollers through 'poll' mode. Stat scrapers can retrieve stats with: `GET /mgmt/shared/bigstats_exporter`
 * Refactored data export object model for easier consumption.
 
 ### Fixes
 
 * Provided default values in BigStats Settings Schema for simplified setup/administration.
+* Handles VIP's with no pool members in 'medium' and 'large' outputs.
 
 ### Known Issues
 

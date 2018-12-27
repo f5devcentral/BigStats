@@ -34,7 +34,9 @@ Util.logInfo = function (message) {
  * @param {*} message The debug message to log
  */
 Util.logDebug = function (message) {
-  this.loggerInstance.info(this.formatMessage(message, 'DEBUG'));
+  if (Util.debugEnabled === true) {
+    this.loggerInstance.info(this.formatMessage(message, 'DEBUG'));
+  }
 };
 
 /**

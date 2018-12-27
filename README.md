@@ -4,7 +4,7 @@
 
 BigStats pushes BIG-IP telemetry to remote logging services/pipelines. It supports HTTP, HTTPS, StatsD, and Apache Kafka destinations.
 
-With BgStats you can insert your valuable BIG-IP stats into your telemetry pipeline solutions, like this:
+With BigStats you can insert your valuable BIG-IP stats into your telemetry pipeline solutions, like this:
 
 ![BigStats Architecture](BigStats_Arch.png)
 

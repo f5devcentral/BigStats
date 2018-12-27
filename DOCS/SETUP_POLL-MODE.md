@@ -1,4 +1,4 @@
-# BigStats Setup - NO DESTINATION (SCRAPER MODE)
+# BigStats Setup - POLL (SCRAPER MODE)
 
 This mode doesn't send the data anywhere. You have to fetch if with a HTTP GET to `/mgmt/shared/bigstats_exporter`
 
@@ -12,7 +12,7 @@ This mode doesn't send the data anywhere. You have to fetch if with a HTTP GET t
 {
     "config": {
         "destination": {
-          "protocol": "none"
+          "protocol": "poll"
         },
         "size": "small",
         "interval": 10,

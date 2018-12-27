@@ -22,19 +22,20 @@ You can find BigStats installation instructions here: [DOCS/BIGSTATS_INSTALL.md]
 
 Configuring BigStats is as simple as POSTing the appropriate settings to `/mgmt/shared/bigstats_settings`. It requires the following information:
 
-* **protocol:** [none|http|https|statsd|kafka]
+* **protocol:** [poll|http|https|statsd|kafka]
 * **address** ip address or resolvable domain name
 * **port** destination port
 * **uri** [OPTIONAL] End-point to post data to. Can be blank. Used only for http or https destinations.
 * **interval** - how often, in seconds, to send the stats. Default: 10 seconds.
+* **size** - how much data: small, medium, or large.
 * **enabled** - enable/disable BigStats as required.
 * **debug** - this will put a LOT of data into the BIG-IPs `/var/log/restnoded/restnoded.log`. Remember to turn this off when done.
 
-You can view the full BigStats Configuration Schema here, [bigstats-schema.json](SRC/BigStats/nodejs/bigstats-schema.json), or you can follow the destination-specific instructions below:
+You can view the full BigStats Configuration Schema here, [bigstats-schema.json](SRC/BigStats/nodejs/bigstats-schema-0.5.0.json), or you can follow the destination-specific instructions below:
 
 Configure BigStats exporter for:
 
-* [Scrapers (no desintation)](DOCS/SETUP_SCRAPER-MODE.md)
+* [Poll (Stat scraper mode, no desintation)](DOCS/SETUP_POLL-MODE.md)
 * [HTTP(S)](DOCS/SETUP_HTTP.md)
 * [StatsD](DOCS/SETUP_STATSD.md)
 * [Kafka](DOCS/SETUP_KAFKA.md)
@@ -46,6 +47,16 @@ Configure BigStats exporter for:
 Running on the F5 BIG-IP (physical or virtual), BigStats crawls the running configuration collecting statistics every 'n' seconds (see config) to build an object in memory like the following:
 
 **Example BigStats Object:**
+
+BigStats produces output in three sizes: Small, Medium, and Large.
+
+* [Small](DOCS/OUTPUT-EXAMPLE-SMALL.md) - VIP connectivity stats
+* [Medium](DOCS/OUTPUT-EXAMPLE-MEDIUM.md) - VIP and Pool member connectivity stats
+* [Large](DOCS/OUTPUT-EXAMPLE-LARGE.md) - VIP and Pool member connectivity stats, and SSL stats 
+
+You can find example outputs in the /DOCS directory.
+
+Below is an example Medium output:
 
 ```json
 {

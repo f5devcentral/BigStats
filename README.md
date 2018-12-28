@@ -10,6 +10,10 @@ With BigStats you can insert your valuable BIG-IP stats into your telemetry pipe
 
 Learn more about BigStats [here](https://REDtalks.live/BigStats) (videos and stuff)
 
+Combine BigStats with the [Github Webhook Server](https://github.com/f5devcentral/CaC-Github_Webhook_Server) for a more complete solution:
+
+![](Webhook-BigStats-Arch_Diag.png)
+
 ## REQUIREMENTS
 
 BIG-IP v13, or newer.

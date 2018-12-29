@@ -76,7 +76,7 @@ BigStatsSettings.prototype.getHostVersion = function () {
 BigStatsSettings.prototype.onPost = function (restOperation) {
   let input = restOperation.getBody();
   let newState = this.validateConfiguration(input);
-  if (newState) {    // HANDLE !input   - you are calling validate.
+  if (newState) { // HANDLE !input - you are calling validate.
     this.state = newState;
     util.logInfo('Settings updated.');
     restOperation.setBody(this.state);

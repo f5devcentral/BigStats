@@ -29,6 +29,11 @@ describe('Util', function () {
     done();
   });
 
+  afterEach(function (done) {
+    sinon.resetHistory();
+    done();
+  });
+
   describe('safeAccess', function () {
     it('should return value if interrogated property is defined', function () {
       let testValue = {};
@@ -106,9 +111,18 @@ describe('Util', function () {
   });
 
   describe('logDebug', function () {
-    it('should emit expected debug string', function () {
+    it('should emit expected debug string when debug is enabled', function () {
+      util.debugEnabled = true;
       util.logDebug('something really detailed happened');
       sinon.assert.calledWith(f5LoggerInfoSpy, '[TestModule - DEBUG] - something really detailed happened');
+    });
+  });
+
+  describe('logDebug', function () {
+    it('should not emit expected debug string when debug is disabled', function () {
+      util.debugEnabled = false;
+      util.logDebug('something really detailed happened');
+      sinon.assert.notCalled(f5LoggerInfoSpy);
     });
   });
 

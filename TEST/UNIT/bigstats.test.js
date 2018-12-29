@@ -126,7 +126,6 @@ describe('BigStats', function () {
 
       let buildLargeStatsObject = sinon.stub(bigStats, 'buildLargeStatsObject').resolves();
 
-
       bigStats.pullStats();
 
       // TODO: This may reveal a limitation with the current design. pullStats is synchronous, but calls underlying functions that are async. When it completes, the promises underneath it are not resolved. Promises never resolve in the same tick they are created.
@@ -182,7 +181,7 @@ describe('BigStats', function () {
       getVipStatsStub = sinon.stub(bigStats, 'getVipStats').resolves(JSON.parse('{"device": {"id": "ip-172-31-1-20-us-west-1-compute-internal","tenants": [{"id": "Common","services": [{"id": "/Common/172.31.10.20:80","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]},{"id": "Tenant_01/App1","services": [{"id": "/Tenant_01/172.31.4.11:80","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]},{"id": "Tenant_02/App2","services": [{"id": "/Tenant_02/172.31.4.21:443","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]},{"id": "Tenant_03/App3","services": [{"id": "/Tenant_03/172.31.4.31:80","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]}]}}'));
       const promise = bigStats.buildSmallStatsObject(vipResourceList.body);
       promise.should.be.fulfilled.then(() => {
-//        bigStats.stats.should.be.deep.equal(expectedStats); //FIXME: new object model stuff with unique 'id' breaks this test. 
+        // bigStats.stats.should.be.deep.equal(expectedStats); //FIXME: new object model stuff with unique 'id' breaks this test.
         sinon.assert.callCount(getVipStatsStub, 6);
         sinon.assert.callCount(utilStub.logDebug, 6);
       }).should.notify(done);
@@ -301,7 +300,8 @@ describe('BigStats', function () {
         sinon.assert.calledWith(utilStub.logError, 'buildLargeStatsObject(): something bad happened');
         sinon.assert.callCount(getVipStatsStub, 7);
       }).should.notify(done);
-    });  });
+    });
+  });
 
   describe('getPoolMemberStats', function () {
     // TODO: modify the mocks to sequentially return different results about each pool member each time it is called

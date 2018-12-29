@@ -142,13 +142,13 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
   // Export device cpu data
   Object.keys(deviceData.cpus).map((cpuIdx) => {
     util.logDebug(`exportStats() - statsd: CPU: ${cpuIdx}`);
-      Object.keys(deviceData.cpus[cpuIdx]).map((metric) => {
-        if (metric !== 'id') {
-          let namespace = `device.${data.config.hostname}.global.cpus.${deviceData.cpus[cpuIdx].id}.${metric}`;
-          let value = deviceData.cpus[cpuIdx][metric];
-          util.logDebug(`exportStats() - statsd - Device CPU Metric: ${namespace} value: ${value}`);
-          sdc.gauge(namespace, value);    
-        }
+    Object.keys(deviceData.cpus[cpuIdx]).map((metric) => {
+      if (metric !== 'id') {
+        let namespace = `device.${data.config.hostname}.global.cpus.${deviceData.cpus[cpuIdx].id}.${metric}`;
+        let value = deviceData.cpus[cpuIdx][metric];
+        util.logDebug(`exportStats() - statsd - Device CPU Metric: ${namespace} value: ${value}`);
+        sdc.gauge(namespace, value);
+      }
     });
   });
 
@@ -165,9 +165,8 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
           let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.${metric}`;
           let value = servicesData[tenantIdx].services[serviceIdx][metric];
           util.logDebug(`exportStats() - statsd - Service '${servicesData[tenantIdx].id}' Metric: ${namespace} value: ${value}`);
-          sdc.gauge(namespace, value);              
-        }
-        else if (metric === 'pool') {
+          sdc.gauge(namespace, value);
+        } else if (metric === 'pool') {
           util.logDebug(`servicesData[tenantIdx].services[serviceIdx].pool.id: ${servicesData[tenantIdx].services[serviceIdx].pool.id}`);
           Object.keys(servicesData[tenantIdx].services[serviceIdx].pool.members).map((memberIdx) => {
             Object.keys(servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx]).map((metric) => {
@@ -177,21 +176,19 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
                 util.logDebug(`pool member: ${poolMemberId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric]}`);
                 let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.pool.${poolId}.members.${poolMemberId}.${metric}`;
                 let value = servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric];
-                sdc.gauge(namespace, value);    
-
+                sdc.gauge(namespace, value);
               }
             });
           });
-        }
-        else if (metric === 'ssl') {
+        } else if (metric === 'ssl') {
           util.logDebug(`servicesData[tenantIdx].services[serviceIdx].ssl.id: ${servicesData[tenantIdx].services[serviceIdx].ssl.id}`);
           Object.keys(servicesData[tenantIdx].services[serviceIdx].ssl).map((metric) => {
             if (metric !== 'id') {
               let sslId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].ssl.id);
               util.logDebug(`ssl metric: ${sslId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].ssl[metric]}`);
               let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.ssl.${sslId}.${metric}`;
-              let value = servicesData[tenantIdx].services[serviceIdx].ssl[metric];      
-              sdc.gauge(namespace, value);    
+              let value = servicesData[tenantIdx].services[serviceIdx].ssl[metric];
+              sdc.gauge(namespace, value);
             }
           });
         }

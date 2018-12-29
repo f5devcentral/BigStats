@@ -12,7 +12,7 @@ const EventEmitter = require('events').EventEmitter;
 const http = require('http');
 const https = require('https');
 const kafka = require('kafka-node');
-const util = require('./util-fake');
+const util = require('../FAKES/util-fake');
 
 let moduleUnderTest = '../../SRC/BigStats/nodejs/bigstats-exporter';
 let utilStub;

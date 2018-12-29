@@ -9,7 +9,7 @@ const chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 chai.should();
 
-const util = require('./util-fake');
+const util = require('../FAKES/util-fake');
 
 let moduleUnderTest = '../../SRC/BigStats/nodejs/bigstats';
 let utilStub;

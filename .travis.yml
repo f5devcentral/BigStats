@@ -1,8 +1,16 @@
+
 language: node_js
 node_js:
  - 6.9.1
+
+install:
+  - npm install -g codecov
 
 # safelist
 branches:
   only:
   - develop
+
+script:
+  - istanbul cover --config ./istanbul.yml ./node_modules/mocha/bin/_mocha ./TEST/UNIT/ --report lcovonly -- -R spec && codecov
+  - codecov

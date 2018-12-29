@@ -4,8 +4,8 @@
   "description": "Push BIG-IP stats to remote logging services. Supports http, https, statsd, and Apache Kafka destinations.",
   "main": "bigstats.js",
   "scripts": {
-    "test": "./node_modules/.bin/mocha ./TEST/UNIT --recursive --reporter spec",
-    "coverage": "./node_modules/istanbul/lib/cli.js cover ./node_modules/.bin/_mocha -- -R spec"
+    "test": "./node_modules/.bin/mocha ./TEST/UNIT/ --recursive --reporter spec",
+    "coverage": "./node_modules/istanbul/lib/cli.js cover --config ./istanbul.yml --X  ./node_modules/.bin/_mocha ./TEST/UNIT/ -- -R spec"
   },
   "repository": {
     "type": "git",

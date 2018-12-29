@@ -2,6 +2,8 @@
 
 <img align="right" width="150px" src="BigStats-300dpi.png" alt="BigStats_Logo"/>
 
+[![Build Status](https://travis-ci.com/f5devcentral/BigStats.svg?branch=develop)](https://travis-ci.com/f5devcentral/BigStats)
+
 BigStats pushes BIG-IP telemetry to remote logging services/pipelines. It supports HTTP, HTTPS, StatsD, and Apache Kafka destinations.
 
 With BigStats you can insert your valuable BIG-IP stats into your telemetry pipeline solutions, like this:

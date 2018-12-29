@@ -7,7 +7,7 @@ const chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 const should = chai.should();
 
-const logger = require('./f5-logger-fake');
+const logger = require('../FAKES/f5-logger-fake');
 
 let util;
 let loggerStub;

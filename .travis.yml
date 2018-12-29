@@ -13,5 +13,5 @@ branches:
   - develop
 
 script:
-  - istanbul cover --config ./istanbul.yml ./node_modules/mocha/bin/_mocha ./TEST/UNIT/ --report lcovonly -- -R spec && codecov
+  - istanbul cover --config ./istanbul.yml ./node_modules/.bin/_mocha ./TEST/UNIT/ --report lcovonly -- -R spec && codecov
   - codecov

@@ -2,6 +2,7 @@ language: node_js
 node_js:
   - "node"
 install:
+  - npm install -g mocha
   - npm install -g istanbul
   - npm install -g codecov
 # safelist
@@ -9,5 +10,5 @@ branches:
   only:
   - develop
 script:
-  - istanbul cover --config ./istanbul.yml ./node_modules/mocha/bin/_mocha ./TEST/UNIT/ --report lcovonly -- -R spec && codecov
+  - istanbul cover --config ./istanbul.yml _mocha ./TEST/UNIT/ --report lcovonly -- -R spec && codecov
   - codecov

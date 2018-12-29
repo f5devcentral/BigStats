@@ -4,6 +4,7 @@ node_js:
  - 6.9.1
 
 install:
+  - npm install
   - npm install -g mocha
   - npm install -g istanbul
   - npm install -g codecov

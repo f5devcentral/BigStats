@@ -1,3 +1,6 @@
+sudo: required
+services:
+  - docker
 language: node_js
 node_js:
   - "6.9.1"
@@ -8,3 +11,8 @@ branches:
 script:
   - ./node_modules/istanbul/lib/cli.js cover --config ./istanbul.yml ./node_modules/mocha/bin/_mocha ./TEST/UNIT/ --report lcovonly -- -R spec && ./node_modules/.bin/codecov
   - ./node_modules/.bin/codecov
+  - git submodule update --init --recursive
+  - git describe --long
+  - git clone https://github.com/packpack/packpack.git packpack
+  - packpack/packpack
+  

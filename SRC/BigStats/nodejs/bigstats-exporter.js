@@ -195,50 +195,6 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
       });
     });
   });
-
-/*
-    var l1 = this.replaceDotsSlashesColons(level1);
-
-    Object.keys(servicesData[level1]).map((level2) => {
-      var l2 = this.replaceDotsSlashesColons(level2);
-
-      util.logDebug(`exportStats() - statsd - Virtual Server: ${l1}.${l2}`);
-
-      Object.keys(servicesData[level1][level2]).map((level3) => {
-        var l3 = this.replaceDotsSlashesColons(level3);
-
-        // If the value is a number, send it to statsd.
-        if (typeof servicesData[level1][level2][level3] === 'number') {
-          let namespace = `${data.config.hostname}.services.${l1}.${l2}.${l3}`;
-          let value = servicesData[level1][level2][level3];
-
-          util.logDebug(`exportStats() - statsd - Virtual Server Stats: ${namespace} value: ${value}`);
-          sdc.gauge(namespace, value);
-        } else if (typeof servicesData[level1][level2][level3] === 'object') {
-          // If the value is an object, process the child object...
-          util.logDebug(`exportStats() - statsd: Pool: ${l3}`);
-
-          Object.keys(servicesData[level1][level2][level3]).map((level4) => {
-            Object.keys(servicesData[level1][level2][level3][level4]).map((level5) => {
-              var l5 = this.replaceDotsSlashesColons(level5);
-              util.logDebug(`exportStats() - statsd: Pool Member: ${l5}`);
-
-              Object.keys(servicesData[level1][level2][level3][level4][level5]).map((level6) => {
-                var l6 = this.replaceDotsSlashesColons(level6);
-
-                let namespace = `${data.config.hostname}.services.${l1}.${l2}.${l3}.${l5}.${l6}`;
-                let value = servicesData[level1][level2][level3][level4][level5][level6];
-
-                util.logDebug(`exportStats() - statsd - Pool Member Stats: ${namespace} value: ${value}`);
-                sdc.gauge(namespace, value);
-              });
-            });
-          });
-        }
-      });
-    });
-  });
-  */
 };
 
 /**

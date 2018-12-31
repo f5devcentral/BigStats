@@ -162,7 +162,7 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
       Object.keys(servicesData[tenantIdx].services[serviceIdx]).map((metric) => {
         if (metric !== 'id' && metric !== 'pool' && metric !== 'ssl') {
           util.logDebug(`exportStats() - statsd: Service: ${servicesData[tenantIdx].services[serviceIdx].id} - ${metric} = ${servicesData[tenantIdx].services[serviceIdx][metric]}`);
-          let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.${metric}`;
+          let namespace = `device.${data.config.hostname}.tenants.${tenantId}.services.${serviceId}.${metric}`;
           let value = servicesData[tenantIdx].services[serviceIdx][metric];
           util.logDebug(`exportStats() - statsd - Service '${servicesData[tenantIdx].id}' Metric: ${namespace} value: ${value}`);
           sdc.gauge(namespace, value);
@@ -174,7 +174,7 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
                 let poolId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].pool.id);
                 let poolMemberId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx].id);
                 util.logDebug(`pool member: ${poolMemberId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric]}`);
-                let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.pool.${poolId}.members.${poolMemberId}.${metric}`;
+                let namespace = `device.${data.config.hostname}.tenants.${tenantId}.services.${serviceId}.pool.${poolId}.members.${poolMemberId}.${metric}`;
                 let value = servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric];
                 sdc.gauge(namespace, value);
               }
@@ -186,7 +186,7 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
             if (metric !== 'id') {
               let sslId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].ssl.id);
               util.logDebug(`ssl metric: ${sslId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].ssl[metric]}`);
-              let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.ssl.${sslId}.${metric}`;
+              let namespace = `device.${data.config.hostname}.tenants.${tenantId}.services.${serviceId}.ssl.${sslId}.${metric}`;
               let value = servicesData[tenantIdx].services[serviceIdx].ssl[metric];
               sdc.gauge(namespace, value);
             }

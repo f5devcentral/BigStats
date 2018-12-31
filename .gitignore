@@ -8,3 +8,4 @@ modules.tgz
 .gitignore
 coverage
 .nyc_output
+coverage.lcov

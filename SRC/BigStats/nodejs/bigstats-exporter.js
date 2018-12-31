@@ -142,13 +142,13 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
   // Export device cpu data
   Object.keys(deviceData.cpus).map((cpuIdx) => {
     util.logDebug(`exportStats() - statsd: CPU: ${cpuIdx}`);
-      Object.keys(deviceData.cpus[cpuIdx]).map((metric) => {
-        if (metric !== 'id') {
-          let namespace = `device.${data.config.hostname}.global.cpus.${deviceData.cpus[cpuIdx].id}.${metric}`;
-          let value = deviceData.cpus[cpuIdx][metric];
-          util.logDebug(`exportStats() - statsd - Device CPU Metric: ${namespace} value: ${value}`);
-          sdc.gauge(namespace, value);    
-        }
+    Object.keys(deviceData.cpus[cpuIdx]).map((metric) => {
+      if (metric !== 'id') {
+        let namespace = `device.${data.config.hostname}.global.cpus.${deviceData.cpus[cpuIdx].id}.${metric}`;
+        let value = deviceData.cpus[cpuIdx][metric];
+        util.logDebug(`exportStats() - statsd - Device CPU Metric: ${namespace} value: ${value}`);
+        sdc.gauge(namespace, value);
+      }
     });
   });
 
@@ -162,12 +162,11 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
       Object.keys(servicesData[tenantIdx].services[serviceIdx]).map((metric) => {
         if (metric !== 'id' && metric !== 'pool' && metric !== 'ssl') {
           util.logDebug(`exportStats() - statsd: Service: ${servicesData[tenantIdx].services[serviceIdx].id} - ${metric} = ${servicesData[tenantIdx].services[serviceIdx][metric]}`);
-          let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.${metric}`;
+          let namespace = `device.${data.config.hostname}.tenants.${tenantId}.services.${serviceId}.${metric}`;
           let value = servicesData[tenantIdx].services[serviceIdx][metric];
           util.logDebug(`exportStats() - statsd - Service '${servicesData[tenantIdx].id}' Metric: ${namespace} value: ${value}`);
-          sdc.gauge(namespace, value);              
-        }
-        else if (metric === 'pool') {
+          sdc.gauge(namespace, value);
+        } else if (metric === 'pool') {
           util.logDebug(`servicesData[tenantIdx].services[serviceIdx].pool.id: ${servicesData[tenantIdx].services[serviceIdx].pool.id}`);
           Object.keys(servicesData[tenantIdx].services[serviceIdx].pool.members).map((memberIdx) => {
             Object.keys(servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx]).map((metric) => {
@@ -175,73 +174,27 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
                 let poolId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].pool.id);
                 let poolMemberId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx].id);
                 util.logDebug(`pool member: ${poolMemberId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric]}`);
-                let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.pool.${poolId}.members.${poolMemberId}.${metric}`;
+                let namespace = `device.${data.config.hostname}.tenants.${tenantId}.services.${serviceId}.pool.${poolId}.members.${poolMemberId}.${metric}`;
                 let value = servicesData[tenantIdx].services[serviceIdx].pool.members[memberIdx][metric];
-                sdc.gauge(namespace, value);    
-
+                sdc.gauge(namespace, value);
               }
             });
           });
-        }
-        else if (metric === 'ssl') {
+        } else if (metric === 'ssl') {
           util.logDebug(`servicesData[tenantIdx].services[serviceIdx].ssl.id: ${servicesData[tenantIdx].services[serviceIdx].ssl.id}`);
           Object.keys(servicesData[tenantIdx].services[serviceIdx].ssl).map((metric) => {
             if (metric !== 'id') {
               let sslId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].ssl.id);
               util.logDebug(`ssl metric: ${sslId} - metric: ${metric} = ${servicesData[tenantIdx].services[serviceIdx].ssl[metric]}`);
-              let namespace = `device.${data.config.hostname}.tenant.${tenantId}.services.${serviceId}.ssl.${sslId}.${metric}`;
-              let value = servicesData[tenantIdx].services[serviceIdx].ssl[metric];      
-              sdc.gauge(namespace, value);    
+              let namespace = `device.${data.config.hostname}.tenants.${tenantId}.services.${serviceId}.ssl.${sslId}.${metric}`;
+              let value = servicesData[tenantIdx].services[serviceIdx].ssl[metric];
+              sdc.gauge(namespace, value);
             }
           });
         }
       });
     });
   });
-
-/*
-    var l1 = this.replaceDotsSlashesColons(level1);
-
-    Object.keys(servicesData[level1]).map((level2) => {
-      var l2 = this.replaceDotsSlashesColons(level2);
-
-      util.logDebug(`exportStats() - statsd - Virtual Server: ${l1}.${l2}`);
-
-      Object.keys(servicesData[level1][level2]).map((level3) => {
-        var l3 = this.replaceDotsSlashesColons(level3);
-
-        // If the value is a number, send it to statsd.
-        if (typeof servicesData[level1][level2][level3] === 'number') {
-          let namespace = `${data.config.hostname}.services.${l1}.${l2}.${l3}`;
-          let value = servicesData[level1][level2][level3];
-
-          util.logDebug(`exportStats() - statsd - Virtual Server Stats: ${namespace} value: ${value}`);
-          sdc.gauge(namespace, value);
-        } else if (typeof servicesData[level1][level2][level3] === 'object') {
-          // If the value is an object, process the child object...
-          util.logDebug(`exportStats() - statsd: Pool: ${l3}`);
-
-          Object.keys(servicesData[level1][level2][level3]).map((level4) => {
-            Object.keys(servicesData[level1][level2][level3][level4]).map((level5) => {
-              var l5 = this.replaceDotsSlashesColons(level5);
-              util.logDebug(`exportStats() - statsd: Pool Member: ${l5}`);
-
-              Object.keys(servicesData[level1][level2][level3][level4][level5]).map((level6) => {
-                var l6 = this.replaceDotsSlashesColons(level6);
-
-                let namespace = `${data.config.hostname}.services.${l1}.${l2}.${l3}.${l5}.${l6}`;
-                let value = servicesData[level1][level2][level3][level4][level5][level6];
-
-                util.logDebug(`exportStats() - statsd - Pool Member Stats: ${namespace} value: ${value}`);
-                sdc.gauge(namespace, value);
-              });
-            });
-          });
-        }
-      });
-    });
-  });
-  */
 };
 
 /**

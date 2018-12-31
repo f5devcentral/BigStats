@@ -841,6 +841,7 @@ BigStats.prototype.getSslStats = function (vipResource) {
 
         if (Object.keys(match).length === 0) {
         // This vipResource doesn't have a matching client-ssl profile
+        // Throwing harmless 'no profile found' to escape Promise. Not really an 'error'.
           const DO_NOTHING = `No SSL profiles associated with: ${servicePath} `;
           throw DO_NOTHING;
         } else {
@@ -857,7 +858,14 @@ BigStats.prototype.getSslStats = function (vipResource) {
         resolve(sslProfileStats);
       })
       .catch((err) => {
-        util.logError(`err: ${err}`);
+        // Throwing harmless 'no profile found' to escape Promise. Not really an 'error'.
+        if (err.startsWith('No SSL profiles associated')) {
+          util.logDebug(`err: ${err}`);
+        }
+        else {
+          // Catch actual errors.
+          util.logError(`err: ${err}`);
+        }
       });
   });
 };

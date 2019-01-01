@@ -15,7 +15,7 @@ before_install:
 
 script:
   - ./node_modules/istanbul/lib/cli.js cover --config ./istanbul.yml ./node_modules/mocha/bin/_mocha ./TEST/UNIT/ --report lcovonly -- -R spec && ./node_modules/.bin/codecov
-  - docker run --rm -v $(pwd):/home/bigstats bigstats/rpm-build-container /bin/sh -c "cd /home/bigstats;./build/buildRpm.sh;"
+  - docker run --rm -v $(pwd):/home/bigstats:rw bigstats/rpm-build-container /bin/sh -c "cd /home/bigstats;./build/buildRpm.sh;"
 
 # before_deploy:
 #   # Set up git user name and tag this commit

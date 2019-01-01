@@ -5,5 +5,26 @@ node_js:
 branches:
   only:
   - develop
+
+services:
+  - docker
+
+before_install:
+  # - docker pull carlad/sinatra
+  - docker build -t bigstats/rpm-build-container ./build/
+
 script:
   - ./node_modules/istanbul/lib/cli.js cover --config ./istanbul.yml ./node_modules/mocha/bin/_mocha ./TEST/UNIT/ --report lcovonly -- -R spec && ./node_modules/.bin/codecov
+  - docker run -d bigstats/rpm-build-container /bin/sh -c "./build/buildRpm.sh;"
+
+# before_deploy:
+#   # Set up git user name and tag this commit
+#   - git config --local user.name "YOUR GIT USER NAME"
+#   - git config --local user.email "YOUR GIT USER EMAIL"
+#   - export TRAVIS_TAG=${TRAVIS_TAG:-$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)}
+#   - git tag $TRAVIS_TAG
+# deploy:
+#   provider: releases
+#   api_key: "GITHUB OAUTH TOKEN"
+#   file: "FILE TO UPLOAD"
+#   skip_cleanup: true

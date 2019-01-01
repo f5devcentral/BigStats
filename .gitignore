@@ -9,3 +9,4 @@ modules.tgz
 coverage
 .nyc_output
 coverage.lcov
+build/rpmbuild

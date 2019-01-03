@@ -418,7 +418,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
           util.logError(`buildSmallStatsObject(): ${err}`);
           reject(err);
         });
-    });
+    }); 
   });
 };
 
@@ -476,38 +476,57 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
           }
           util.logDebug(`tenantStats.length: ${tenantStats.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, tenantStats[tenantIndex]: ${JSON.stringify(tenantStats[tenantIndex])}`);
 
-          // Verify VIP has a pool attached
-          if (typeof vipResource.poolReference !== 'undefined') {
-            // initialize objects on first run
-            if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
-              tenantStats[tenantIndex].services[serviceIndex].pool = {};
-              tenantStats[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
-              tenantStats[tenantIndex].services[serviceIndex].pool.members = [];
-            }
+          // If its the last VIP in the list and it has no pool associated, resolve now.
+          if (typeof vipResource.poolReference === 'undefined' && vipResourceListIndex === (vipResourceList.items.length - 1)) {
+            util.logDebug('VIP & POOL ARRAYs Complete');
+            resolve(tenantStats);
+          }
+          else {
+            let indexes = {
+              tenantIndex: tenantIndex,
+              serviceIndex: serviceIndex
+            };
+            return indexes;
+          }
 
-            this.getPoolResourceList(vipResource)
-              .then((poolResourceList) => {
-                poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
-                  this.getPoolMemberStats(poolMemberResource)
-                    .then((stats) => {
-                      tenantStats[tenantIndex].services[serviceIndex].pool.members.push(stats);
+        })
+        .then((indexes) => {
+          if (indexes) {
+            let tenantIndex = indexes.tenantIndex;
+            let serviceIndex = indexes.serviceIndex;
+            // Verify VIP has a pool attached
+            if (typeof vipResource.poolReference !== 'undefined') {
+              // initialize objects on first run
+              if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
+                tenantStats[tenantIndex].services[serviceIndex].pool = {};
+                tenantStats[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
+                tenantStats[tenantIndex].services[serviceIndex].pool.members = [];
+              }
 
-                      if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
-                        util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
-                        util.logDebug(`getPoolMemberStats() - Processing: ${poolMemberResourceIndex} of: ${(poolResourceList.length - 1)}`);
+              this.getPoolResourceList(vipResource)
+                .then((poolResourceList) => {
+                  poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
+                    this.getPoolMemberStats(poolMemberResource)
+                      .then((stats) => {
+                        tenantStats[tenantIndex].services[serviceIndex].pool.members.push(stats);
 
-                        if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
-                          util.logDebug('VIP & POOL ARRAYs Complete');
-                          resolve(tenantStats);
+                        if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
+                          util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
+                          util.logDebug(`getPoolMemberStats() - Processing: ${poolMemberResourceIndex} of: ${(poolResourceList.length - 1)}`);
+
+                          if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
+                            util.logDebug('VIP & POOL ARRAYs Complete');
+                            resolve(tenantStats);
+                          }
                         }
-                      }
-                    })
-                    .catch((err) => {
-                      util.logError(`buildMediumStatsObject(): ${err}`);
-                      reject(err);
-                    });
+                      })
+                      .catch((err) => {
+                        util.logError(`buildMediumStatsObject(): ${err}`);
+                        reject(err);
+                      });
+                  });
                 });
-              });
+            }
           }
         })
         .catch((err) => {
@@ -580,8 +599,13 @@ BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
               }
             });
 
+          // If its the last VIP in the list and it has no pool associated, resolve now.
+          if (typeof vipResource.poolReference === 'undefined' && vipResourceListIndex === (vipResourceList.items.length - 1)) {
+            util.logDebug('VIP & POOL ARRAYs Complete');
+            resolve(tenantStats);
+          }
           // Verify VIP has a pool attached
-          if (typeof vipResource.poolReference !== 'undefined') {
+          else if (typeof vipResource.poolReference !== 'undefined') {
             // initialize objects on first run
             if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
               tenantStats[tenantIndex].services[serviceIndex].pool = {};
@@ -656,6 +680,7 @@ BigStats.prototype.getVipResourceList = function () {
  */
 BigStats.prototype.getVipStats = function (vipResource) {
   return new Promise((resolve, reject) => {
+
     var slicedPath = '';
     var PREFIX = 'https://localhost';
 

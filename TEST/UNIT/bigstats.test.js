@@ -306,7 +306,7 @@ describe('BigStats', function () {
   describe('getPoolMemberStats', function () {
     // TODO: modify the mocks to sequentially return different results about each pool member each time it is called
     it('should return stats for a specific pool member', function (done) {
-      const expectedStats = JSON.parse('{"id":"10.1.20.17:80","serverside_curConns":0,"serverside_maxConns":0,"serverside_bitsIn":0,"serverside_bitsOut":0,"serverside_pktsIn":0,"serverside_pktsOut":0,"monitorStatus":0}');
+      const expectedStats = JSON.parse('{"poolMemberResource": {"name": "10.1.20.17:80","path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool/members/~Common~10.1.20.17:80?ver=13.1.1"},"poolMemberStats":{"id": "10.1.20.17:80","monitorStatus": 0,"serverside_bitsIn": 0,"serverside_bitsOut": 0,"serverside_curConns": 0,"serverside_maxConns": 0,"serverside_pktsIn": 0,"serverside_pktsOut": 0}}');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(poolMemberStats);
 
       const promise = bigStats.getPoolMemberStats(JSON.parse('{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~Common~myPool/members/~Common~10.1.20.17:80?ver=13.1.1"}'));
@@ -327,7 +327,7 @@ describe('BigStats', function () {
 
   describe('getPoolResourceList', function () {
     it('should return a list of pool members', function (done) {
-      const expectedStats = JSON.parse('[{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]');
+      const expectedStats = JSON.parse('[{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1","vip":{"destination": "/Common/172.31.10.20:80","fullPath": "/Common/myVIP","partition": "Common","pool": "/Common/myPool","poolReference":{"link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool?ver=13.1.1"},"selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP?ver=13.1.1"}},{"name":"10.1.20.18:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1","vip":{"destination": "/Common/172.31.10.20:80","fullPath": "/Common/myVIP","partition": "Common","pool": "/Common/myPool","poolReference":{"link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool?ver=13.1.1"},"selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP?ver=13.1.1"}}]');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(JSON.parse('{"body":{"kind":"tm:ltm:pool:members:memberscollectionstate","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members?$select=name%2CselfLink&ver=13.1.1","items":[{"name":"10.1.20.17:80","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]}}'));
 
       const promise = bigStats.getPoolResourceList(vipResourceList.body.items[0]);

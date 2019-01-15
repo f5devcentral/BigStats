@@ -376,21 +376,19 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
   // Initialize services object
   let tenantStats = [];
 
-  return new Promise((resolve, reject) => {
-    // Fetch list of deployed services
-    vipResourceList.items.map((element, index) => {
-      // Collect Stats for each service
-      this.getVipStats(element)
+  const vipPromises = vipResourceList.items.map((vipResource, vipResourceIndex) => {
+    return new Promise((resolve, reject) => {
+      // Collect Stats for each VIP/service
+      this.getVipStats(vipResource)
         .then((values) => {
-          var servicePath;
-
+          let servicePath;  
           // Check if subPath is un use.
-          if ('subPath' in element) {
+          if ('subPath' in vipResource) {
             // Merge 'tenant' name and 'subPath' name as '/' delimited string.
-            servicePath = element.partition + '/' + element.subPath;
+            servicePath = vipResource.partition + '/' + vipResource.subPath;
           } else {
             // 'subPath' is NOT used, use 'tenant' name on its own.
-            servicePath = element.partition;
+            servicePath = vipResource.partition;
           }
 
           // Check if a tenant entry for this VIP already exists
@@ -404,15 +402,12 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
             });
           } else {
             // Tenant does exist, splice into Tenant array entry
-            tenantStats[tenantIndex].services.splice(tenantIndex, 0, values);
+            tenantStats[tenantIndex].services.push(values);
           }
 
-          util.logDebug(`buildSmallStatsObject() - Processing: ${index} of: ${(vipResourceList.items.length - 1)}`);
-
-          if (index === (vipResourceList.items.length - 1)) {
-            this.stats = { device: { 'tenants': [tenantStats] } };
-            resolve(tenantStats);
-          }
+          util.logDebug(`buildSmallStatsObject() - Processing: ${vipResourceIndex} of: ${(vipResourceList.items.length - 1)}`);
+          resolve();
+          
         })
         .catch((err) => {
           util.logError(`buildSmallStatsObject(): ${err}`);
@@ -420,6 +415,12 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
         });
     }); 
   });
+
+  return Promise.all(vipPromises)
+  .then(() => {
+    return tenantStats;
+  });
+
 };
 
 /**
@@ -433,107 +434,54 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
 *
 */
 BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
-  // Initialize services object
+
   let tenantStats = [];
 
-  return new Promise((resolve, reject) => {
-    // Fetch stats from each resource, based on config.size
-    vipResourceList.items.map((vipResource, vipResourceListIndex) => {
-      this.getVipStats(vipResource)
-        .then((results) => {
-          let servicePath;
-          var tenantIndex;
-          var serviceIndex;
-          // Check if subPath is un use.
-          if ('subPath' in vipResource) {
-            // Merge 'tenant' name and 'subPath' name as '/' delimited string.
-            servicePath = vipResource.partition + '/' + vipResource.subPath;
-          } else {
-            // 'subPath' is NOT used, use 'tenant' name on its own.
-            servicePath = vipResource.partition;
-          }
-          util.logDebug(`buildMediumStatsObject() - Processing VIP: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
-
-          // Check if the tenant and service entries exist
-          tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
-          if (tenantIndex === -1) {
-            // Tenant & Service don't exist, creating.
-            tenantStats.push({
-              id: servicePath,
-              services: [results]
-            });
-            // Update tenantIndex & serviceIndex for newly created objects.
-            tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
-            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
-          } else {
-            // Tenant exists, check if service exists
-            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
-            if (serviceIndex === -1) {
-              // Service does not exist, creating.
-              tenantStats[tenantIndex].services.push(results);
-              serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
-            }
-          }
-          util.logDebug(`tenantStats.length: ${tenantStats.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, tenantStats[tenantIndex]: ${JSON.stringify(tenantStats[tenantIndex])}`);
-
-          // If its the last VIP in the list and it has no pool associated, resolve now.
-          if (typeof vipResource.poolReference === 'undefined' && vipResourceListIndex === (vipResourceList.items.length - 1)) {
-            util.logDebug('VIP & POOL ARRAYs Complete');
-            resolve(tenantStats);
-          }
-          else {
-            let indexes = {
-              tenantIndex: tenantIndex,
-              serviceIndex: serviceIndex
-            };
-            return indexes;
-          }
-
-        })
-        .then((indexes) => {
-          if (indexes) {
-            let tenantIndex = indexes.tenantIndex;
-            let serviceIndex = indexes.serviceIndex;
-            // Verify VIP has a pool attached
-            if (typeof vipResource.poolReference !== 'undefined') {
-              // initialize objects on first run
-              if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
-                tenantStats[tenantIndex].services[serviceIndex].pool = {};
-                tenantStats[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
-                tenantStats[tenantIndex].services[serviceIndex].pool.members = [];
-              }
-
-              this.getPoolResourceList(vipResource)
-                .then((poolResourceList) => {
-                  poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
-                    this.getPoolMemberStats(poolMemberResource)
-                      .then((stats) => {
-                        tenantStats[tenantIndex].services[serviceIndex].pool.members.push(stats);
-
-                        if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
-                          util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
-                          util.logDebug(`getPoolMemberStats() - Processing: ${poolMemberResourceIndex} of: ${(poolResourceList.length - 1)}`);
-
-                          if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
-                            util.logDebug('VIP & POOL ARRAYs Complete');
-                            resolve(tenantStats);
-                          }
-                        }
-                      })
-                      .catch((err) => {
-                        util.logError(`buildMediumStatsObject(): ${err}`);
-                        reject(err);
-                      });
-                  });
-                });
-            }
-          }
-        })
-        .catch((err) => {
-          util.logError(`buildMediumStatsObject(): ${err}`);
-          reject(err);
-        });
+  return this.buildSmallStatsObject(vipResourceList)
+  .then((smallStatsObj) => {
+    util.logDebug(`buildMediumStatsObject() w/ smallStatsObj: ${JSON.stringify(smallStatsObj)}`);
+    tenantStats = smallStatsObj;
+    let poolResourceListPromises = [];
+    vipResourceList.items.map((vipResource) => {
+      if (typeof vipResource.poolReference !== 'undefined') {
+        poolResourceListPromises.push(this.getPoolResourceList(vipResource));
+      }
+    });  
+    return Promise.all(poolResourceListPromises);
+  })
+  .then((poolResources) => {
+    util.logDebug(`buildMediumStatsObject() w/ poolResources: ${JSON.stringify(poolResources)}`);
+    let poolResourcePromises = [];
+    poolResources.map((poolMembersResource) => {
+      poolMembersResource.map((poolMemberResource) => {
+        poolResourcePromises.push(this.getPoolMemberStats(poolMemberResource));
+      });
+    });  
+    return Promise.all(poolResourcePromises);
+  })
+  .then((poolMembersStats) => {
+    util.logDebug(`buildMediumStatsObject() w/ poolMembersStats: ${JSON.stringify(poolMembersStats)}`);
+    poolMembersStats.map((poolMemberStats) => {
+      let servicePath;
+      let tenantIndex;
+      let serviceIndex;
+      // Check if subPath is un use. If so, merge into vip 'id' 
+      if ('subPath' in poolMemberStats.poolMemberResource.vip) {
+        servicePath = poolMemberStats.poolMemberResource.vip.partition + '/' + poolMemberStats.poolMemberResource.vip.subPath;
+      } else {
+        servicePath = poolMemberStats.poolMemberResource.vip.partition;
+      }
+      tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
+      serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === poolMemberStats.poolMemberResource.vip.destination);
+      if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
+        tenantStats[tenantIndex].services[serviceIndex].pool = {
+          id: poolMemberStats.poolMemberResource.vip.pool,
+          members: []
+        };
+      }
+      tenantStats[tenantIndex].services[serviceIndex].pool.members.push(poolMemberStats.poolMemberStats);
     });
+    return tenantStats;
   });
 };
 
@@ -549,100 +497,45 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 *
 */
 BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
-  // Initialize services object
+
   let tenantStats = [];
 
-  return new Promise((resolve, reject) => {
-    // Fetch stats from each resource, based on config.size
-    vipResourceList.items.map((vipResource, vipResourceListIndex) => {
-      this.getVipStats(vipResource)
-        .then((results) => {
-          let servicePath;
-          var tenantIndex;
-          var serviceIndex;
-          // Check if subPath is un use.
-          if ('subPath' in vipResource) {
-            // Merge 'tenant' name and 'subPath' name as '/' delimited string.
-            servicePath = vipResource.partition + '/' + vipResource.subPath;
-          } else {
-            // 'subPath' is NOT used, use 'tenant' name on its own.
-            servicePath = vipResource.partition;
-          }
-          util.logDebug(`buildlargeStatsObject() - Processing VIP: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
-
-          // Check if the tenant and service entries exist
-          tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
-          if (tenantIndex === -1) {
-            // Tenant & Service don't exist, creating.
-            tenantStats.push({
-              id: servicePath,
-              services: [results]
-            });
-            // Update tenantIndex & serviceIndex for newly created objects.
-            tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
-            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
-          } else {
-            // Tenant exists, check if service exists
-            serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
-            if (serviceIndex === -1) {
-              // Service does not exist, creating.
-              tenantStats[tenantIndex].services.push(results);
-              serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === vipResource.destination);
-            }
-          }
-          util.logDebug(`tenantStats.length: ${tenantStats.length}, tenantIndex: ${tenantIndex}, serviceIndex: ${serviceIndex}, tenantStats[tenantIndex]: ${JSON.stringify(tenantStats[tenantIndex])}`);
-
-          this.getSslStats(vipResource)
-            .then((sslStats) => {
-              if (Object.keys(sslStats).length !== 0) {
-                tenantStats[tenantIndex].services[serviceIndex].ssl = sslStats;
-              }
-            });
-
-          // If its the last VIP in the list and it has no pool associated, resolve now.
-          if (typeof vipResource.poolReference === 'undefined' && vipResourceListIndex === (vipResourceList.items.length - 1)) {
-            util.logDebug('VIP & POOL ARRAYs Complete');
-            resolve(tenantStats);
-          }
-          // Verify VIP has a pool attached
-          else if (typeof vipResource.poolReference !== 'undefined') {
-            // initialize objects on first run
-            if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
-              tenantStats[tenantIndex].services[serviceIndex].pool = {};
-              tenantStats[tenantIndex].services[serviceIndex].pool.id = vipResource.pool;
-              tenantStats[tenantIndex].services[serviceIndex].pool.members = [];
-            }
-
-            this.getPoolResourceList(vipResource)
-              .then((poolResourceList) => {
-                poolResourceList.map((poolMemberResource, poolMemberResourceIndex) => {
-                  this.getPoolMemberStats(poolMemberResource)
-                    .then((stats) => {
-                      tenantStats[tenantIndex].services[serviceIndex].pool.members.push(stats);
-
-                      if (vipResourceListIndex === (vipResourceList.items.length - 1)) {
-                        util.logDebug(`getPoolMemberStats() - Processing: ${vipResourceListIndex} of: ${(vipResourceList.items.length - 1)}`);
-                        util.logDebug(`getPoolMemberStats() - Processing: ${poolMemberResourceIndex} of: ${(poolResourceList.length - 1)}`);
-
-                        if (poolMemberResourceIndex === (poolResourceList.length - 1)) {
-                          util.logDebug('VIP & POOL ARRAYs Complete');
-                          resolve(tenantStats);
-                        }
-                      }
-                    })
-                    .catch((err) => {
-                      util.logError(`buildLargeStatsObject(): ${err}`);
-                      reject(err);
-                    });
-                });
-              });
-          }
-        })
-        .catch((err) => {
-          util.logError(`buildLargeStatsObject(): ${err}`);
-          reject(err);
-        });
+  return this.buildMediumStatsObject(vipResourceList)
+  .then((mediumStatsObj) => {
+    util.logDebug(`buildLargeStatsObject() w/ mediumStatsObj: ${JSON.stringify(mediumStatsObj)}`);
+    tenantStats = mediumStatsObj;
+    let sslResourcePromises = [];
+    vipResourceList.items.map((vipResource) => {
+      sslResourcePromises.push(this.getSslStats(vipResource));
+    });  
+    return Promise.all(sslResourcePromises);
+  })
+  .then((sslStatsArray) => {
+    util.logDebug(`sslStatsArray: ${JSON.stringify(sslStatsArray)}`);
+    sslStatsArray.map((sslStats) => {
+      if (typeof sslStats !== 'undefined') {
+        util.logDebug(`buildLargeStatsObject() w/ sslStats: ${JSON.stringify(sslStats)}`);
+        let servicePath;
+        let tenantIndex;
+        let serviceIndex;
+        // Check if subPath is un use. If so, merge into vip 'id' 
+        if ('subPath' in sslStats.vip) {
+          servicePath = sslStats.vip.partition + '/' + sslStats.vip.subPath;
+        } else {
+          servicePath = sslStats.vip.partition;
+        }
+        tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
+        serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === sslStats.vip.destination);
+        if (typeof tenantStats[tenantIndex].services[serviceIndex].ssl === 'undefined') {
+          tenantStats[tenantIndex].services[serviceIndex].ssl = {
+            id: sslStats.vip.pool,
+            members: []
+          };
+        }
+        tenantStats[tenantIndex].services[serviceIndex].ssl = sslStats.stats;
+      }
     });
+    return tenantStats;
   });
 };
 
@@ -739,44 +632,41 @@ BigStats.prototype.getVipStats = function (vipResource) {
 BigStats.prototype.getPoolResourceList = function (vipResource) {
   return new Promise((resolve, reject) => {
     // If the VIP has an associated pool
-    if (typeof vipResource.poolReference !== 'undefined') {
-      var cleanPath = '';
-      var PREFIX = 'https://localhost';
+    var cleanPath = '';
+    var PREFIX = 'https://localhost';
 
-      if (vipResource.poolReference.link.indexOf(PREFIX) === 0) {
-        // PREFIX is exactly at the beginning
-        cleanPath = vipResource.poolReference.link.slice(PREFIX.length).split('?').shift();
-      }
-
-      var query = '$select=name,selfLink';
-      var path = `${cleanPath}/members`;
-      util.logDebug(`getPoolResourceList() - Pool Members URI: ${path}`);
-      var uri = this.restHelper.makeRestnodedUri(path, query);
-      var restOp = this.createRestOperation(uri);
-      var poolMemberListObj = [];
-
-      this.restRequestSender.sendGet(restOp)
-        .then((resp) => {
-          resp.body.items.map((element, index) => {
-            poolMemberListObj.push(
-              {
-                name: element.name,
-                path: element.selfLink
-              }
-            );
-
-            util.logDebug(`getPoolResourceList() - Processing: ${index} of: ${(resp.body.items.length - 1)}`);
-
-            if (index === (resp.body.items.length - 1)) {
-              resolve(poolMemberListObj);
-            }
-          });
-        })
-        .catch((err) => {
-          util.logError(`getPoolResourceList(): ${err}`);
-          reject(err);
-        });
+    if (vipResource.poolReference.link.indexOf(PREFIX) === 0) {
+      // PREFIX is exactly at the beginning
+      cleanPath = vipResource.poolReference.link.slice(PREFIX.length).split('?').shift();
     }
+
+    var query = '$select=name,selfLink';
+    var path = `${cleanPath}/members`;
+    util.logDebug(`getPoolResourceList() - Pool Members URI: ${path}`);
+    var uri = this.restHelper.makeRestnodedUri(path, query);
+    var restOp = this.createRestOperation(uri);
+    var poolMemberListObj = [];
+
+    this.restRequestSender.sendGet(restOp)
+      .then((resp) => {
+        resp.body.items.map((element, index) => {
+          poolMemberListObj.push(
+            {
+              vip: vipResource,
+              name: element.name,
+              path: element.selfLink
+            }
+          );
+
+          util.logDebug(`getPoolResourceList() - Processing: ${index} of: ${(resp.body.items.length - 1)}`);
+
+        });
+        resolve(poolMemberListObj);
+      })
+      .catch((err) => {
+        util.logError(`getPoolResourceList(): ${err}`);
+        reject(err);
+      });
   });
 };
 
@@ -818,14 +708,17 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
         }
 
         let poolMemberStats = {
-          id: poolMemberResource.name,
-          serverside_curConns: resp.body.entries[entryUrl].nestedStats.entries['serverside.curConns'].value,
-          serverside_maxConns: resp.body.entries[entryUrl].nestedStats.entries['serverside.maxConns'].value,
-          serverside_bitsIn: resp.body.entries[entryUrl].nestedStats.entries['serverside.bitsIn'].value,
-          serverside_bitsOut: resp.body.entries[entryUrl].nestedStats.entries['serverside.bitsOut'].value,
-          serverside_pktsIn: resp.body.entries[entryUrl].nestedStats.entries['serverside.pktsIn'].value,
-          serverside_pktsOut: resp.body.entries[entryUrl].nestedStats.entries['serverside.pktsOut'].value,
-          monitorStatus: serverStatus
+          poolMemberResource,
+          poolMemberStats: {
+            id: poolMemberResource.name,
+            serverside_curConns: resp.body.entries[entryUrl].nestedStats.entries['serverside.curConns'].value,
+            serverside_maxConns: resp.body.entries[entryUrl].nestedStats.entries['serverside.maxConns'].value,
+            serverside_bitsIn: resp.body.entries[entryUrl].nestedStats.entries['serverside.bitsIn'].value,
+            serverside_bitsOut: resp.body.entries[entryUrl].nestedStats.entries['serverside.bitsOut'].value,
+            serverside_pktsIn: resp.body.entries[entryUrl].nestedStats.entries['serverside.pktsIn'].value,
+            serverside_pktsOut: resp.body.entries[entryUrl].nestedStats.entries['serverside.pktsOut'].value,
+            monitorStatus: serverStatus  
+          }
         };
 
         resolve(poolMemberStats);
@@ -859,38 +752,29 @@ BigStats.prototype.getSslStats = function (vipResource) {
         const vipProfileList = JSON.stringify(values[0]);
         let sslProfileList = [];
         values[1].map((element) => sslProfileList.push(element.name));
-        util.logDebug(`### vipProfileList: ${vipProfileList}`);
-        util.logDebug(`### sslProfileList: ${sslProfileList}`);
+        util.logDebug(`getSslStats() - getVipProfileList(): ${vipProfileList}`);
+        util.logDebug(`getSslStats() - getSslProfileList(): ${sslProfileList}`);
         // Compare a VIP's profile list with the 'client-ssl' profile list
         const match = values[1].filter(element => vipProfileList.includes(element.name));
 
         if (Object.keys(match).length === 0) {
-        // This vipResource doesn't have a matching client-ssl profile
-        // Throwing harmless 'no profile found' to escape Promise. Not really an 'error'.
-          const DO_NOTHING = `No SSL profiles associated with: ${servicePath} `;
-          throw DO_NOTHING;
+          resolve();
         } else {
-          util.logDebug(`### Matched: SSL profile. Name: ${match[0].name}, FullPath: ${match[0].fullPath}`);
-          return match[0].fullPath;
+          util.logDebug(`getSslStats(): SSL profile: Name: ${match[0].name}, FullPath: ${match[0].fullPath}`);
+          let matchedSsl = {
+            vip: vipResource,
+            sslPath: match[0].fullPath
+          };
+          return this.getSslProfileStats(matchedSsl);
         }
       })
-      .then((matchedSslProfileFullPath) => {
-        util.logDebug(`### matchedSslProfileFullPath: ${matchedSslProfileFullPath}\n`);
-        return this.getSslProfileStats(matchedSslProfileFullPath);
-      })
       .then((sslProfileStats) => {
-        util.logDebug(`### sslProfileStats: ${JSON.stringify(sslProfileStats)}`);
+        util.logDebug(`getSslStats() - getSslProfileStats(): ${JSON.stringify(sslProfileStats)}`);
         resolve(sslProfileStats);
       })
       .catch((err) => {
         // Throwing harmless 'no profile found' to escape Promise. Not really an 'error'.
-        if (err.startsWith('No SSL profiles associated')) {
-          util.logDebug(`err: ${err}`);
-        }
-        else {
-          // Catch actual errors.
-          util.logError(`err: ${err}`);
-        }
+        util.logDebug(`err: ${err}`);
       });
   });
 };
@@ -945,9 +829,9 @@ BigStats.prototype.getSslProfileList = function () {
 };
 
 //       return this.getSslProfileStats(servicePath, matchedSslProfileName);
-BigStats.prototype.getSslProfileStats = function (sslProfileFullPath) {
+BigStats.prototype.getSslProfileStats = function (sslProfile) {
   return new Promise((resolve, reject) => {
-    let fullPath = sslProfileFullPath.replace(/\//g, '~');
+    let fullPath = sslProfile.sslPath.replace(/\//g, '~');
     var uri = `/mgmt/tm/ltm/profile/client-ssl/${fullPath}/stats`;
     var url = this.restHelper.makeRestnodedUri(uri);
     var restOp = this.createRestOperation(url);
@@ -956,115 +840,118 @@ BigStats.prototype.getSslProfileStats = function (sslProfileFullPath) {
       .then((resp) => {
         let path = `https://localhost/mgmt/tm/ltm/profile/client-ssl/${fullPath}/${fullPath}/stats`;
         let sslStats = {
-          id: sslProfileFullPath,
-          common_activeHandshakeRejected: resp.body.entries[path].nestedStats.entries['common.activeHandshakeRejected'].value,
-          common_aggregateRenegotiationsRejected: resp.body.entries[path].nestedStats.entries['common.aggregateRenegotiationsRejected'].value,
-          common_badRecords: resp.body.entries[path].nestedStats.entries['common.badRecords'].value,
-          common_c3dUses_conns: resp.body.entries[path].nestedStats.entries['common.c3dUses.conns'].value,
-          common_cipherUses_adhKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.adhKeyxchg'].value,
-          common_cipherUses_aesBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.aesBulk'].value,
-          common_cipherUses_aesGcmBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.aesGcmBulk'].value,
-          common_cipherUses_camelliaBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.camelliaBulk'].value,
-          common_cipherUses_desBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.desBulk'].value,
-          common_cipherUses_dhRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.dhRsaKeyxchg'].value,
-          common_cipherUses_dheDssKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.dheDssKeyxchg'].value,
-          common_cipherUses_ecdhEcdsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdhEcdsaKeyxchg'].value,
-          common_cipherUses_ecdhRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdhRsaKeyxchg'].value,
-          common_cipherUses_ecdheEcdsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdheEcdsaKeyxchg'].value,
-          common_cipherUses_ecdheRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdheRsaKeyxchg'].value,
-          common_cipherUses_edhRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.edhRsaKeyxchg'].value,
-          common_cipherUses_ideaBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.ideaBulk'].value,
-          common_cipherUses_md5Digest: resp.body.entries[path].nestedStats.entries['common.cipherUses.md5Digest'].value,
-          common_cipherUses_nullBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.nullBulk'].value,
-          common_cipherUses_nullDigest: resp.body.entries[path].nestedStats.entries['common.cipherUses.nullDigest'].value,
-          common_cipherUses_rc2Bulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.rc2Bulk'].value,
-          common_cipherUses_rc4Bulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.rc4Bulk'].value,
-          common_cipherUses_rsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.rsaKeyxchg'].value,
-          common_cipherUses_shaDigest: resp.body.entries[path].nestedStats.entries['common.cipherUses.shaDigest'].value,
-          common_connectionMirroring_haCtxRecv: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haCtxRecv'].value,
-          common_connectionMirroring_haCtxSent: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haCtxSent'].value,
-          common_connectionMirroring_haFailure: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haFailure'].value,
-          common_connectionMirroring_haHsSuccess: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haHsSuccess'].value,
-          common_connectionMirroring_haPeerReady: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haPeerReady'].value,
-          common_connectionMirroring_haTimeout: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haTimeout'].value,
-          common_curCompatConns: resp.body.entries[path].nestedStats.entries['common.curCompatConns'].value,
-          common_curConns: resp.body.entries[path].nestedStats.entries['common.curConns'].value,
-          common_curNativeConns: resp.body.entries[path].nestedStats.entries['common.curNativeConns'].value,
-          common_currentActiveHandshakes: resp.body.entries[path].nestedStats.entries['common.currentActiveHandshakes'].value,
-          common_decryptedBytesIn: resp.body.entries[path].nestedStats.entries['common.decryptedBytesIn'].value,
-          common_decryptedBytesOut: resp.body.entries[path].nestedStats.entries['common.decryptedBytesOut'].value,
-          common_dtlsTxPushbacks: resp.body.entries[path].nestedStats.entries['common.dtlsTxPushbacks'].value,
-          common_encryptedBytesIn: resp.body.entries[path].nestedStats.entries['common.encryptedBytesIn'].value,
-          common_encryptedBytesOut: resp.body.entries[path].nestedStats.entries['common.encryptedBytesOut'].value,
-          common_extendedMasterSecrets: resp.body.entries[path].nestedStats.entries['common.extendedMasterSecrets'].value,
-          common_fatalAlerts: resp.body.entries[path].nestedStats.entries['common.fatalAlerts'].value,
-          common_fullyHwAcceleratedConns: resp.body.entries[path].nestedStats.entries['common.fullyHwAcceleratedConns'].value,
-          common_fwdpUses_alertBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.alertBypasses'].value,
-          common_fwdpUses_cachedCerts: resp.body.entries[path].nestedStats.entries['common.fwdpUses.cachedCerts'].value,
-          common_fwdpUses_clicertFailBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.clicertFailBypasses'].value,
-          common_fwdpUses_conns: resp.body.entries[path].nestedStats.entries['common.fwdpUses.conns'].value,
-          common_fwdpUses_dipBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.dipBypasses'].value,
-          common_fwdpUses_hnBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.hnBypasses'].value,
-          common_fwdpUses_sipBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.sipBypasses'].value,
-          common_handshakeFailures: resp.body.entries[path].nestedStats.entries['common.handshakeFailures'].value,
-          common_insecureHandshakeAccepts: resp.body.entries[path].nestedStats.entries['common.insecureHandshakeAccepts'].value,
-          common_insecureHandshakeRejects: resp.body.entries[path].nestedStats.entries['common.insecureHandshakeRejects'].value,
-          common_insecureRenegotiationRejects: resp.body.entries[path].nestedStats.entries['common.insecureRenegotiationRejects'].value,
-          common_maxCompatConns: resp.body.entries[path].nestedStats.entries['common.maxCompatConns'].value,
-          common_maxConns: resp.body.entries[path].nestedStats.entries['common.maxConns'].value,
-          common_maxNativeConns: resp.body.entries[path].nestedStats.entries['common.maxNativeConns'].value,
-          common_midstreamRenegotiations: resp.body.entries[path].nestedStats.entries['common.midstreamRenegotiations'].value,
-          common_nonHwAcceleratedConns: resp.body.entries[path].nestedStats.entries['common.nonHwAcceleratedConns'].value,
-          common_ocspFwdpClientssl_cachedResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.cachedResp'].value,
-          common_ocspFwdpClientssl_certStatusReq: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.certStatusReq'].value,
-          common_ocspFwdpClientssl_invalidCertResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.invalidCertResp'].value,
-          common_ocspFwdpClientssl_respstatusErrResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.respstatusErrResp'].value,
-          common_ocspFwdpClientssl_revokedResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.revokedResp'].value,
-          common_ocspFwdpClientssl_stapledResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.stapledResp'].value,
-          common_ocspFwdpClientssl_unknownResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.unknownResp'].value,
-          common_partiallyHwAcceleratedConns: resp.body.entries[path].nestedStats.entries['common.partiallyHwAcceleratedConns'].value,
-          common_peercertInvalid: resp.body.entries[path].nestedStats.entries['common.peercertInvalid'].value,
-          common_peercertNone: resp.body.entries[path].nestedStats.entries['common.peercertNone'].value,
-          common_peercertValid: resp.body.entries[path].nestedStats.entries['common.peercertValid'].value,
-          common_prematureDisconnects: resp.body.entries[path].nestedStats.entries['common.prematureDisconnects'].value,
-          common_protocolUses_dtlsv1: resp.body.entries[path].nestedStats.entries['common.protocolUses.dtlsv1'].value,
-          common_protocolUses_sslv2: resp.body.entries[path].nestedStats.entries['common.protocolUses.sslv2'].value,
-          common_protocolUses_sslv3: resp.body.entries[path].nestedStats.entries['common.protocolUses.sslv3'].value,
-          common_protocolUses_tlsv1: resp.body.entries[path].nestedStats.entries['common.protocolUses.tlsv1'].value,
-          common_protocolUses_tlsv1_1: resp.body.entries[path].nestedStats.entries['common.protocolUses.tlsv1_1'].value,
-          common_protocolUses_tlsv1_2: resp.body.entries[path].nestedStats.entries['common.protocolUses.tlsv1_2'].value,
-          common_recordsIn: resp.body.entries[path].nestedStats.entries['common.recordsIn'].value,
-          common_recordsOut: resp.body.entries[path].nestedStats.entries['common.recordsOut'].value,
-          common_renegotiationsRejected: resp.body.entries[path].nestedStats.entries['common.renegotiationsRejected'].value,
-          common_secureHandshakes: resp.body.entries[path].nestedStats.entries['common.secureHandshakes'].value,
-          common_sessCacheCurEntries: resp.body.entries[path].nestedStats.entries['common.sessCacheCurEntries'].value,
-          common_sessCacheHits: resp.body.entries[path].nestedStats.entries['common.sessCacheHits'].value,
-          common_sessCacheInvalidations: resp.body.entries[path].nestedStats.entries['common.sessCacheInvalidations'].value,
-          common_sessCacheLookups: resp.body.entries[path].nestedStats.entries['common.sessCacheLookups'].value,
-          common_sessCacheOverflows: resp.body.entries[path].nestedStats.entries['common.sessCacheOverflows'].value,
-          common_sessionMirroring_failure: resp.body.entries[path].nestedStats.entries['common.sessionMirroring.failure'].value,
-          common_sessionMirroring_success: resp.body.entries[path].nestedStats.entries['common.sessionMirroring.success'].value,
-          common_sesstickUses_reuseFailed: resp.body.entries[path].nestedStats.entries['common.sesstickUses.reuseFailed'].value,
-          common_sesstickUses_reused: resp.body.entries[path].nestedStats.entries['common.sesstickUses.reused'].value,
-          common_sniRejects: resp.body.entries[path].nestedStats.entries['common.sniRejects'].value,
-          common_totCompatConns: resp.body.entries[path].nestedStats.entries['common.totCompatConns'].value,
-          common_totNativeConns: resp.body.entries[path].nestedStats.entries['common.totNativeConns'].value,
-          dynamicRecord_x1: resp.body.entries[path].nestedStats.entries['dynamicRecord.x1'].value,
-          dynamicRecord_x10: resp.body.entries[path].nestedStats.entries['dynamicRecord.x10'].value,
-          dynamicRecord_x11: resp.body.entries[path].nestedStats.entries['dynamicRecord.x11'].value,
-          dynamicRecord_x12: resp.body.entries[path].nestedStats.entries['dynamicRecord.x12'].value,
-          dynamicRecord_x13: resp.body.entries[path].nestedStats.entries['dynamicRecord.x13'].value,
-          dynamicRecord_x14: resp.body.entries[path].nestedStats.entries['dynamicRecord.x14'].value,
-          dynamicRecord_x15: resp.body.entries[path].nestedStats.entries['dynamicRecord.x15'].value,
-          dynamicRecord_x16: resp.body.entries[path].nestedStats.entries['dynamicRecord.x16'].value,
-          dynamicRecord_x2: resp.body.entries[path].nestedStats.entries['dynamicRecord.x2'].value,
-          dynamicRecord_x3: resp.body.entries[path].nestedStats.entries['dynamicRecord.x3'].value,
-          dynamicRecord_x4: resp.body.entries[path].nestedStats.entries['dynamicRecord.x4'].value,
-          dynamicRecord_x5: resp.body.entries[path].nestedStats.entries['dynamicRecord.x5'].value,
-          dynamicRecord_x6: resp.body.entries[path].nestedStats.entries['dynamicRecord.x6'].value,
-          dynamicRecord_x7: resp.body.entries[path].nestedStats.entries['dynamicRecord.x7'].value,
-          dynamicRecord_x8: resp.body.entries[path].nestedStats.entries['dynamicRecord.x8'].value,
-          dynamicRecord_x9: resp.body.entries[path].nestedStats.entries['dynamicRecord.x9'].value
+          vip: sslProfile.vip,
+          stats: {
+            id: sslProfile.sslPath,
+            common_activeHandshakeRejected: resp.body.entries[path].nestedStats.entries['common.activeHandshakeRejected'].value,
+            common_aggregateRenegotiationsRejected: resp.body.entries[path].nestedStats.entries['common.aggregateRenegotiationsRejected'].value,
+            common_badRecords: resp.body.entries[path].nestedStats.entries['common.badRecords'].value,
+            common_c3dUses_conns: resp.body.entries[path].nestedStats.entries['common.c3dUses.conns'].value,
+            common_cipherUses_adhKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.adhKeyxchg'].value,
+            common_cipherUses_aesBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.aesBulk'].value,
+            common_cipherUses_aesGcmBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.aesGcmBulk'].value,
+            common_cipherUses_camelliaBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.camelliaBulk'].value,
+            common_cipherUses_desBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.desBulk'].value,
+            common_cipherUses_dhRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.dhRsaKeyxchg'].value,
+            common_cipherUses_dheDssKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.dheDssKeyxchg'].value,
+            common_cipherUses_ecdhEcdsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdhEcdsaKeyxchg'].value,
+            common_cipherUses_ecdhRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdhRsaKeyxchg'].value,
+            common_cipherUses_ecdheEcdsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdheEcdsaKeyxchg'].value,
+            common_cipherUses_ecdheRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.ecdheRsaKeyxchg'].value,
+            common_cipherUses_edhRsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.edhRsaKeyxchg'].value,
+            common_cipherUses_ideaBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.ideaBulk'].value,
+            common_cipherUses_md5Digest: resp.body.entries[path].nestedStats.entries['common.cipherUses.md5Digest'].value,
+            common_cipherUses_nullBulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.nullBulk'].value,
+            common_cipherUses_nullDigest: resp.body.entries[path].nestedStats.entries['common.cipherUses.nullDigest'].value,
+            common_cipherUses_rc2Bulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.rc2Bulk'].value,
+            common_cipherUses_rc4Bulk: resp.body.entries[path].nestedStats.entries['common.cipherUses.rc4Bulk'].value,
+            common_cipherUses_rsaKeyxchg: resp.body.entries[path].nestedStats.entries['common.cipherUses.rsaKeyxchg'].value,
+            common_cipherUses_shaDigest: resp.body.entries[path].nestedStats.entries['common.cipherUses.shaDigest'].value,
+            common_connectionMirroring_haCtxRecv: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haCtxRecv'].value,
+            common_connectionMirroring_haCtxSent: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haCtxSent'].value,
+            common_connectionMirroring_haFailure: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haFailure'].value,
+            common_connectionMirroring_haHsSuccess: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haHsSuccess'].value,
+            common_connectionMirroring_haPeerReady: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haPeerReady'].value,
+            common_connectionMirroring_haTimeout: resp.body.entries[path].nestedStats.entries['common.connectionMirroring.haTimeout'].value,
+            common_curCompatConns: resp.body.entries[path].nestedStats.entries['common.curCompatConns'].value,
+            common_curConns: resp.body.entries[path].nestedStats.entries['common.curConns'].value,
+            common_curNativeConns: resp.body.entries[path].nestedStats.entries['common.curNativeConns'].value,
+            common_currentActiveHandshakes: resp.body.entries[path].nestedStats.entries['common.currentActiveHandshakes'].value,
+            common_decryptedBytesIn: resp.body.entries[path].nestedStats.entries['common.decryptedBytesIn'].value,
+            common_decryptedBytesOut: resp.body.entries[path].nestedStats.entries['common.decryptedBytesOut'].value,
+            common_dtlsTxPushbacks: resp.body.entries[path].nestedStats.entries['common.dtlsTxPushbacks'].value,
+            common_encryptedBytesIn: resp.body.entries[path].nestedStats.entries['common.encryptedBytesIn'].value,
+            common_encryptedBytesOut: resp.body.entries[path].nestedStats.entries['common.encryptedBytesOut'].value,
+            common_extendedMasterSecrets: resp.body.entries[path].nestedStats.entries['common.extendedMasterSecrets'].value,
+            common_fatalAlerts: resp.body.entries[path].nestedStats.entries['common.fatalAlerts'].value,
+            common_fullyHwAcceleratedConns: resp.body.entries[path].nestedStats.entries['common.fullyHwAcceleratedConns'].value,
+            common_fwdpUses_alertBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.alertBypasses'].value,
+            common_fwdpUses_cachedCerts: resp.body.entries[path].nestedStats.entries['common.fwdpUses.cachedCerts'].value,
+            common_fwdpUses_clicertFailBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.clicertFailBypasses'].value,
+            common_fwdpUses_conns: resp.body.entries[path].nestedStats.entries['common.fwdpUses.conns'].value,
+            common_fwdpUses_dipBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.dipBypasses'].value,
+            common_fwdpUses_hnBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.hnBypasses'].value,
+            common_fwdpUses_sipBypasses: resp.body.entries[path].nestedStats.entries['common.fwdpUses.sipBypasses'].value,
+            common_handshakeFailures: resp.body.entries[path].nestedStats.entries['common.handshakeFailures'].value,
+            common_insecureHandshakeAccepts: resp.body.entries[path].nestedStats.entries['common.insecureHandshakeAccepts'].value,
+            common_insecureHandshakeRejects: resp.body.entries[path].nestedStats.entries['common.insecureHandshakeRejects'].value,
+            common_insecureRenegotiationRejects: resp.body.entries[path].nestedStats.entries['common.insecureRenegotiationRejects'].value,
+            common_maxCompatConns: resp.body.entries[path].nestedStats.entries['common.maxCompatConns'].value,
+            common_maxConns: resp.body.entries[path].nestedStats.entries['common.maxConns'].value,
+            common_maxNativeConns: resp.body.entries[path].nestedStats.entries['common.maxNativeConns'].value,
+            common_midstreamRenegotiations: resp.body.entries[path].nestedStats.entries['common.midstreamRenegotiations'].value,
+            common_nonHwAcceleratedConns: resp.body.entries[path].nestedStats.entries['common.nonHwAcceleratedConns'].value,
+            common_ocspFwdpClientssl_cachedResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.cachedResp'].value,
+            common_ocspFwdpClientssl_certStatusReq: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.certStatusReq'].value,
+            common_ocspFwdpClientssl_invalidCertResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.invalidCertResp'].value,
+            common_ocspFwdpClientssl_respstatusErrResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.respstatusErrResp'].value,
+            common_ocspFwdpClientssl_revokedResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.revokedResp'].value,
+            common_ocspFwdpClientssl_stapledResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.stapledResp'].value,
+            common_ocspFwdpClientssl_unknownResp: resp.body.entries[path].nestedStats.entries['common.ocspFwdpClientssl.unknownResp'].value,
+            common_partiallyHwAcceleratedConns: resp.body.entries[path].nestedStats.entries['common.partiallyHwAcceleratedConns'].value,
+            common_peercertInvalid: resp.body.entries[path].nestedStats.entries['common.peercertInvalid'].value,
+            common_peercertNone: resp.body.entries[path].nestedStats.entries['common.peercertNone'].value,
+            common_peercertValid: resp.body.entries[path].nestedStats.entries['common.peercertValid'].value,
+            common_prematureDisconnects: resp.body.entries[path].nestedStats.entries['common.prematureDisconnects'].value,
+            common_protocolUses_dtlsv1: resp.body.entries[path].nestedStats.entries['common.protocolUses.dtlsv1'].value,
+            common_protocolUses_sslv2: resp.body.entries[path].nestedStats.entries['common.protocolUses.sslv2'].value,
+            common_protocolUses_sslv3: resp.body.entries[path].nestedStats.entries['common.protocolUses.sslv3'].value,
+            common_protocolUses_tlsv1: resp.body.entries[path].nestedStats.entries['common.protocolUses.tlsv1'].value,
+            common_protocolUses_tlsv1_1: resp.body.entries[path].nestedStats.entries['common.protocolUses.tlsv1_1'].value,
+            common_protocolUses_tlsv1_2: resp.body.entries[path].nestedStats.entries['common.protocolUses.tlsv1_2'].value,
+            common_recordsIn: resp.body.entries[path].nestedStats.entries['common.recordsIn'].value,
+            common_recordsOut: resp.body.entries[path].nestedStats.entries['common.recordsOut'].value,
+            common_renegotiationsRejected: resp.body.entries[path].nestedStats.entries['common.renegotiationsRejected'].value,
+            common_secureHandshakes: resp.body.entries[path].nestedStats.entries['common.secureHandshakes'].value,
+            common_sessCacheCurEntries: resp.body.entries[path].nestedStats.entries['common.sessCacheCurEntries'].value,
+            common_sessCacheHits: resp.body.entries[path].nestedStats.entries['common.sessCacheHits'].value,
+            common_sessCacheInvalidations: resp.body.entries[path].nestedStats.entries['common.sessCacheInvalidations'].value,
+            common_sessCacheLookups: resp.body.entries[path].nestedStats.entries['common.sessCacheLookups'].value,
+            common_sessCacheOverflows: resp.body.entries[path].nestedStats.entries['common.sessCacheOverflows'].value,
+            common_sessionMirroring_failure: resp.body.entries[path].nestedStats.entries['common.sessionMirroring.failure'].value,
+            common_sessionMirroring_success: resp.body.entries[path].nestedStats.entries['common.sessionMirroring.success'].value,
+            common_sesstickUses_reuseFailed: resp.body.entries[path].nestedStats.entries['common.sesstickUses.reuseFailed'].value,
+            common_sesstickUses_reused: resp.body.entries[path].nestedStats.entries['common.sesstickUses.reused'].value,
+            common_sniRejects: resp.body.entries[path].nestedStats.entries['common.sniRejects'].value,
+            common_totCompatConns: resp.body.entries[path].nestedStats.entries['common.totCompatConns'].value,
+            common_totNativeConns: resp.body.entries[path].nestedStats.entries['common.totNativeConns'].value,
+            dynamicRecord_x1: resp.body.entries[path].nestedStats.entries['dynamicRecord.x1'].value,
+            dynamicRecord_x10: resp.body.entries[path].nestedStats.entries['dynamicRecord.x10'].value,
+            dynamicRecord_x11: resp.body.entries[path].nestedStats.entries['dynamicRecord.x11'].value,
+            dynamicRecord_x12: resp.body.entries[path].nestedStats.entries['dynamicRecord.x12'].value,
+            dynamicRecord_x13: resp.body.entries[path].nestedStats.entries['dynamicRecord.x13'].value,
+            dynamicRecord_x14: resp.body.entries[path].nestedStats.entries['dynamicRecord.x14'].value,
+            dynamicRecord_x15: resp.body.entries[path].nestedStats.entries['dynamicRecord.x15'].value,
+            dynamicRecord_x16: resp.body.entries[path].nestedStats.entries['dynamicRecord.x16'].value,
+            dynamicRecord_x2: resp.body.entries[path].nestedStats.entries['dynamicRecord.x2'].value,
+            dynamicRecord_x3: resp.body.entries[path].nestedStats.entries['dynamicRecord.x3'].value,
+            dynamicRecord_x4: resp.body.entries[path].nestedStats.entries['dynamicRecord.x4'].value,
+            dynamicRecord_x5: resp.body.entries[path].nestedStats.entries['dynamicRecord.x5'].value,
+            dynamicRecord_x6: resp.body.entries[path].nestedStats.entries['dynamicRecord.x6'].value,
+            dynamicRecord_x7: resp.body.entries[path].nestedStats.entries['dynamicRecord.x7'].value,
+            dynamicRecord_x8: resp.body.entries[path].nestedStats.entries['dynamicRecord.x8'].value,
+            dynamicRecord_x9: resp.body.entries[path].nestedStats.entries['dynamicRecord.x9'].value
+          }
         };
 
         resolve(sslStats);

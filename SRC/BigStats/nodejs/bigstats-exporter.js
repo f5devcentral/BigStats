@@ -156,10 +156,12 @@ BigStatsExporter.prototype.statsdExporter = function (data) {
   Object.keys(servicesData).map((tenantIdx) => {
     util.logDebug(`exportStats() - Tenant Index: ${tenantIdx}, Tenant Id: ${servicesData[tenantIdx].id}`);
     Object.keys(servicesData[tenantIdx].services).map((serviceIdx) => {
+      //TODO: timeout=(intevarl/2)/(services.length)
       let tenantId = this.replaceDotsSlashesColons(servicesData[tenantIdx].id);
       let serviceId = this.replaceDotsSlashesColons(servicesData[tenantIdx].services[serviceIdx].id);
       util.logDebug(`exportStats() - Service Index: ${serviceIdx}, Service Id: ${servicesData[tenantIdx].services[serviceIdx].id}`);
       Object.keys(servicesData[tenantIdx].services[serviceIdx]).map((metric) => {
+        //TODO: timeout=(intevarl/2)/(services.length)
         if (metric !== 'id' && metric !== 'pool' && metric !== 'ssl') {
           util.logDebug(`exportStats() - statsd: Service: ${servicesData[tenantIdx].services[serviceIdx].id} - ${metric} = ${servicesData[tenantIdx].services[serviceIdx][metric]}`);
           let namespace = `device.${data.config.hostname}.tenants.${tenantId}.services.${serviceId}.${metric}`;

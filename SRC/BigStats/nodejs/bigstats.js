@@ -737,7 +737,7 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
  */
 BigStats.prototype.getSslStats = function (vipResource) {
   return new Promise((resolve, reject) => {
-    var servicePath;
+    let servicePath;
     // Check if subPath is un use.
     if ('subPath' in vipResource) {
       // Merge 'tenant' name and 'subPath' name as '/' delimited string.
@@ -775,6 +775,7 @@ BigStats.prototype.getSslStats = function (vipResource) {
       .catch((err) => {
         // Throwing harmless 'no profile found' to escape Promise. Not really an 'error'.
         util.logDebug(`err: ${err}`);
+        reject(err);
       });
   });
 };
@@ -802,6 +803,10 @@ BigStats.prototype.getVipProfileList = function (vipResource) {
           vipProfileNames.push(item.name);
         });
         resolve(vipProfileNames);
+      })
+      .catch((err) => {
+        util.logError(`getVipProfileList(): - Error retrieving VIP Profile List: ${err}`);
+        reject(err);
       });
   });
 };
@@ -824,11 +829,14 @@ BigStats.prototype.getSslProfileList = function () {
           sslProfileNames.push({ name: item.name, fullPath: item.fullPath });
         });
         resolve(sslProfileNames);
+      })
+      .catch((err) => {
+        util.logError(`getSslProfileList(): - Error retrieving SSL Profile List: ${err}`);
+        reject(err);
       });
   });
 };
 
-//       return this.getSslProfileStats(servicePath, matchedSslProfileName);
 BigStats.prototype.getSslProfileStats = function (sslProfile) {
   return new Promise((resolve, reject) => {
     let fullPath = sslProfile.sslPath.replace(/\//g, '~');

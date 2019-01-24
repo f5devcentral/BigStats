@@ -26,7 +26,9 @@ let getPoolMemberStatsStub;
 let vipInfoStats = require('./data/vs-stats.json');
 let hostInfoStats = require('./data/host-info-stats.json');
 let vipResourceList = require('./data/filtered-vip-resource-list.json');
+let vipProfileList = require('./data/vip-profile-list.json');
 let poolMemberStats = require('./data/pool-member-stats.json');
+let clientSslProfileList = require('./data/client-ssl_profile_list.json');
 
 describe('BigStats', function () {
   beforeEach(function (done) {
@@ -154,12 +156,38 @@ describe('BigStats', function () {
   });
 
   describe('getDeviceStats', function () {
+    
+    // runs once before all tests in this block
+    before(function (done) {
+      utilStub = sinon.createStubInstance(util);
+
+      const BigStats = proxyquire(moduleUnderTest,
+        {
+          './util': utilStub
+        });
+
+      bigStats = new BigStats();
+      bigStats.restHelper = {};
+      bigStats.restHelper.makeRestnodedUri = sinon.spy();
+      bigStats.createRestOperation = sinon.spy();
+      bigStats.restRequestSender = { sendGet: function () { } };
+      done();
+    });
+
+    afterEach(function (done) {
+      // reset stub behavior and history
+      sinon.reset();
+      bigStats.restRequestSender.sendGet.restore();
+      done();
+    });
+
     it('should return formatted device statistics', function (done) {
       const expectedStats = JSON.parse('{"cpus":[{"fiveSecAvgIdle": 92,"fiveSecAvgIowait": 0,"fiveSecAvgIrq": 0,"fiveSecAvgNiced": 0,"fiveSecAvgRatio": 7,"fiveSecAvgSoftirq": 0,"fiveSecAvgStolen": 0,"fiveSecAvgSystem": 2,"fiveSecAvgUser": 5,"id": "cpu0"},{"fiveSecAvgIdle": 93,"fiveSecAvgIowait": 0,"fiveSecAvgIrq": 0,"fiveSecAvgNiced": 0,"fiveSecAvgRatio": 7,"fiveSecAvgSoftirq": 0,"fiveSecAvgStolen": 0,"fiveSecAvgSystem": 1,"fiveSecAvgUser": 5,"id": "cpu1"}],"memory": {"memoryTotal": 8063369216,"memoryUsed": 2178806560}}');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(hostInfoStats);
 
       const promise = bigStats.getDeviceStats();
-      promise.should.be.fulfilled.then(() => {
+      promise.should.be.fulfilled.then((deviceStats) => {
+        deviceStats.should.be.deep.equal(expectedStats);
         sinon.assert.calledOnce(sendGetStub);
       }).should.notify(done);
     });
@@ -409,6 +437,53 @@ describe('BigStats', function () {
 
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'getVipStats() - Error retrieving vipResourceStats: something bad happened');
+        sinon.assert.calledOnce(sendGetStub);
+      }).should.notify(done);
+    });
+  });
+
+  describe('getVipProfileList', function () {
+    it('should return a list of vips profiles', function (done) {
+      const expectedList = ["f5-tcp-progressive", "http", "webtls01"];
+      sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(vipProfileList);
+
+      const promise = bigStats.getVipProfileList(vipResourceList.body.items[0]);
+      promise.should.be.fulfilled.then((profileList) => {
+        profileList.should.be.deep.equal(expectedList);
+        sinon.assert.notCalled(utilStub.logDebug);
+      }).should.notify(done);
+    });
+
+    it('should not return when error occurs', function (done) {
+      sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects('something bad happened');
+
+      const promise = bigStats.getVipProfileList(vipResourceList.body.items[0]);
+
+      promise.should.be.rejected.then(() => {
+        sinon.assert.calledWith(utilStub.logError, 'getVipProfileList(): - Error retrieving VIP Profile List: something bad happened');
+        sinon.assert.calledOnce(sendGetStub);
+      }).should.notify(done);
+    });
+  });
+
+  describe('getSslProfileList', function () {
+    it('should return a list of SSL profiles', function (done) {
+      const expectedList = [{"name":"clientssl","fullPath":"/Common/clientssl"},{"name":"clientssl-insecure-compatible","fullPath":"/Common/clientssl-insecure-compatible"},{"name":"clientssl-secure","fullPath":"/Common/clientssl-secure"},{"name":"crypto-server-default-clientssl","fullPath":"/Common/crypto-server-default-clientssl"},{"name":"splitsession-default-clientssl","fullPath":"/Common/splitsession-default-clientssl"},{"name":"wom-default-clientssl","fullPath":"/Common/wom-default-clientssl"},{"name":"webtls01","fullPath":"/Sample_01/A01/webtls01"},{"name":"webtls02","fullPath":"/Sample_02/A02/webtls02"},{"name":"webtls03","fullPath":"/Sample_03/A03/webtls03"},{"name":"webtls04","fullPath":"/Sample_04/A04/webtls04"},{"name":"webtls05","fullPath":"/Sample_05/A05/webtls05"}];
+      sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(clientSslProfileList);
+
+      const promise = bigStats.getSslProfileList();
+      promise.should.be.fulfilled.then((profileList) => {
+        profileList.should.be.deep.equal(expectedList);
+        sinon.assert.notCalled(utilStub.logDebug);
+      }).should.notify(done);
+    });
+
+    it('should not return when error occurs', function (done) {
+      sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects('something bad happened');
+
+      const promise = bigStats.getSslProfileList();
+      promise.should.be.rejected.then(() => {
+        sinon.assert.calledWith(utilStub.logError, 'getSslProfileList(): - Error retrieving SSL Profile List: something bad happened');
         sinon.assert.calledOnce(sendGetStub);
       }).should.notify(done);
     });

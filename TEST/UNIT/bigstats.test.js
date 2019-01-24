@@ -482,6 +482,7 @@ describe('BigStats', function () {
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').rejects('something bad happened');
 
       const promise = bigStats.getSslProfileList();
+
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'getSslProfileList(): - Error retrieving SSL Profile List: something bad happened');
         sinon.assert.calledOnce(sendGetStub);

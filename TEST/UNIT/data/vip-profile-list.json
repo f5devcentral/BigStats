@@ -1,0 +1,36 @@
+{
+  "body": {
+    "kind": "tm:ltm:virtual:profiles:profilescollectionstate",
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain/profiles?ver=13.1.1",
+    "items": [
+      {
+        "kind": "tm:ltm:virtual:profiles:profilesstate",
+        "name": "f5-tcp-progressive",
+        "partition": "Common",
+        "fullPath": "/Common/f5-tcp-progressive",
+        "generation": 2565,
+        "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain/profiles/~Common~f5-tcp-progressive?ver=13.1.1",
+        "context": "all"
+      },
+      {
+        "kind": "tm:ltm:virtual:profiles:profilesstate",
+        "name": "http",
+        "partition": "Common",
+        "fullPath": "/Common/http",
+        "generation": 2565,
+        "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain/profiles/~Common~http?ver=13.1.1",
+        "context": "all"
+      },
+      {
+        "kind": "tm:ltm:virtual:profiles:profilesstate",
+        "name": "webtls01",
+        "partition": "Sample_01",
+        "subPath": "A01",
+        "fullPath": "/Sample_01/A01/webtls01",
+        "generation": 2565,
+        "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain/profiles/~Sample_01~A01~webtls01?ver=13.1.1",
+        "context": "clientside"
+      }
+    ]
+  }
+}

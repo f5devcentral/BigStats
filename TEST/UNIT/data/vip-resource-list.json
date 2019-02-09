@@ -5,16 +5,16 @@
     "items": [
         {
             "kind": "tm:ltm:virtual:virtualstate",
-            "name": "myVIP",
+            "name": "myApp1",
             "partition": "Common",
-            "fullPath": "/Common/myVIP",
-            "generation": 797,
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP?ver=13.1.1",
+            "fullPath": "/Common/myApp1",
+            "generation": 471,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1",
             "addressStatus": "yes",
             "autoLasthop": "default",
             "cmpEnabled": "yes",
             "connectionLimit": 0,
-            "destination": "/Common/172.31.10.20:80",
+            "destination": "/Common/192.1.0.1:80",
             "enabled": true,
             "gtmScore": 0,
             "ipProtocol": "tcp",
@@ -22,69 +22,10 @@
             "mirror": "disabled",
             "mobileAppTunnel": "disabled",
             "nat64": "disabled",
-            "pool": "/Common/myPool",
+            "pool": "/Common/myPool1",
             "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool?ver=13.1.1"
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1"
             },
-            "rateLimit": "disabled",
-            "rateLimitDstMask": 0,
-            "rateLimitMode": "object",
-            "rateLimitSrcMask": 0,
-            "serviceDownImmediateAction": "none",
-            "source": "0.0.0.0/0",
-            "sourceAddressTranslation": {
-                "type": "none"
-            },
-            "sourcePort": "preserve",
-            "synCookieStatus": "not-activated",
-            "translateAddress": "enabled",
-            "translatePort": "enabled",
-            "vlansEnabled": true,
-            "vsIndex": 2,
-            "rules": [
-                "/Common/ilxpi-faas5/rule1"
-            ],
-            "rulesReference": [
-                {
-                    "link": "https://localhost/mgmt/tm/ltm/rule/~Common~ilxpi-faas5~rule1?ver=13.1.1"
-                }
-            ],
-            "vlans": [
-                "/Common/server"
-            ],
-            "vlansReference": [
-                {
-                    "link": "https://localhost/mgmt/tm/net/vlan/~Common~server?ver=13.1.1"
-                }
-            ],
-            "policiesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP/policies?ver=13.1.1",
-                "isSubcollection": true
-            },
-            "profilesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP/profiles?ver=13.1.1",
-                "isSubcollection": true
-            }
-        },
-        {
-            "kind": "tm:ltm:virtual:virtualstate",
-            "name": "myVIP2",
-            "partition": "Common",
-            "fullPath": "/Common/myVIP2",
-            "generation": 532,
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP2?ver=13.1.1",
-            "addressStatus": "yes",
-            "autoLasthop": "default",
-            "cmpEnabled": "yes",
-            "connectionLimit": 0,
-            "destination": "/Common/172.31.10.20:8081",
-            "enabled": true,
-            "gtmScore": 0,
-            "ipProtocol": "tcp",
-            "mask": "255.255.255.255",
-            "mirror": "disabled",
-            "mobileAppTunnel": "disabled",
-            "nat64": "disabled",
             "rateLimit": "disabled",
             "rateLimitDstMask": 0,
             "rateLimitMode": "object",
@@ -99,30 +40,30 @@
             "translateAddress": "enabled",
             "translatePort": "enabled",
             "vlansDisabled": true,
-            "vsIndex": 21,
+            "vsIndex": 25,
             "policiesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP2/policies?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1/policies?ver=13.1.1",
                 "isSubcollection": true
             },
             "profilesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP2/profiles?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1/profiles?ver=13.1.1",
                 "isSubcollection": true
             }
         },
         {
             "kind": "tm:ltm:virtual:virtualstate",
             "name": "serviceMain",
-            "partition": "Tenant_01",
-            "subPath": "App1",
-            "fullPath": "/Tenant_01/App1/serviceMain",
-            "generation": 183,
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_01~App1~serviceMain?ver=13.1.1",
+            "partition": "Sample_01",
+            "subPath": "A01",
+            "fullPath": "/Sample_01/A01/serviceMain",
+            "generation": 573,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1",
             "addressStatus": "yes",
             "autoLasthop": "default",
             "cmpEnabled": "yes",
             "connectionLimit": 0,
-            "description": "App1",
-            "destination": "/Tenant_01/172.31.4.11:80",
+            "description": "A01",
+            "destination": "/Sample_01/192.0.0.1:443",
             "enabled": true,
             "gtmScore": 0,
             "ipProtocol": "tcp",
@@ -130,9 +71,9 @@
             "mirror": "disabled",
             "mobileAppTunnel": "disabled",
             "nat64": "disabled",
-            "pool": "/Tenant_01/App1/web_pool1",
+            "pool": "/Sample_01/A01/web_pool01",
             "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Tenant_01~App1~web_pool1?ver=13.1.1"
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1"
             },
             "rateLimit": "disabled",
             "rateLimitDstMask": 0,
@@ -148,7 +89,7 @@
             "translateAddress": "enabled",
             "translatePort": "enabled",
             "vlansDisabled": true,
-            "vsIndex": 12,
+            "vsIndex": 26,
             "persist": [
                 {
                     "name": "cookie",
@@ -160,87 +101,28 @@
                 }
             ],
             "policiesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_01~App1~serviceMain/policies?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain/policies?ver=13.1.1",
                 "isSubcollection": true
             },
             "profilesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_01~App1~serviceMain/profiles?ver=13.1.1",
-                "isSubcollection": true
-            }
-        },
-        {
-            "kind": "tm:ltm:virtual:virtualstate",
-            "name": "serviceMain",
-            "partition": "Tenant_02",
-            "subPath": "App2",
-            "fullPath": "/Tenant_02/App2/serviceMain",
-            "generation": 235,
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain?ver=13.1.1",
-            "addressStatus": "yes",
-            "autoLasthop": "default",
-            "cmpEnabled": "yes",
-            "connectionLimit": 0,
-            "description": "App2",
-            "destination": "/Tenant_02/172.31.4.21:443",
-            "enabled": true,
-            "gtmScore": 0,
-            "ipProtocol": "tcp",
-            "mask": "255.255.255.255",
-            "mirror": "disabled",
-            "mobileAppTunnel": "disabled",
-            "nat64": "disabled",
-            "pool": "/Tenant_02/App2/web_pool2",
-            "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Tenant_02~App2~web_pool2?ver=13.1.1"
-            },
-            "rateLimit": "disabled",
-            "rateLimitDstMask": 0,
-            "rateLimitMode": "object",
-            "rateLimitSrcMask": 0,
-            "serviceDownImmediateAction": "none",
-            "source": "0.0.0.0/0",
-            "sourceAddressTranslation": {
-                "type": "automap"
-            },
-            "sourcePort": "preserve",
-            "synCookieStatus": "not-activated",
-            "translateAddress": "enabled",
-            "translatePort": "enabled",
-            "vlansDisabled": true,
-            "vsIndex": 15,
-            "persist": [
-                {
-                    "name": "cookie",
-                    "partition": "Common",
-                    "tmDefault": "yes",
-                    "nameReference": {
-                        "link": "https://localhost/mgmt/tm/ltm/persistence/cookie/~Common~cookie?ver=13.1.1"
-                    }
-                }
-            ],
-            "policiesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain/policies?ver=13.1.1",
-                "isSubcollection": true
-            },
-            "profilesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain/profiles?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain/profiles?ver=13.1.1",
                 "isSubcollection": true
             }
         },
         {
             "kind": "tm:ltm:virtual:virtualstate",
             "name": "serviceMain-Redirect",
-            "partition": "Tenant_02",
-            "subPath": "App2",
-            "fullPath": "/Tenant_02/App2/serviceMain-Redirect",
-            "generation": 235,
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain-Redirect?ver=13.1.1",
+            "partition": "Sample_01",
+            "subPath": "A01",
+            "fullPath": "/Sample_01/A01/serviceMain-Redirect",
+            "generation": 573,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect?ver=13.1.1",
             "addressStatus": "yes",
             "autoLasthop": "default",
             "cmpEnabled": "yes",
             "connectionLimit": 0,
-            "description": "App2",
-            "destination": "/Tenant_02/172.31.4.21:80",
+            "description": "A01",
+            "destination": "/Sample_01/192.0.0.1:80",
             "enabled": true,
             "gtmScore": 0,
             "ipProtocol": "tcp",
@@ -262,7 +144,7 @@
             "translateAddress": "enabled",
             "translatePort": "enabled",
             "vlansDisabled": true,
-            "vsIndex": 16,
+            "vsIndex": 27,
             "rules": [
                 "/Common/_sys_https_redirect"
             ],
@@ -272,28 +154,28 @@
                 }
             ],
             "policiesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain-Redirect/policies?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect/policies?ver=13.1.1",
                 "isSubcollection": true
             },
             "profilesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain-Redirect/profiles?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect/profiles?ver=13.1.1",
                 "isSubcollection": true
             }
         },
         {
             "kind": "tm:ltm:virtual:virtualstate",
             "name": "serviceMain",
-            "partition": "Tenant_03",
-            "subPath": "App3",
-            "fullPath": "/Tenant_03/App3/serviceMain",
-            "generation": 204,
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_03~App3~serviceMain?ver=13.1.1",
+            "partition": "Sample_02",
+            "subPath": "A02",
+            "fullPath": "/Sample_02/A02/serviceMain",
+            "generation": 578,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1",
             "addressStatus": "yes",
             "autoLasthop": "default",
             "cmpEnabled": "yes",
             "connectionLimit": 0,
-            "description": "App3",
-            "destination": "/Tenant_03/172.31.4.31:80",
+            "description": "A02",
+            "destination": "/Sample_02/192.0.1.2:443",
             "enabled": true,
             "gtmScore": 0,
             "ipProtocol": "tcp",
@@ -301,9 +183,9 @@
             "mirror": "disabled",
             "mobileAppTunnel": "disabled",
             "nat64": "disabled",
-            "pool": "/Tenant_03/App3/web_pool3",
+            "pool": "/Sample_02/A02/web_pool02",
             "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Tenant_03~App3~web_pool3?ver=13.1.1"
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1"
             },
             "rateLimit": "disabled",
             "rateLimitDstMask": 0,
@@ -319,7 +201,7 @@
             "translateAddress": "enabled",
             "translatePort": "enabled",
             "vlansDisabled": true,
-            "vsIndex": 13,
+            "vsIndex": 28,
             "persist": [
                 {
                     "name": "cookie",
@@ -331,14 +213,179 @@
                 }
             ],
             "policiesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_03~App3~serviceMain/policies?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain/policies?ver=13.1.1",
                 "isSubcollection": true
             },
             "profilesReference": {
-                "link": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_03~App3~serviceMain/profiles?ver=13.1.1",
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain/profiles?ver=13.1.1",
+                "isSubcollection": true
+            }
+        },
+        {
+            "kind": "tm:ltm:virtual:virtualstate",
+            "name": "serviceMain-Redirect",
+            "partition": "Sample_02",
+            "subPath": "A02",
+            "fullPath": "/Sample_02/A02/serviceMain-Redirect",
+            "generation": 578,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect?ver=13.1.1",
+            "addressStatus": "yes",
+            "autoLasthop": "default",
+            "cmpEnabled": "yes",
+            "connectionLimit": 0,
+            "description": "A02",
+            "destination": "/Sample_02/192.0.1.2:80",
+            "enabled": true,
+            "gtmScore": 0,
+            "ipProtocol": "tcp",
+            "mask": "255.255.255.255",
+            "mirror": "disabled",
+            "mobileAppTunnel": "disabled",
+            "nat64": "disabled",
+            "rateLimit": "disabled",
+            "rateLimitDstMask": 0,
+            "rateLimitMode": "object",
+            "rateLimitSrcMask": 0,
+            "serviceDownImmediateAction": "none",
+            "source": "0.0.0.0/0",
+            "sourceAddressTranslation": {
+                "type": "automap"
+            },
+            "sourcePort": "preserve",
+            "synCookieStatus": "not-activated",
+            "translateAddress": "enabled",
+            "translatePort": "enabled",
+            "vlansDisabled": true,
+            "vsIndex": 29,
+            "rules": [
+                "/Common/_sys_https_redirect"
+            ],
+            "rulesReference": [
+                {
+                    "link": "https://localhost/mgmt/tm/ltm/rule/~Common~_sys_https_redirect?ver=13.1.1"
+                }
+            ],
+            "policiesReference": {
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect/policies?ver=13.1.1",
+                "isSubcollection": true
+            },
+            "profilesReference": {
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect/profiles?ver=13.1.1",
+                "isSubcollection": true
+            }
+        },
+        {
+            "kind": "tm:ltm:virtual:virtualstate",
+            "name": "serviceMain",
+            "partition": "Sample_03",
+            "subPath": "A03",
+            "fullPath": "/Sample_03/A03/serviceMain",
+            "generation": 583,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain?ver=13.1.1",
+            "addressStatus": "yes",
+            "autoLasthop": "default",
+            "cmpEnabled": "yes",
+            "connectionLimit": 0,
+            "description": "A03",
+            "destination": "/Sample_03/192.0.1.3:443",
+            "enabled": true,
+            "gtmScore": 0,
+            "ipProtocol": "tcp",
+            "mask": "255.255.255.255",
+            "mirror": "disabled",
+            "mobileAppTunnel": "disabled",
+            "nat64": "disabled",
+            "pool": "/Sample_03/A03/web_pool03",
+            "poolReference": {
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_03~A03~web_pool03?ver=13.1.1"
+            },
+            "rateLimit": "disabled",
+            "rateLimitDstMask": 0,
+            "rateLimitMode": "object",
+            "rateLimitSrcMask": 0,
+            "serviceDownImmediateAction": "none",
+            "source": "0.0.0.0/0",
+            "sourceAddressTranslation": {
+                "type": "automap"
+            },
+            "sourcePort": "preserve",
+            "synCookieStatus": "not-activated",
+            "translateAddress": "enabled",
+            "translatePort": "enabled",
+            "vlansDisabled": true,
+            "vsIndex": 30,
+            "persist": [
+                {
+                    "name": "cookie",
+                    "partition": "Common",
+                    "tmDefault": "yes",
+                    "nameReference": {
+                        "link": "https://localhost/mgmt/tm/ltm/persistence/cookie/~Common~cookie?ver=13.1.1"
+                    }
+                }
+            ],
+            "policiesReference": {
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain/policies?ver=13.1.1",
+                "isSubcollection": true
+            },
+            "profilesReference": {
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain/profiles?ver=13.1.1",
+                "isSubcollection": true
+            }
+        },
+        {
+            "kind": "tm:ltm:virtual:virtualstate",
+            "name": "serviceMain-Redirect",
+            "partition": "Sample_03",
+            "subPath": "A03",
+            "fullPath": "/Sample_03/A03/serviceMain-Redirect",
+            "generation": 583,
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain-Redirect?ver=13.1.1",
+            "addressStatus": "yes",
+            "autoLasthop": "default",
+            "cmpEnabled": "yes",
+            "connectionLimit": 0,
+            "description": "A03",
+            "destination": "/Sample_03/192.0.1.3:80",
+            "enabled": true,
+            "gtmScore": 0,
+            "ipProtocol": "tcp",
+            "mask": "255.255.255.255",
+            "mirror": "disabled",
+            "mobileAppTunnel": "disabled",
+            "nat64": "disabled",
+            "rateLimit": "disabled",
+            "rateLimitDstMask": 0,
+            "rateLimitMode": "object",
+            "rateLimitSrcMask": 0,
+            "serviceDownImmediateAction": "none",
+            "source": "0.0.0.0/0",
+            "sourceAddressTranslation": {
+                "type": "automap"
+            },
+            "sourcePort": "preserve",
+            "synCookieStatus": "not-activated",
+            "translateAddress": "enabled",
+            "translatePort": "enabled",
+            "vlansDisabled": true,
+            "vsIndex": 31,
+            "rules": [
+                "/Common/_sys_https_redirect"
+            ],
+            "rulesReference": [
+                {
+                    "link": "https://localhost/mgmt/tm/ltm/rule/~Common~_sys_https_redirect?ver=13.1.1"
+                }
+            ],
+            "policiesReference": {
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain-Redirect/policies?ver=13.1.1",
+                "isSubcollection": true
+            },
+            "profilesReference": {
+                "link": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain-Redirect/profiles?ver=13.1.1",
                 "isSubcollection": true
             }
         }
     ]
-  }
+}
 }

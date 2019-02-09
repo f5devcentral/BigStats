@@ -204,14 +204,37 @@ describe('BigStats', function () {
   });
 
   describe('buildSmallStatsObject', function () {
+
     it('should return formatted service statistics', function (done) {
       const expectedStats = require('./data/expected-small-stats.json');
-      getVipStatsStub = sinon.stub(bigStats, 'getVipStats').resolves(JSON.parse('{"device": {"id": "ip-172-31-1-20-us-west-1-compute-internal","tenants": [{"id": "Common","services": [{"id": "/Common/172.31.10.20:80","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]},{"id": "Tenant_01/App1","services": [{"id": "/Tenant_01/172.31.4.11:80","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]},{"id": "Tenant_02/App2","services": [{"id": "/Tenant_02/172.31.4.21:443","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]},{"id": "Tenant_03/App3","services": [{"id": "/Tenant_03/172.31.4.31:80","clientside_curConns": 0,"clientside_maxConns": 0,"clientside_bitsIn": 0,"clientside_bitsOut": 0,"clientside_pktsIn": 0,"clientside_pktsOut": 0}]}]}}'));
+      const arg1 = JSON.parse('{ "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }');
+      const arg1Res = JSON.parse('{ "id": "/Common/192.1.0.1:80", "clientside_curConns": 0, "clientside_maxConns": 3, "clientside_bitsIn": 710728, "clientside_bitsOut": 679104, "clientside_pktsIn": 1580, "clientside_pktsOut": 1572 }');
+      const arg2 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }');
+      const arg2Res = JSON.parse('{ "id": "/Sample_01/192.0.0.1:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg3 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:80" }');
+      const arg3Res = JSON.parse('{ "id": "/Sample_01/192.0.0.1:80", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg4 = JSON.parse('{ "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }');
+      const arg4Res = JSON.parse('{ "id": "/Sample_02/192.0.1.2:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg5 = JSON.parse(' { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:80" }');
+      const arg5Res = JSON.parse('{ "id": "/Sample_02/192.0.1.2:80", "clientside_curConns": 0, "clientside_maxConns": 2, "clientside_bitsIn": 786680, "clientside_bitsOut": 886080, "clientside_pktsIn": 1775, "clientside_pktsOut": 1420 }');
+      const arg6 = JSON.parse(' { "partition": "Sample_03", "subPath": "A03", "fullPath": "/Sample_03/A03/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain?ver=13.1.1", "destination": "/Sample_03/192.0.1.3:443", "pool": "/Sample_03/A03/web_pool03", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_03~A03~web_pool03?ver=13.1.1" } }');
+      const arg6Res = JSON.parse('{ "id": "/Sample_03/192.0.1.3:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg7 = JSON.parse(' { "partition": "Sample_03", "subPath": "A03", "fullPath": "/Sample_03/A03/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_03/192.0.1.3:80" }');
+      const arg7Res = JSON.parse('{ "id": "/Sample_03/192.0.1.3:80", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      getVipStatsStub = sinon.stub(bigStats, 'getVipStats');
+      getVipStatsStub.withArgs(arg1).resolves(arg1Res);
+      getVipStatsStub.withArgs(arg2).resolves(arg2Res);
+      getVipStatsStub.withArgs(arg3).resolves(arg3Res);
+      getVipStatsStub.withArgs(arg4).resolves(arg4Res);
+      getVipStatsStub.withArgs(arg5).resolves(arg5Res);
+      getVipStatsStub.withArgs(arg6).resolves(arg6Res);
+      getVipStatsStub.withArgs(arg7).resolves(arg7Res);
+      
       const promise = bigStats.buildSmallStatsObject(vipResourceList.body);
-      promise.should.be.fulfilled.then(() => {
-        // bigStats.stats.should.be.deep.equal(expectedStats); //FIXME: new object model stuff with unique 'id' breaks this test.
-        sinon.assert.callCount(getVipStatsStub, 6);
-        sinon.assert.callCount(utilStub.logDebug, 6);
+      promise.should.be.fulfilled.then((smallStatsObj) => {
+        smallStatsObj.should.be.deep.equal(expectedStats.device.tenants);
+        sinon.assert.callCount(getVipStatsStub, 7);
+        sinon.assert.callCount(utilStub.logDebug, 7);
       }).should.notify(done);
     });
 
@@ -220,7 +243,7 @@ describe('BigStats', function () {
       const promise = bigStats.buildSmallStatsObject(vipResourceList.body);
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'buildSmallStatsObject(): something bad happened');
-        sinon.assert.callCount(getVipStatsStub, 6);
+        sinon.assert.callCount(getVipStatsStub, 7);
       }).should.notify(done);
     });
   });
@@ -355,9 +378,8 @@ describe('BigStats', function () {
 
   describe('getPoolResourceList', function () {
     it('should return a list of pool members', function (done) {
-      const expectedStats = JSON.parse('[{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1","vip":{"destination": "/Common/172.31.10.20:80","fullPath": "/Common/myVIP","partition": "Common","pool": "/Common/myPool","poolReference":{"link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool?ver=13.1.1"},"selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP?ver=13.1.1"}},{"name":"10.1.20.18:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1","vip":{"destination": "/Common/172.31.10.20:80","fullPath": "/Common/myVIP","partition": "Common","pool": "/Common/myPool","poolReference":{"link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool?ver=13.1.1"},"selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP?ver=13.1.1"}}]');
-      sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(JSON.parse('{"body":{"kind":"tm:ltm:pool:members:memberscollectionstate","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members?$select=name%2CselfLink&ver=13.1.1","items":[{"name":"10.1.20.17:80","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","selfLink":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]}}'));
-
+      const expectedStats = JSON.parse('[{ "name": "192.1.0.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/myPool1/members/~Common~192.1.0.1:80?ver=13.1.1", "vip": { "destination": "/Common/192.1.0.1:80", "fullPath": "/Common/myApp1", "partition": "Common", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" }, "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1" } }, { "name": "192.1.0.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/myPool1/members/~Common~192.1.0.2:80?ver=13.1.1", "vip": { "destination": "/Common/192.1.0.1:80", "fullPath": "/Common/myApp1", "partition": "Common", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" }, "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1" } }]');
+      sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(JSON.parse('{"body":{ "kind": "tm:ltm:pool:members:memberscollectionstate", "selfLink": "https://localhost/mgmt/tm/ltm/pool/myPool1/members?$select=name%2CselfLink&ver=13.1.1", "items": [{ "name": "192.1.0.1:80", "selfLink": "https://localhost/mgmt/tm/ltm/pool/myPool1/members/~Common~192.1.0.1:80?ver=13.1.1" }, { "name": "192.1.0.2:80", "selfLink": "https://localhost/mgmt/tm/ltm/pool/myPool1/members/~Common~192.1.0.2:80?ver=13.1.1" } ] }}'));
       const promise = bigStats.getPoolResourceList(vipResourceList.body.items[0]);
       promise.should.be.fulfilled.then((poolMemberList) => {
         poolMemberList.should.be.deep.equal(expectedStats);
@@ -419,12 +441,13 @@ describe('BigStats', function () {
     });
 
     it('should return formatted vip statistics', function (done) {
-      const expectedStats = JSON.parse('{"id":"/Common/172.31.10.20:80","clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}');
+      const expectedStats = JSON.parse('{"id":"/Common/192.1.0.1:80","clientside_curConns":0,"clientside_maxConns":3,"clientside_bitsIn":8087416,"clientside_bitsOut":7753536,"clientside_pktsIn":17974,"clientside_pktsOut":17948}');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(vipInfoStats);
       bigStats.config = config;
 
       const promise = bigStats.getVipStats(vipResourceList.body.items[0]);
       promise.should.be.fulfilled.then((stats) => {
+        console.log(`getVipStats promise stats: ${stats}`);
         stats.should.be.deep.equal(expectedStats);
         sinon.assert.calledOnce(sendGetStub);
       }).should.notify(done);

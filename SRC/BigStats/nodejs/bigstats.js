@@ -1,18 +1,18 @@
 /*
-*   BigStats:
-*     iControl LX Stats Exporter for BIG-IP
-*
-*   N. Pearce, June 2018
-*   http://github.com/npearce
-*
-*/
+ *   BigStats:
+ *     iControl LX Stats Exporter for BIG-IP
+ *
+ *   N. Pearce, June 2018
+ *   http://github.com/npearce
+ *
+ */
 'use strict';
 
 const bigStatsSettingsPath = '/shared/bigstats_settings';
 const bigStatsExporterPath = '/shared/bigstats_exporter';
 const util = require('./util');
 
-function BigStats () {
+function BigStats() {
   this.config = {};
   this.stats = {};
   util.init('BigStats');
@@ -314,9 +314,9 @@ BigStats.prototype.pullStats = function () {
 };
 
 /**
-* Fetch device statistics - CPU, RAM
-*
-*/
+ * Fetch device statistics - CPU, RAM
+ *
+ */
 BigStats.prototype.getDeviceStats = function () {
   let deviceGlobalStats = {};
 
@@ -364,14 +364,14 @@ BigStats.prototype.getDeviceStats = function () {
 };
 
 /**
-* For 'small' stats size (config.size: small), fetch:
-*   - Virtual IP in/out data
-*
-* @param {Object} vipResourceList representing an individual vip resource
-*
-* @returns {Promise} Object representing the collected stats
-*
-*/
+ * For 'small' stats size (config.size: small), fetch:
+ *   - Virtual IP in/out data
+ *
+ * @param {Object} vipResourceList representing an individual vip resource
+ *
+ * @returns {Promise} Object representing the collected stats
+ *
+ */
 BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
   // Initialize services object
   let tenantStats = [];
@@ -381,7 +381,7 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
       // Collect Stats for each VIP/service
       this.getVipStats(vipResource)
         .then((values) => {
-          let servicePath;  
+          let servicePath;
           // Check if subPath is un use.
           if ('subPath' in vipResource) {
             // Merge 'tenant' name and 'subPath' name as '/' delimited string.
@@ -401,142 +401,140 @@ BigStats.prototype.buildSmallStatsObject = function (vipResourceList) {
               services: [values]
             });
           } else {
-            // Tenant does exist, splice into Tenant array entry
+            // Tenant does exist, add to Tenant array
             tenantStats[tenantIndex].services.push(values);
           }
 
           util.logDebug(`buildSmallStatsObject() - Processing: ${vipResourceIndex} of: ${(vipResourceList.items.length - 1)}`);
           resolve();
-          
         })
         .catch((err) => {
           util.logError(`buildSmallStatsObject(): ${err}`);
           reject(err);
         });
-    }); 
+    });
   });
 
   return Promise.all(vipPromises)
-  .then(() => {
-    return tenantStats;
-  });
-
+    .then(() => {
+      return tenantStats;
+    });
 };
 
 /**
-* For 'medium' stats size (config.size: medium), fetch:
-*   - Virtual IP in/out data
-*   - Individual Pool Member data
-*
-* @param {Object} vipResourceList representing an individual vip resource
-*
-* @returns {Promise} Object representing the collected stats
-*
-*/
+ * For 'medium' stats size (config.size: medium), fetch:
+ *   - Virtual IP in/out data
+ *   - Individual Pool Member data
+ *
+ * @param {Object} vipResourceList representing an individual vip resource
+ *
+ * @returns {Promise} Object representing the collected stats
+ *
+ */
 BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
 
   let tenantStats = [];
 
   return this.buildSmallStatsObject(vipResourceList)
-  .then((smallStatsObj) => {
-    util.logDebug(`buildMediumStatsObject() w/ smallStatsObj: ${JSON.stringify(smallStatsObj)}`);
-    tenantStats = smallStatsObj;
-    let poolResourceListPromises = [];
-    vipResourceList.items.map((vipResource) => {
-      if (typeof vipResource.poolReference !== 'undefined') {
-        poolResourceListPromises.push(this.getPoolResourceList(vipResource));
-      }
-    });  
-    return Promise.all(poolResourceListPromises);
-  })
-  .then((poolResources) => {
-    util.logDebug(`buildMediumStatsObject() w/ poolResources: ${JSON.stringify(poolResources)}`);
-    let poolResourcePromises = [];
-    poolResources.map((poolMembersResource) => {
-      poolMembersResource.map((poolMemberResource) => {
-        poolResourcePromises.push(this.getPoolMemberStats(poolMemberResource));
+    .then((smallStatsObj) => {
+      util.logDebug(`buildMediumStatsObject() w/ smallStatsObj: ${JSON.stringify(smallStatsObj)}`);
+      tenantStats = smallStatsObj;
+      let poolResourceListPromises = [];
+      vipResourceList.items.map((vipResource) => {
+        if (typeof vipResource.poolReference !== 'undefined') {
+          poolResourceListPromises.push(this.getPoolResourceList(vipResource));
+        }
       });
-    });  
-    return Promise.all(poolResourcePromises);
-  })
-  .then((poolMembersStats) => {
-    util.logDebug(`buildMediumStatsObject() w/ poolMembersStats: ${JSON.stringify(poolMembersStats)}`);
-    poolMembersStats.map((poolMemberStats) => {
-      let servicePath;
-      let tenantIndex;
-      let serviceIndex;
-      // Check if subPath is un use. If so, merge into vip 'id' 
-      if ('subPath' in poolMemberStats.poolMemberResource.vip) {
-        servicePath = poolMemberStats.poolMemberResource.vip.partition + '/' + poolMemberStats.poolMemberResource.vip.subPath;
-      } else {
-        servicePath = poolMemberStats.poolMemberResource.vip.partition;
-      }
-      tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
-      serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === poolMemberStats.poolMemberResource.vip.destination);
-      if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
-        tenantStats[tenantIndex].services[serviceIndex].pool = {
-          id: poolMemberStats.poolMemberResource.vip.pool,
-          members: []
-        };
-      }
-      tenantStats[tenantIndex].services[serviceIndex].pool.members.push(poolMemberStats.poolMemberStats);
+      return Promise.all(poolResourceListPromises);
+    })
+    .then((poolResources) => {
+      util.logDebug(`buildMediumStatsObject() w/ poolResources: ${JSON.stringify(poolResources)}`);
+      let poolResourcePromises = [];
+      poolResources.map((poolMembersResource) => {
+        poolMembersResource.map((poolMemberResource) => {
+          poolResourcePromises.push(this.getPoolMemberStats(poolMemberResource));
+        });
+      });
+      return Promise.all(poolResourcePromises);
+    })
+    .then((poolMembersStats) => {
+      util.logDebug(`buildMediumStatsObject() w/ poolMembersStats: ${JSON.stringify(poolMembersStats)}`);
+      poolMembersStats.map((poolMemberStats) => {
+        let servicePath;
+        let tenantIndex;
+        let serviceIndex;
+        // Check if subPath is un use. If so, merge into vip 'id' 
+        if ('subPath' in poolMemberStats.poolMemberResource.vip) {
+          servicePath = poolMemberStats.poolMemberResource.vip.partition + '/' + poolMemberStats.poolMemberResource.vip.subPath;
+        } else {
+          servicePath = poolMemberStats.poolMemberResource.vip.partition;
+        }
+        tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
+        serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === poolMemberStats.poolMemberResource.vip.destination);
+        if (typeof tenantStats[tenantIndex].services[serviceIndex].pool === 'undefined') {
+          tenantStats[tenantIndex].services[serviceIndex].pool = {
+            id: poolMemberStats.poolMemberResource.vip.pool,
+            members: []
+          };
+        }
+        tenantStats[tenantIndex].services[serviceIndex].pool.members.push(poolMemberStats.poolMemberStats);
+      });
+      return tenantStats;
     });
-    return tenantStats;
-  });
 };
 
 /**
-* For 'large' stats size (config.size: large), fetch:
-*   - Virtual IP in/out data
-*   - Individual Pool Member data
-*   - SSL stats
-*
-* @param {Object} vipResourceList representing an individual vip resource
-*
-* @returns {null} Absolutely nothing....
-*
-*/
+ * For 'large' stats size (config.size: large), fetch:
+ *   - Virtual IP in/out data
+ *   - Individual Pool Member data
+ *   - SSL stats
+ *
+ * @param {Object} vipResourceList representing an individual vip resource
+ *
+ * @returns {null} Absolutely nothing....
+ *
+ */
 BigStats.prototype.buildLargeStatsObject = function (vipResourceList) {
 
   let tenantStats = [];
 
   return this.buildMediumStatsObject(vipResourceList)
-  .then((mediumStatsObj) => {
-    util.logDebug(`buildLargeStatsObject() w/ mediumStatsObj: ${JSON.stringify(mediumStatsObj)}`);
-    tenantStats = mediumStatsObj;
-    let sslResourcePromises = [];
-    vipResourceList.items.map((vipResource) => {
-      sslResourcePromises.push(this.getSslStats(vipResource));
-    });  
-    return Promise.all(sslResourcePromises);
-  })
-  .then((sslStatsArray) => {
-    util.logDebug(`sslStatsArray: ${JSON.stringify(sslStatsArray)}`);
-    sslStatsArray.map((sslStats) => {
-      if (typeof sslStats !== 'undefined') {
-        util.logDebug(`buildLargeStatsObject() w/ sslStats: ${JSON.stringify(sslStats)}`);
-        let servicePath;
-        let tenantIndex;
-        let serviceIndex;
-        // Check if subPath is un use. If so, merge into vip 'id' 
-        if ('subPath' in sslStats.vip) {
-          servicePath = sslStats.vip.partition + '/' + sslStats.vip.subPath;
-        } else {
-          servicePath = sslStats.vip.partition;
+    .then((mediumStatsObj) => {
+      util.logDebug(`buildLargeStatsObject() w/ mediumStatsObj: ${JSON.stringify(mediumStatsObj)}`);
+      tenantStats = mediumStatsObj;
+      let sslResourcePromises = [];
+      vipResourceList.items.map((vipResource) => {
+        sslResourcePromises.push(this.getSslStats(vipResource));
+      });
+      return Promise.all(sslResourcePromises);
+    })
+    .then((sslStatsArray) => {
+      util.logDebug(`sslStatsArray: ${JSON.stringify(sslStatsArray)}`);
+      sslStatsArray.map((sslStats) => {
+        if (typeof sslStats !== 'undefined') {
+          util.logDebug(`buildLargeStatsObject() w/ sslStats: ${JSON.stringify(sslStats)}`);
+          let servicePath;
+          let tenantIndex;
+          let serviceIndex;
+          // Check if subPath is un use. If so, merge into vip 'id' 
+          if ('subPath' in sslStats.vip) {
+            servicePath = sslStats.vip.partition + '/' + sslStats.vip.subPath;
+          } else {
+            servicePath = sslStats.vip.partition;
+          }
+          tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
+          serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === sslStats.vip.destination);
+          if (typeof tenantStats[tenantIndex].services[serviceIndex].ssl === 'undefined') {
+            tenantStats[tenantIndex].services[serviceIndex].ssl = {
+              id: sslStats.vip.pool,
+              members: []
+            };
+          }
+          tenantStats[tenantIndex].services[serviceIndex].ssl = sslStats.stats;
         }
-        tenantIndex = tenantStats.findIndex(tenant => tenant.id === servicePath);
-        serviceIndex = tenantStats[tenantIndex].services.findIndex(service => service.id === sslStats.vip.destination);
-        if (typeof tenantStats[tenantIndex].services[serviceIndex].ssl === 'undefined') {
-          tenantStats[tenantIndex].services[serviceIndex].ssl = {
-            id: sslStats.vip.pool,
-            members: []
-          };
-        }
-        tenantStats[tenantIndex].services[serviceIndex].ssl = sslStats.stats;
-      }
+      });
+      return tenantStats;
     });
-    return tenantStats;
-  });
 };
 
 /**
@@ -573,7 +571,6 @@ BigStats.prototype.getVipResourceList = function () {
  */
 BigStats.prototype.getVipStats = function (vipResource) {
   return new Promise((resolve, reject) => {
-
     var slicedPath = '';
     var PREFIX = 'https://localhost';
 
@@ -650,13 +647,11 @@ BigStats.prototype.getPoolResourceList = function (vipResource) {
     this.restRequestSender.sendGet(restOp)
       .then((resp) => {
         resp.body.items.map((element, index) => {
-          poolMemberListObj.push(
-            {
-              vip: vipResource,
-              name: element.name,
-              path: element.selfLink
-            }
-          );
+          poolMemberListObj.push({
+            vip: vipResource,
+            name: element.name,
+            path: element.selfLink
+          });
 
           util.logDebug(`getPoolResourceList() - Processing: ${index} of: ${(resp.body.items.length - 1)}`);
 
@@ -717,7 +712,7 @@ BigStats.prototype.getPoolMemberStats = function (poolMemberResource) {
             serverside_bitsOut: resp.body.entries[entryUrl].nestedStats.entries['serverside.bitsOut'].value,
             serverside_pktsIn: resp.body.entries[entryUrl].nestedStats.entries['serverside.pktsIn'].value,
             serverside_pktsOut: resp.body.entries[entryUrl].nestedStats.entries['serverside.pktsOut'].value,
-            monitorStatus: serverStatus  
+            monitorStatus: serverStatus
           }
         };
 
@@ -826,7 +821,10 @@ BigStats.prototype.getSslProfileList = function () {
       .then((resp) => {
         let sslProfileNames = [];
         resp.body.items.map((item) => {
-          sslProfileNames.push({ name: item.name, fullPath: item.fullPath });
+          sslProfileNames.push({
+            name: item.name,
+            fullPath: item.fullPath
+          });
         });
         resolve(sslProfileNames);
       })
@@ -974,7 +972,10 @@ BigStats.prototype.getSslProfileStats = function (sslProfile) {
  */
 // Push stats to a remote destination
 BigStats.prototype.exportStats = function (statsObj) {
-  var data = { config: this.config, stats: statsObj };
+  var data = {
+    config: this.config,
+    stats: statsObj
+  };
 
   util.logDebug(`exportStats() w/:  ${JSON.stringify(data, '', '\t')}`);
 
@@ -992,13 +993,13 @@ BigStats.prototype.exportStats = function (statsObj) {
 };
 
 /**
-* Creates a new rest operation instance. Sets the target uri and body
-*
-* @param {url} uri Target URI
-* @param {Object} body Request body
-*
-* @returns {RestOperation}
-*/
+ * Creates a new rest operation instance. Sets the target uri and body
+ *
+ * @param {url} uri Target URI
+ * @param {Object} body Request body
+ *
+ * @returns {RestOperation}
+ */
 BigStats.prototype.createRestOperation = function (uri, body) {
   var restOp = this.restOperationFactory.createRestOperationInstance()
     .setUri(uri)

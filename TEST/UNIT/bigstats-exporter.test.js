@@ -331,9 +331,8 @@ describe('BigStatsExporter', function () {
 
       let testData = convertStatsToExportFormat(require('./data/expected-small-stats.json'), config);
       bigStatsExporter.statsdExporter(testData);
-      sinon.assert.callCount(gaugeStub, 44);
-      //      sinon.assert.calledWith(gaugeStub, 'myhostname.device.0.0', 'd');  //FIXME: Dan, what does this do?
-      sinon.assert.callCount(utilStub.logDebug, 80);
+      sinon.assert.callCount(gaugeStub, 50);
+      sinon.assert.callCount(utilStub.logDebug, 92);
     });
   });
 

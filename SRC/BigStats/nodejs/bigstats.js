@@ -480,6 +480,9 @@ BigStats.prototype.buildMediumStatsObject = function (vipResourceList) {
         tenantStats[tenantIndex].services[serviceIndex].pool.members.push(poolMemberStats.poolMemberStats);
       });
       return tenantStats;
+    })
+    .catch(err => {
+      util.logError(`buildMediumStatsObject(): ${err}`);
     });
 };
 

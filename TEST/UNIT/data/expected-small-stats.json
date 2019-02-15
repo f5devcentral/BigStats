@@ -1,86 +1,99 @@
 {
   "device": {
-    "id": "ip-172-31-1-20-us-west-1-compute-internal",
-    "tenants": [{
-        "id": "Common",
-        "services": [{
-            "id": "/Common/172.31.10.20:80",
-            "clientside_curConns": 0,
-            "clientside_maxConns": 0,
-            "clientside_bitsIn": 0,
-            "clientside_bitsOut": 0,
-            "clientside_pktsIn": 0,
-            "clientside_pktsOut": 0
+      "id": "ip-172-31-1-115-us-west-1-compute-internal",
+      "tenants": [
+          {
+              "id": "Common",
+              "services": [
+                  {
+                    "id": "/Common/192.1.0.1:80",
+                    "clientside_curConns": 0,
+                    "clientside_maxConns": 0,
+                    "clientside_bitsIn": 0,
+                    "clientside_bitsOut": 0,
+                    "clientside_pktsIn": 0,
+                    "clientside_pktsOut": 0
+                  }
+              ]
+          },
+          {
+              "id": "Sample_01/A01",
+              "services": [
+                {
+                  "id": "/Sample_01/192.0.0.1:80",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
+                },
+                {
+                  "id": "/Sample_01/192.0.0.1:443",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
+                }
+              ]
+          },
+          {
+              "id": "Sample_02/A02",
+              "services": [
+                {
+                  "id": "/Sample_02/192.0.1.2:80",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
+                },
+                {
+                  "id": "/Sample_02/192.0.1.2:443",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
+                }
+              ]
           }
-        ]
-      },
-      {
-        "id": "Tenant_01/App1",
-        "services": [{
-          "id": "/Tenant_01/172.31.4.11:80",
-          "clientside_curConns": 0,
-          "clientside_maxConns": 0,
-          "clientside_bitsIn": 0,
-          "clientside_bitsOut": 0,
-          "clientside_pktsIn": 0,
-          "clientside_pktsOut": 0
-        }]
-      },
-      {
-        "id": "Tenant_02/App2",
-        "services": [{
-          "id": "/Tenant_02/172.31.4.21:443",
-          "clientside_curConns": 0,
-          "clientside_maxConns": 0,
-          "clientside_bitsIn": 0,
-          "clientside_bitsOut": 0,
-          "clientside_pktsIn": 0,
-          "clientside_pktsOut": 0
-        }]
-      },
-      {
-        "id": "Tenant_03/App3",
-        "services": [{
-          "id": "/Tenant_03/172.31.4.31:80",
-          "clientside_curConns": 0,
-          "clientside_maxConns": 0,
-          "clientside_bitsIn": 0,
-          "clientside_bitsOut": 0,
-          "clientside_pktsIn": 0,
-          "clientside_pktsOut": 0
-        }]
+      ],
+      "global": {
+          "memory": {
+              "memoryTotal": 8103067648,
+              "memoryUsed": 1607584744
+          },
+          "cpus": [
+              {
+                  "id": "cpu0",
+                  "fiveSecAvgIdle": 96,
+                  "fiveSecAvgIowait": 0,
+                  "fiveSecAvgIrq": 0,
+                  "fiveSecAvgNiced": 0,
+                  "fiveSecAvgRatio": 1,
+                  "fiveSecAvgSoftirq": 0,
+                  "fiveSecAvgStolen": 0,
+                  "fiveSecAvgSystem": 0,
+                  "fiveSecAvgUser": 1
+              },
+              {
+                  "id": "cpu1",
+                  "fiveSecAvgIdle": 97,
+                  "fiveSecAvgIowait": 0,
+                  "fiveSecAvgIrq": 0,
+                  "fiveSecAvgNiced": 0,
+                  "fiveSecAvgRatio": 1,
+                  "fiveSecAvgSoftirq": 0,
+                  "fiveSecAvgStolen": 0,
+                  "fiveSecAvgSystem": 0,
+                  "fiveSecAvgUser": 1
+              }
+          ]
       }
-    ],
-    "global": {
-      "memory": {
-        "memoryTotal": 8063369216,
-        "memoryUsed": 1915208032
-      },
-      "cpus": [{
-          "id": "cpu0",
-          "fiveSecAvgIdle": 96,
-          "fiveSecAvgIowait": 0,
-          "fiveSecAvgIrq": 0,
-          "fiveSecAvgNiced": 0,
-          "fiveSecAvgRatio": 4,
-          "fiveSecAvgSoftirq": 0,
-          "fiveSecAvgStolen": 0,
-          "fiveSecAvgSystem": 1,
-          "fiveSecAvgUser": 3
-        },
-        {
-          "id": "cpu1",
-          "fiveSecAvgIdle": 95,
-          "fiveSecAvgIowait": 0,
-          "fiveSecAvgIrq": 0,
-          "fiveSecAvgNiced": 0,
-          "fiveSecAvgRatio": 4,
-          "fiveSecAvgSoftirq": 0,
-          "fiveSecAvgStolen": 0,
-          "fiveSecAvgSystem": 1,
-          "fiveSecAvgUser": 3
-        }
-      ]
-    }
   }
 }

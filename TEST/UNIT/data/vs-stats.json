@@ -1,19 +1,19 @@
-{
-  "body": {
+{ "body":
+  {
     "kind": "tm:ltm:virtual:virtualstats",
-    "generation": 797,
-    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP/stats?ver=13.1.1",
+    "generation": 471,
+    "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1/stats?ver=13.1.1",
     "entries": {
-        "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP/~Common~myVIP/stats": {
+        "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1/~Common~myApp1/stats": {
             "nestedStats": {
                 "kind": "tm:ltm:virtual:virtualstats",
-                "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP/~Common~myVIP/stats?ver=13.1.1",
+                "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1/~Common~myApp1/stats?ver=13.1.1",
                 "entries": {
                     "clientside.bitsIn": {
-                        "value": 0
+                        "value": 8087416
                     },
                     "clientside.bitsOut": {
-                        "value": 0
+                        "value": 7753536
                     },
                     "clientside.curConns": {
                         "value": 0
@@ -22,19 +22,19 @@
                         "value": 0
                     },
                     "clientside.maxConns": {
-                        "value": 0
+                        "value": 3
                     },
                     "clientside.pktsIn": {
-                        "value": 0
+                        "value": 17974
                     },
                     "clientside.pktsOut": {
-                        "value": 0
+                        "value": 17948
                     },
                     "clientside.slowKilled": {
                         "value": 0
                     },
                     "clientside.totConns": {
-                        "value": 0
+                        "value": 4487
                     },
                     "cmpEnableMode": {
                         "description": "all-cpus"
@@ -43,16 +43,16 @@
                         "description": "enabled"
                     },
                     "csMaxConnDur": {
-                        "value": 0
+                        "value": 4014
                     },
                     "csMeanConnDur": {
-                        "value": 0
+                        "value": 4010
                     },
                     "csMinConnDur": {
-                        "value": 0
+                        "value": 4004
                     },
                     "destination": {
-                        "description": "172.31.10.20:80"
+                        "description": "192.1.0.1:80"
                     },
                     "ephemeral.bitsIn": {
                         "value": 0
@@ -88,7 +88,7 @@
                         "value": 0
                     },
                     "tmName": {
-                        "description": "/Common/myVIP"
+                        "description": "/Common/myApp1"
                     },
                     "oneMinAvgUsageRatio": {
                         "value": 0

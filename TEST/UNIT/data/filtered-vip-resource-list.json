@@ -5,60 +5,50 @@
     "items": [
         {
             "partition": "Common",
-            "fullPath": "/Common/myVIP",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP?ver=13.1.1",
-            "destination": "/Common/172.31.10.20:80",
-            "pool": "/Common/myPool",
+            "fullPath": "/Common/myApp1",
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1",
+            "destination": "/Common/192.1.0.1:80",
+            "pool": "/Common/myPool1",
             "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool?ver=13.1.1"
+                "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1"
             }
         },
         {
-            "partition": "Common",
-            "fullPath": "/Common/myVIP2",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myVIP2?ver=13.1.1",
-            "destination": "/Common/172.31.10.20:8081"
+            "partition": "Sample_01",
+            "subPath": "A01",
+            "fullPath": "/Sample_01/A01/serviceMain-Redirect",
+            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect?ver=13.1.1",
+            "destination": "/Sample_01/192.0.0.1:80"
         },
         {
-            "partition": "Tenant_01",
-            "subPath": "App1",
-            "fullPath": "/Tenant_01/App1/serviceMain",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_01~App1~serviceMain?ver=13.1.1",
-            "destination": "/Tenant_01/172.31.4.11:80",
-            "pool": "/Tenant_01/App1/web_pool1",
-            "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Tenant_01~App1~web_pool1?ver=13.1.1"
-            }
-        },
-        {
-            "partition": "Tenant_02",
-            "subPath": "App2",
-            "fullPath": "/Tenant_02/App2/serviceMain",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain?ver=13.1.1",
-            "destination": "/Tenant_02/172.31.4.21:443",
-            "pool": "/Tenant_02/App2/web_pool2",
-            "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Tenant_02~App2~web_pool2?ver=13.1.1"
-            }
-        },
-        {
-            "partition": "Tenant_02",
-            "subPath": "App2",
-            "fullPath": "/Tenant_02/App2/serviceMain-Redirect",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_02~App2~serviceMain-Redirect?ver=13.1.1",
-            "destination": "/Tenant_02/172.31.4.21:80"
-        },
-        {
-            "partition": "Tenant_03",
-            "subPath": "App3",
-            "fullPath": "/Tenant_03/App3/serviceMain",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Tenant_03~App3~serviceMain?ver=13.1.1",
-            "destination": "/Tenant_03/172.31.4.31:80",
-            "pool": "/Tenant_03/App3/web_pool3",
-            "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Tenant_03~App3~web_pool3?ver=13.1.1"
-            }
+          "partition": "Sample_01",
+          "subPath": "A01",
+          "fullPath": "/Sample_01/A01/serviceMain",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1",
+          "destination": "/Sample_01/192.0.0.1:443",
+          "pool": "/Sample_01/A01/web_pool01",
+          "poolReference": {
+              "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1"
+          }
+      },
+      {
+          "partition": "Sample_02",
+          "subPath": "A02",
+          "fullPath": "/Sample_02/A02/serviceMain-Redirect",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect?ver=13.1.1",
+          "destination": "/Sample_02/192.0.1.2:80"
+      },
+      {
+        "partition": "Sample_02",
+        "subPath": "A02",
+        "fullPath": "/Sample_02/A02/serviceMain",
+        "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1",
+        "destination": "/Sample_02/192.0.1.2:443",
+        "pool": "/Sample_02/A02/web_pool02",
+        "poolReference": {
+            "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1"
         }
+      }
     ]
-  }
+}
 }

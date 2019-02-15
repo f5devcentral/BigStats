@@ -93,7 +93,6 @@ describe('BigStats', function () {
 
       bigStats.pullStats();
 
-      // TODO: This may reveal a limitation with the current design. pullStats is synchronous, but calls underlying functions that are async. When it completes, the promises underneath it are not resolved. Promises never resolve in the same tick they are created.
       setImmediate(() => {
         sinon.assert.calledOnce(getSettingsStub);
         sinon.assert.calledOnce(getDeviceStatsStub);
@@ -112,7 +111,6 @@ describe('BigStats', function () {
 
       bigStats.pullStats();
 
-      // TODO: This may reveal a limitation with the current design. pullStats is synchronous, but calls underlying functions that are async. When it completes, the promises underneath it are not resolved. Promises never resolve in the same tick they are created.
       setImmediate(() => {
         sinon.assert.calledOnce(getSettingsStub);
         sinon.assert.calledOnce(getDeviceStatsStub);
@@ -131,7 +129,6 @@ describe('BigStats', function () {
 
       bigStats.pullStats();
 
-      // TODO: This may reveal a limitation with the current design. pullStats is synchronous, but calls underlying functions that are async. When it completes, the promises underneath it are not resolved. Promises never resolve in the same tick they are created.
       setImmediate(() => {
         sinon.assert.calledOnce(getSettingsStub);
         sinon.assert.calledOnce(getDeviceStatsStub);
@@ -148,7 +145,6 @@ describe('BigStats', function () {
 
       bigStats.pullStats();
 
-      // TODO: Fix this. pullStats is synchronous, but calls underlying functions that are async. When it completes, the promises underneath it are not resolved. Have to put in an artificial wait before checking if the underlying stubs have been called.
       setImmediate(() => {
         sinon.assert.calledOnce(getSettingsStub);
         sinon.assert.calledWith(utilStub.logError, 'pullStats() - Promise Chain Error: problem getting settings');

@@ -16,57 +16,39 @@
         {
             "partition": "Sample_01",
             "subPath": "A01",
-            "fullPath": "/Sample_01/A01/serviceMain",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1",
-            "destination": "/Sample_01/192.0.0.1:443",
-            "pool": "/Sample_01/A01/web_pool01",
-            "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1"
-            }
-        },
-        {
-            "partition": "Sample_01",
-            "subPath": "A01",
             "fullPath": "/Sample_01/A01/serviceMain-Redirect",
             "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect?ver=13.1.1",
             "destination": "/Sample_01/192.0.0.1:80"
         },
         {
-            "partition": "Sample_02",
-            "subPath": "A02",
-            "fullPath": "/Sample_02/A02/serviceMain",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1",
-            "destination": "/Sample_02/192.0.1.2:443",
-            "pool": "/Sample_02/A02/web_pool02",
-            "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1"
-            }
-        },
-        {
-            "partition": "Sample_02",
-            "subPath": "A02",
-            "fullPath": "/Sample_02/A02/serviceMain-Redirect",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect?ver=13.1.1",
-            "destination": "/Sample_02/192.0.1.2:80"
-        },
-        {
-            "partition": "Sample_03",
-            "subPath": "A03",
-            "fullPath": "/Sample_03/A03/serviceMain",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain?ver=13.1.1",
-            "destination": "/Sample_03/192.0.1.3:443",
-            "pool": "/Sample_03/A03/web_pool03",
-            "poolReference": {
-                "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_03~A03~web_pool03?ver=13.1.1"
-            }
-        },
-        {
-            "partition": "Sample_03",
-            "subPath": "A03",
-            "fullPath": "/Sample_03/A03/serviceMain-Redirect",
-            "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain-Redirect?ver=13.1.1",
-            "destination": "/Sample_03/192.0.1.3:80"
+          "partition": "Sample_01",
+          "subPath": "A01",
+          "fullPath": "/Sample_01/A01/serviceMain",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1",
+          "destination": "/Sample_01/192.0.0.1:443",
+          "pool": "/Sample_01/A01/web_pool01",
+          "poolReference": {
+              "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1"
+          }
+      },
+      {
+          "partition": "Sample_02",
+          "subPath": "A02",
+          "fullPath": "/Sample_02/A02/serviceMain-Redirect",
+          "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect?ver=13.1.1",
+          "destination": "/Sample_02/192.0.1.2:80"
+      },
+      {
+        "partition": "Sample_02",
+        "subPath": "A02",
+        "fullPath": "/Sample_02/A02/serviceMain",
+        "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1",
+        "destination": "/Sample_02/192.0.1.2:443",
+        "pool": "/Sample_02/A02/web_pool02",
+        "poolReference": {
+            "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1"
         }
+      }
     ]
 }
 }

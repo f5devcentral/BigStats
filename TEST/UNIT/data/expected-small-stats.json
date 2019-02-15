@@ -6,82 +6,59 @@
               "id": "Common",
               "services": [
                   {
-                      "id": "/Common/192.1.0.1:80",
-                      "clientside_curConns": 0,
-                      "clientside_maxConns": 3,
-                      "clientside_bitsIn": 710728,
-                      "clientside_bitsOut": 679104,
-                      "clientside_pktsIn": 1580,
-                      "clientside_pktsOut": 1572
-                  }
-              ]
-          },
-          {
-              "id": "Sample_01/A01",
-              "services": [
-                  {
-                      "id": "/Sample_01/192.0.0.1:443",
-                      "clientside_curConns": 0,
-                      "clientside_maxConns": 0,
-                      "clientside_bitsIn": 0,
-                      "clientside_bitsOut": 0,
-                      "clientside_pktsIn": 0,
-                      "clientside_pktsOut": 0
-                  },
-                  {
-                      "id": "/Sample_01/192.0.0.1:80",
-                      "clientside_curConns": 0,
-                      "clientside_maxConns": 0,
-                      "clientside_bitsIn": 0,
-                      "clientside_bitsOut": 0,
-                      "clientside_pktsIn": 0,
-                      "clientside_pktsOut": 0
-                  }
-              ]
-          },
-          {
-              "id": "Sample_02/A02",
-              "services": [
-                  {
-                      "id": "/Sample_02/192.0.1.2:443",
-                      "clientside_curConns": 0,
-                      "clientside_maxConns": 0,
-                      "clientside_bitsIn": 0,
-                      "clientside_bitsOut": 0,
-                      "clientside_pktsIn": 0,
-                      "clientside_pktsOut": 0
-                  },
-                  {
-                    "id": "/Sample_02/192.0.1.2:80",
-                    "clientside_curConns": 0,
-                    "clientside_maxConns": 2,
-                    "clientside_bitsIn": 786680,
-                    "clientside_bitsOut": 886080,
-                    "clientside_pktsIn": 1775,
-                    "clientside_pktsOut": 1420
-                }
-              ]
-          },
-          {
-              "id": "Sample_03/A03",
-              "services": [
-                  {
-                      "id": "/Sample_03/192.0.1.3:443",
-                      "clientside_curConns": 0,
-                      "clientside_maxConns": 0,
-                      "clientside_bitsIn": 0,
-                      "clientside_bitsOut": 0,
-                      "clientside_pktsIn": 0,
-                      "clientside_pktsOut": 0
-                  },
-                  {
-                    "id": "/Sample_03/192.0.1.3:80",
+                    "id": "/Common/192.1.0.1:80",
                     "clientside_curConns": 0,
                     "clientside_maxConns": 0,
                     "clientside_bitsIn": 0,
                     "clientside_bitsOut": 0,
                     "clientside_pktsIn": 0,
                     "clientside_pktsOut": 0
+                  }
+              ]
+          },
+          {
+              "id": "Sample_01/A01",
+              "services": [
+                {
+                  "id": "/Sample_01/192.0.0.1:80",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
+                },
+                {
+                  "id": "/Sample_01/192.0.0.1:443",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
+                }
+              ]
+          },
+          {
+              "id": "Sample_02/A02",
+              "services": [
+                {
+                  "id": "/Sample_02/192.0.1.2:80",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
+                },
+                {
+                  "id": "/Sample_02/192.0.1.2:443",
+                  "clientside_curConns": 0,
+                  "clientside_maxConns": 0,
+                  "clientside_bitsIn": 0,
+                  "clientside_bitsOut": 0,
+                  "clientside_pktsIn": 0,
+                  "clientside_pktsOut": 0
                 }
               ]
           }

@@ -21,6 +21,7 @@ let getDeviceStatsStub;
 let buildSmallStatsObjectStub;
 let exportStatsStub;
 let getVipStatsStub;
+let getPoolResourceListStub;
 let getPoolResourceStub;
 let getPoolMemberStatsStub;
 let vipInfoStats = require('./data/vs-stats.json');
@@ -208,33 +209,27 @@ describe('BigStats', function () {
     it('should return formatted service statistics', function (done) {
       const expectedStats = require('./data/expected-small-stats.json');
       const arg1 = JSON.parse('{ "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }');
-      const arg1Res = JSON.parse('{ "id": "/Common/192.1.0.1:80", "clientside_curConns": 0, "clientside_maxConns": 3, "clientside_bitsIn": 710728, "clientside_bitsOut": 679104, "clientside_pktsIn": 1580, "clientside_pktsOut": 1572 }');
-      const arg2 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }');
-      const arg2Res = JSON.parse('{ "id": "/Sample_01/192.0.0.1:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
-      const arg3 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:80" }');
-      const arg3Res = JSON.parse('{ "id": "/Sample_01/192.0.0.1:80", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
-      const arg4 = JSON.parse('{ "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }');
-      const arg4Res = JSON.parse('{ "id": "/Sample_02/192.0.1.2:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
-      const arg5 = JSON.parse(' { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:80" }');
-      const arg5Res = JSON.parse('{ "id": "/Sample_02/192.0.1.2:80", "clientside_curConns": 0, "clientside_maxConns": 2, "clientside_bitsIn": 786680, "clientside_bitsOut": 886080, "clientside_pktsIn": 1775, "clientside_pktsOut": 1420 }');
-      const arg6 = JSON.parse(' { "partition": "Sample_03", "subPath": "A03", "fullPath": "/Sample_03/A03/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain?ver=13.1.1", "destination": "/Sample_03/192.0.1.3:443", "pool": "/Sample_03/A03/web_pool03", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_03~A03~web_pool03?ver=13.1.1" } }');
-      const arg6Res = JSON.parse('{ "id": "/Sample_03/192.0.1.3:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
-      const arg7 = JSON.parse(' { "partition": "Sample_03", "subPath": "A03", "fullPath": "/Sample_03/A03/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_03~A03~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_03/192.0.1.3:80" }');
-      const arg7Res = JSON.parse('{ "id": "/Sample_03/192.0.1.3:80", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg1Res = JSON.parse('{ "id": "/Common/192.1.0.1:80", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg2 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:80" }');
+      const arg2Res = JSON.parse('{ "id": "/Sample_01/192.0.0.1:80", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg3 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }');
+      const arg3Res = JSON.parse('{ "id": "/Sample_01/192.0.0.1:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg4 = JSON.parse(' { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain-Redirect", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain-Redirect?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:80" }');
+      const arg4Res = JSON.parse('{ "id": "/Sample_02/192.0.1.2:80", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
+      const arg5 = JSON.parse('{ "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }');
+      const arg5Res = JSON.parse('{ "id": "/Sample_02/192.0.1.2:443", "clientside_curConns": 0, "clientside_maxConns": 0, "clientside_bitsIn": 0, "clientside_bitsOut": 0, "clientside_pktsIn": 0, "clientside_pktsOut": 0 }');
       getVipStatsStub = sinon.stub(bigStats, 'getVipStats');
       getVipStatsStub.withArgs(arg1).resolves(arg1Res);
       getVipStatsStub.withArgs(arg2).resolves(arg2Res);
       getVipStatsStub.withArgs(arg3).resolves(arg3Res);
       getVipStatsStub.withArgs(arg4).resolves(arg4Res);
       getVipStatsStub.withArgs(arg5).resolves(arg5Res);
-      getVipStatsStub.withArgs(arg6).resolves(arg6Res);
-      getVipStatsStub.withArgs(arg7).resolves(arg7Res);
       
       const promise = bigStats.buildSmallStatsObject(vipResourceList.body);
       promise.should.be.fulfilled.then((smallStatsObj) => {
         smallStatsObj.should.be.deep.equal(expectedStats.device.tenants);
-        sinon.assert.callCount(getVipStatsStub, 7);
-        sinon.assert.callCount(utilStub.logDebug, 7);
+        sinon.assert.callCount(getVipStatsStub, 5);
+        sinon.assert.callCount(utilStub.logDebug, 5);
       }).should.notify(done);
     });
 
@@ -243,119 +238,91 @@ describe('BigStats', function () {
       const promise = bigStats.buildSmallStatsObject(vipResourceList.body);
       promise.should.be.rejected.then(() => {
         sinon.assert.calledWith(utilStub.logError, 'buildSmallStatsObject(): something bad happened');
-        sinon.assert.callCount(getVipStatsStub, 7);
+        sinon.assert.callCount(getVipStatsStub, 5);
       }).should.notify(done);
     });
   });
 
-  describe.skip('buildMediumStatsObject', function () {
-    // runs once before each test in this block
-    beforeEach(function (done) {
-      getVipStatsStub = sinon.stub(bigStats, 'getVipStats').resolves(JSON.parse('{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}'));
+  describe('buildMediumStatsObject', function () {
 
-      getPoolResourceStub = sinon.stub(bigStats, 'getPoolResourceList').resolves(JSON.parse('[{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]'));
-      getPoolResourceStub.withArgs(undefined).resolves();
+    it('should return formatted service statistics', function (done) {
+      const expectedSmallStats = require('./data/expected-small-stats.json');
+      const expectedMediumStats = require('./data/expected-medium-stats.json');
+      const getSmallStatsObj = sinon.stub(bigStats, 'buildSmallStatsObject').resolves(expectedSmallStats.device.tenants);
 
-      getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats').callsFake((poolMemberResource) => {
-        return new Promise((resolve, reject) => {
-          const stats = { 'serverside_curConns': 0, 'serverside_maxConns': 0, 'serverside_bitsIn': 0, 'serverside_bitsOut': 0, 'serverside_pktsIn': 0, 'serverside_pktsOut': 0, 'monitorStatus': 0 };
-          resolve(poolMemberResource.name === '10.1.20.17:80' ? { '10.1.20.17:80': stats } : { '10.1.20.18:80': stats });
-        });
-      });
-      done();
-    });
+      const poolResListArg1 = JSON.parse('{ "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }');
+      const poolResListArg1Res = JSON.parse('[{ "vip": { "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }, "name": "192.1.0.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1/members/~Common~192.1.0.1:80?ver=13.1.1" }, { "vip": { "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }, "name": "192.1.0.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1/members/~Common~192.1.0.2:80?ver=13.1.1" }]');
+      const poolResListArg2 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }');
+      const poolResListArg2Res = JSON.parse('[{ "vip": { "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }, "name": "192.0.1.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01/members/~Sample_01~192.0.1.1:80?ver=13.1.1" }, { "vip": { "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }, "name": "192.0.1.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01/members/~Sample_01~192.0.1.2:80?ver=13.1.1" }]');
+      const poolResListArg3 = JSON.parse('{ "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }');
+      const poolResListArg3Res = JSON.parse('[{ "vip": { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }, "name": "192.0.2.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02/members/~Sample_02~192.0.2.1:80?ver=13.1.1" }, { "vip": { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }, "name": "192.0.2.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02/members/~Sample_02~192.0.2.2:80?ver=13.1.1" }]');
+      getPoolResourceListStub = sinon.stub(bigStats, 'getPoolResourceList')
+        .withArgs(poolResListArg1).resolves(poolResListArg1Res)
+        .withArgs(poolResListArg2).resolves(poolResListArg2Res)
+        .withArgs(poolResListArg3).resolves(poolResListArg3Res);
 
-    it('should return formatted device statistics', function (done) {
-      const expectedStats = require('./data/expected-medium-stats.json');
+      const poolMemStatArg1 = JSON.parse('{ "vip": { "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }, "name": "192.1.0.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1/members/~Common~192.1.0.1:80?ver=13.1.1" }');
+      const poolMemStatArg1Res = JSON.parse('{ "poolMemberResource": { "vip": { "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }, "name": "192.1.0.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1/members/~Common~192.1.0.1:80?ver=13.1.1" }, "poolMemberStats": { "id": "192.1.0.1:80", "serverside_curConns": 0, "serverside_maxConns": 0, "serverside_bitsIn": 0, "serverside_bitsOut": 0, "serverside_pktsIn": 0, "serverside_pktsOut": 0, "monitorStatus": 0 } }');
+      const poolMemStatArg2 = JSON.parse('{ "vip": { "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }, "name": "192.1.0.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1/members/~Common~192.1.0.2:80?ver=13.1.1" }');
+      const poolMemStatArg2Res = JSON.parse('{ "poolMemberResource": { "vip": { "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }, "name": "192.1.0.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1/members/~Common~192.1.0.2:80?ver=13.1.1" }, "poolMemberStats": { "id": "192.1.0.2:80", "serverside_curConns": 0, "serverside_maxConns": 0, "serverside_bitsIn": 0, "serverside_bitsOut": 0, "serverside_pktsIn": 0, "serverside_pktsOut": 0, "monitorStatus": 0 } }');
+      const poolMemStatArg3 = JSON.parse('{ "vip": { "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }, "name": "192.0.1.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01/members/~Sample_01~192.0.1.1:80?ver=13.1.1" }');
+      const poolMemStatArg3Res = JSON.parse('{ "poolMemberResource": { "vip": { "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }, "name": "192.0.1.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01/members/~Sample_01~192.0.1.1:80?ver=13.1.1" }, "poolMemberStats": { "id": "192.0.1.1:80", "serverside_curConns": 0, "serverside_maxConns": 0, "serverside_bitsIn": 0, "serverside_bitsOut": 0, "serverside_pktsIn": 0, "serverside_pktsOut": 0, "monitorStatus": 0 } }');
+      const poolMemStatArg4 = JSON.parse('{ "vip": { "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }, "name": "192.0.1.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01/members/~Sample_01~192.0.1.2:80?ver=13.1.1" }');
+      const poolMemStatArg4Res = JSON.parse('{ "poolMemberResource": { "vip": { "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }, "name": "192.0.1.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01/members/~Sample_01~192.0.1.2:80?ver=13.1.1" }, "poolMemberStats": { "id": "192.0.1.2:80", "serverside_curConns": 0, "serverside_maxConns": 0, "serverside_bitsIn": 0, "serverside_bitsOut": 0, "serverside_pktsIn": 0, "serverside_pktsOut": 0, "monitorStatus": 0 } }');
+      const poolMemStatArg5 = JSON.parse('{ "vip": { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }, "name": "192.0.2.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02/members/~Sample_02~192.0.2.1:80?ver=13.1.1" }');
+      const poolMemStatArg5Res = JSON.parse('{ "poolMemberResource": { "vip": { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }, "name": "192.0.2.1:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02/members/~Sample_02~192.0.2.1:80?ver=13.1.1" }, "poolMemberStats": { "id": "192.0.2.1:80", "serverside_curConns": 0, "serverside_maxConns": 0, "serverside_bitsIn": 0, "serverside_bitsOut": 0, "serverside_pktsIn": 0, "serverside_pktsOut": 0, "monitorStatus": 0 } }');
+      const poolMemStatArg6 = JSON.parse('{ "vip": { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }, "name": "192.0.2.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02/members/~Sample_02~192.0.2.2:80?ver=13.1.1" }');
+      const poolMemStatArg6Res = JSON.parse('{ "poolMemberResource": { "vip": { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }, "name": "192.0.2.2:80", "path": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02/members/~Sample_02~192.0.2.2:80?ver=13.1.1" }, "poolMemberStats": { "id": "192.0.2.2:80", "serverside_curConns": 0, "serverside_maxConns": 0, "serverside_bitsIn": 0, "serverside_bitsOut": 0, "serverside_pktsIn": 0, "serverside_pktsOut": 0, "monitorStatus": 0 } }');
 
-      const promise = bigStats.buildMediumStatsObject(vipResourceList.body);
-      promise.should.be.fulfilled.then(() => {
-        bigStats.stats.should.be.deep.equal(expectedStats);
-        sinon.assert.callCount(getVipStatsStub, 7);
-        sinon.assert.callCount(getPoolResourceStub, 7);
-        sinon.assert.callCount(getPoolMemberStatsStub, 10);
-        sinon.assert.callCount(utilStub.logDebug, 4);
-      }).should.notify(done);
-    });
-
-    it('should not return when getVipStats error occurs', function (done) {
-      getVipStatsStub.restore();
-      getVipStatsStub = sinon.stub(bigStats, 'getVipStats').rejects('something bad happened');
-
-      const promise = bigStats.buildMediumStatsObject(vipResourceList.body);
-      promise.should.be.rejected.then(() => {
-        sinon.assert.calledWith(utilStub.logError, 'buildMediumStatsObject(): something bad happened');
-        sinon.assert.callCount(getVipStatsStub, 7);
-      }).should.notify(done);
-    });
-
-    it('should not return when getPoolMemberStats error occurs', function (done) {
-      getPoolMemberStatsStub.restore();
-      getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats').rejects('something bad happened');
+      getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats')
+        .withArgs(poolMemStatArg1).resolves(poolMemStatArg1Res)
+        .withArgs(poolMemStatArg2).resolves(poolMemStatArg2Res)
+        .withArgs(poolMemStatArg3).resolves(poolMemStatArg3Res)
+        .withArgs(poolMemStatArg4).resolves(poolMemStatArg4Res)
+        .withArgs(poolMemStatArg5).resolves(poolMemStatArg5Res)
+        .withArgs(poolMemStatArg6).resolves(poolMemStatArg6Res);
 
       const promise = bigStats.buildMediumStatsObject(vipResourceList.body);
-      promise.should.be.rejected.then(() => {
-        sinon.assert.calledWith(utilStub.logError, 'buildMediumStatsObject(): something bad happened');
-        sinon.assert.callCount(getVipStatsStub, 7);
+      promise.should.be.fulfilled.then((mediumStatsObj) => {
+        mediumStatsObj.should.be.deep.equal(expectedMediumStats.device.tenants);
+        sinon.assert.callCount(utilStub.logDebug, 3);
+        sinon.assert.callCount(getSmallStatsObj, 1);
+        sinon.assert.callCount(getPoolResourceListStub, 1);
+        sinon.assert.callCount(getPoolMemberStatsStub, 1);
       }).should.notify(done);
     });
   });
 
-  describe.skip('buildLargeStatsObject', function () {
+  describe('buildLargeStatsObject', function () {
     // runs once before each test in this block
-    beforeEach(function (done) {
-      getVipStatsStub = sinon.stub(bigStats, 'getVipStats').resolves(JSON.parse('{"clientside_curConns":0,"clientside_maxConns":0,"clientside_bitsIn":0,"clientside_bitsOut":0,"clientside_pktsIn":0,"clientside_pktsOut":0}'));
-
-      getPoolResourceStub = sinon.stub(bigStats, 'getPoolResourceList').resolves(JSON.parse('[{"name":"10.1.20.17:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.17:80?ver=13.1.1"},{"name":"10.1.20.18:80","path":"https://localhost/mgmt/tm/ltm/pool/~DVWA~Application_1~web_pool/members/~DVWA~10.1.20.18:80?ver=13.1.1"}]'));
-      getPoolResourceStub.withArgs(undefined).resolves();
-
-      getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats').callsFake((poolMemberResource) => {
-        return new Promise((resolve, reject) => {
-          const stats = { 'serverside_curConns': 0, 'serverside_maxConns': 0, 'serverside_bitsIn': 0, 'serverside_bitsOut': 0, 'serverside_pktsIn': 0, 'serverside_pktsOut': 0, 'monitorStatus': 0 };
-          resolve(poolMemberResource.name === '10.1.20.17:80' ? { '10.1.20.17:80': stats } : { '10.1.20.18:80': stats });
-        });
-      });
-      done();
-    });
 
     it('should return formatted device statistics', function (done) {
-      const expectedStats = require('./data/expected-medium-stats.json');
+      const expectedMediumStats = require('./data/expected-medium-stats.json');
+      const expectedLargeStats = require('./data/expected-large-stats.json');
+      const getMediumStatsObjStub = sinon.stub(bigStats, 'buildMediumStatsObject').resolves(expectedMediumStats.device.tenants);
+      const sslStatsArg1 = JSON.parse('{ "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }');
+      const sslStatsArg1Res = JSON.parse('{ "vip": { "partition": "Common", "fullPath": "/Common/myApp1", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Common~myApp1?ver=13.1.1", "destination": "/Common/192.1.0.1:80", "pool": "/Common/myPool1", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool1?ver=13.1.1" } }, "stats": { "id": "/Common/clientssl", "common_activeHandshakeRejected": 0, "common_aggregateRenegotiationsRejected": 0, "common_badRecords": 0, "common_c3dUses_conns": 0, "common_cipherUses_adhKeyxchg": 0, "common_cipherUses_aesBulk": 0, "common_cipherUses_aesGcmBulk": 0, "common_cipherUses_camelliaBulk": 0, "common_cipherUses_desBulk": 0, "common_cipherUses_dhRsaKeyxchg": 0, "common_cipherUses_dheDssKeyxchg": 0, "common_cipherUses_ecdhEcdsaKeyxchg": 0, "common_cipherUses_ecdhRsaKeyxchg": 0, "common_cipherUses_ecdheEcdsaKeyxchg": 0, "common_cipherUses_ecdheRsaKeyxchg": 0, "common_cipherUses_edhRsaKeyxchg": 0, "common_cipherUses_ideaBulk": 0, "common_cipherUses_md5Digest": 0, "common_cipherUses_nullBulk": 0, "common_cipherUses_nullDigest": 0, "common_cipherUses_rc2Bulk": 0, "common_cipherUses_rc4Bulk": 0, "common_cipherUses_rsaKeyxchg": 0, "common_cipherUses_shaDigest": 0, "common_connectionMirroring_haCtxRecv": 0, "common_connectionMirroring_haCtxSent": 0, "common_connectionMirroring_haFailure": 0, "common_connectionMirroring_haHsSuccess": 0, "common_connectionMirroring_haPeerReady": 0, "common_connectionMirroring_haTimeout": 0, "common_curCompatConns": 0, "common_curConns": 0, "common_curNativeConns": 0, "common_currentActiveHandshakes": 0, "common_decryptedBytesIn": 0, "common_decryptedBytesOut": 0, "common_dtlsTxPushbacks": 0, "common_encryptedBytesIn": 975357, "common_encryptedBytesOut": 0, "common_extendedMasterSecrets": 0, "common_fatalAlerts": 0, "common_fullyHwAcceleratedConns": 0, "common_fwdpUses_alertBypasses": 0, "common_fwdpUses_cachedCerts": 0, "common_fwdpUses_clicertFailBypasses": 0, "common_fwdpUses_conns": 0, "common_fwdpUses_dipBypasses": 0, "common_fwdpUses_hnBypasses": 0, "common_fwdpUses_sipBypasses": 0, "common_handshakeFailures": 0, "common_insecureHandshakeAccepts": 0, "common_insecureHandshakeRejects": 0, "common_insecureRenegotiationRejects": 0, "common_maxCompatConns": 0, "common_maxConns": 2, "common_maxNativeConns": 0, "common_midstreamRenegotiations": 0, "common_nonHwAcceleratedConns": 0, "common_ocspFwdpClientssl_cachedResp": 0, "common_ocspFwdpClientssl_certStatusReq": 0, "common_ocspFwdpClientssl_invalidCertResp": 0, "common_ocspFwdpClientssl_respstatusErrResp": 0, "common_ocspFwdpClientssl_revokedResp": 0, "common_ocspFwdpClientssl_stapledResp": 0, "common_ocspFwdpClientssl_unknownResp": 0, "common_partiallyHwAcceleratedConns": 0, "common_peercertInvalid": 0, "common_peercertNone": 0, "common_peercertValid": 0, "common_prematureDisconnects": 0, "common_protocolUses_dtlsv1": 0, "common_protocolUses_sslv2": 0, "common_protocolUses_sslv3": 0, "common_protocolUses_tlsv1": 0, "common_protocolUses_tlsv1_1": 0, "common_protocolUses_tlsv1_2": 0, "common_recordsIn": 0, "common_recordsOut": 0, "common_renegotiationsRejected": 0, "common_secureHandshakes": 0, "common_sessCacheCurEntries": 0, "common_sessCacheHits": 0, "common_sessCacheInvalidations": 0, "common_sessCacheLookups": 0, "common_sessCacheOverflows": 0, "common_sessionMirroring_failure": 0, "common_sessionMirroring_success": 0, "common_sesstickUses_reuseFailed": 0, "common_sesstickUses_reused": 0, "common_sniRejects": 0, "common_totCompatConns": 0, "common_totNativeConns": 0, "dynamicRecord_x1": 0, "dynamicRecord_x10": 0, "dynamicRecord_x11": 0, "dynamicRecord_x12": 0, "dynamicRecord_x13": 0, "dynamicRecord_x14": 0, "dynamicRecord_x15": 0, "dynamicRecord_x16": 0, "dynamicRecord_x2": 0, "dynamicRecord_x3": 0, "dynamicRecord_x4": 0, "dynamicRecord_x5": 0, "dynamicRecord_x6": 0, "dynamicRecord_x7": 0, "dynamicRecord_x8": 0, "dynamicRecord_x9": 0 } }');
+      const sslStatsArg2 = JSON.parse('{ "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }');
+      const sslStatsArg2Res = JSON.parse('{ "vip": { "partition": "Sample_01", "subPath": "A01", "fullPath": "/Sample_01/A01/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_01~A01~serviceMain?ver=13.1.1", "destination": "/Sample_01/192.0.0.1:443", "pool": "/Sample_01/A01/web_pool01", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_01~A01~web_pool01?ver=13.1.1" } }, "stats": { "id": "/Sample_01/A01/webtls01", "common_activeHandshakeRejected": 0, "common_aggregateRenegotiationsRejected": 0, "common_badRecords": 0, "common_c3dUses_conns": 0, "common_cipherUses_adhKeyxchg": 0, "common_cipherUses_aesBulk": 0, "common_cipherUses_aesGcmBulk": 0, "common_cipherUses_camelliaBulk": 0, "common_cipherUses_desBulk": 0, "common_cipherUses_dhRsaKeyxchg": 0, "common_cipherUses_dheDssKeyxchg": 0, "common_cipherUses_ecdhEcdsaKeyxchg": 0, "common_cipherUses_ecdhRsaKeyxchg": 0, "common_cipherUses_ecdheEcdsaKeyxchg": 0, "common_cipherUses_ecdheRsaKeyxchg": 0, "common_cipherUses_edhRsaKeyxchg": 0, "common_cipherUses_ideaBulk": 0, "common_cipherUses_md5Digest": 0, "common_cipherUses_nullBulk": 0, "common_cipherUses_nullDigest": 0, "common_cipherUses_rc2Bulk": 0, "common_cipherUses_rc4Bulk": 0, "common_cipherUses_rsaKeyxchg": 0, "common_cipherUses_shaDigest": 0, "common_connectionMirroring_haCtxRecv": 0, "common_connectionMirroring_haCtxSent": 0, "common_connectionMirroring_haFailure": 0, "common_connectionMirroring_haHsSuccess": 0, "common_connectionMirroring_haPeerReady": 0, "common_connectionMirroring_haTimeout": 0, "common_curCompatConns": 0, "common_curConns": 0, "common_curNativeConns": 0, "common_currentActiveHandshakes": 0, "common_decryptedBytesIn": 0, "common_decryptedBytesOut": 0, "common_dtlsTxPushbacks": 0, "common_encryptedBytesIn": 0, "common_encryptedBytesOut": 0, "common_extendedMasterSecrets": 0, "common_fatalAlerts": 0, "common_fullyHwAcceleratedConns": 0, "common_fwdpUses_alertBypasses": 0, "common_fwdpUses_cachedCerts": 0, "common_fwdpUses_clicertFailBypasses": 0, "common_fwdpUses_conns": 0, "common_fwdpUses_dipBypasses": 0, "common_fwdpUses_hnBypasses": 0, "common_fwdpUses_sipBypasses": 0, "common_handshakeFailures": 0, "common_insecureHandshakeAccepts": 0, "common_insecureHandshakeRejects": 0, "common_insecureRenegotiationRejects": 0, "common_maxCompatConns": 0, "common_maxConns": 0, "common_maxNativeConns": 0, "common_midstreamRenegotiations": 0, "common_nonHwAcceleratedConns": 0, "common_ocspFwdpClientssl_cachedResp": 0, "common_ocspFwdpClientssl_certStatusReq": 0, "common_ocspFwdpClientssl_invalidCertResp": 0, "common_ocspFwdpClientssl_respstatusErrResp": 0, "common_ocspFwdpClientssl_revokedResp": 0, "common_ocspFwdpClientssl_stapledResp": 0, "common_ocspFwdpClientssl_unknownResp": 0, "common_partiallyHwAcceleratedConns": 0, "common_peercertInvalid": 0, "common_peercertNone": 0, "common_peercertValid": 0, "common_prematureDisconnects": 0, "common_protocolUses_dtlsv1": 0, "common_protocolUses_sslv2": 0, "common_protocolUses_sslv3": 0, "common_protocolUses_tlsv1": 0, "common_protocolUses_tlsv1_1": 0, "common_protocolUses_tlsv1_2": 0, "common_recordsIn": 0, "common_recordsOut": 0, "common_renegotiationsRejected": 0, "common_secureHandshakes": 0, "common_sessCacheCurEntries": 0, "common_sessCacheHits": 0, "common_sessCacheInvalidations": 0, "common_sessCacheLookups": 0, "common_sessCacheOverflows": 0, "common_sessionMirroring_failure": 0, "common_sessionMirroring_success": 0, "common_sesstickUses_reuseFailed": 0, "common_sesstickUses_reused": 0, "common_sniRejects": 0, "common_totCompatConns": 0, "common_totNativeConns": 0, "dynamicRecord_x1": 0, "dynamicRecord_x10": 0, "dynamicRecord_x11": 0, "dynamicRecord_x12": 0, "dynamicRecord_x13": 0, "dynamicRecord_x14": 0, "dynamicRecord_x15": 0, "dynamicRecord_x16": 0, "dynamicRecord_x2": 0, "dynamicRecord_x3": 0, "dynamicRecord_x4": 0, "dynamicRecord_x5": 0, "dynamicRecord_x6": 0, "dynamicRecord_x7": 0, "dynamicRecord_x8": 0, "dynamicRecord_x9": 0 } }');
+      const sslStatsArg3 = JSON.parse('{ "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }');
+      const sslStatsArg3Res = JSON.parse('{ "vip": { "partition": "Sample_02", "subPath": "A02", "fullPath": "/Sample_02/A02/serviceMain", "selfLink": "https://localhost/mgmt/tm/ltm/virtual/~Sample_02~A02~serviceMain?ver=13.1.1", "destination": "/Sample_02/192.0.1.2:443", "pool": "/Sample_02/A02/web_pool02", "poolReference": { "link": "https://localhost/mgmt/tm/ltm/pool/~Sample_02~A02~web_pool02?ver=13.1.1" } }, "stats": { "id": "/Sample_02/A02/webtls02", "common_activeHandshakeRejected": 0, "common_aggregateRenegotiationsRejected": 0, "common_badRecords": 0, "common_c3dUses_conns": 0, "common_cipherUses_adhKeyxchg": 0, "common_cipherUses_aesBulk": 0, "common_cipherUses_aesGcmBulk": 0, "common_cipherUses_camelliaBulk": 0, "common_cipherUses_desBulk": 0, "common_cipherUses_dhRsaKeyxchg": 0, "common_cipherUses_dheDssKeyxchg": 0, "common_cipherUses_ecdhEcdsaKeyxchg": 0, "common_cipherUses_ecdhRsaKeyxchg": 0, "common_cipherUses_ecdheEcdsaKeyxchg": 0, "common_cipherUses_ecdheRsaKeyxchg": 0, "common_cipherUses_edhRsaKeyxchg": 0, "common_cipherUses_ideaBulk": 0, "common_cipherUses_md5Digest": 0, "common_cipherUses_nullBulk": 0, "common_cipherUses_nullDigest": 0, "common_cipherUses_rc2Bulk": 0, "common_cipherUses_rc4Bulk": 0, "common_cipherUses_rsaKeyxchg": 0, "common_cipherUses_shaDigest": 0, "common_connectionMirroring_haCtxRecv": 0, "common_connectionMirroring_haCtxSent": 0, "common_connectionMirroring_haFailure": 0, "common_connectionMirroring_haHsSuccess": 0, "common_connectionMirroring_haPeerReady": 0, "common_connectionMirroring_haTimeout": 0, "common_curCompatConns": 0, "common_curConns": 0, "common_curNativeConns": 0, "common_currentActiveHandshakes": 0, "common_decryptedBytesIn": 0, "common_decryptedBytesOut": 0, "common_dtlsTxPushbacks": 0, "common_encryptedBytesIn": 0, "common_encryptedBytesOut": 0, "common_extendedMasterSecrets": 0, "common_fatalAlerts": 0, "common_fullyHwAcceleratedConns": 0, "common_fwdpUses_alertBypasses": 0, "common_fwdpUses_cachedCerts": 0, "common_fwdpUses_clicertFailBypasses": 0, "common_fwdpUses_conns": 0, "common_fwdpUses_dipBypasses": 0, "common_fwdpUses_hnBypasses": 0, "common_fwdpUses_sipBypasses": 0, "common_handshakeFailures": 0, "common_insecureHandshakeAccepts": 0, "common_insecureHandshakeRejects": 0, "common_insecureRenegotiationRejects": 0, "common_maxCompatConns": 0, "common_maxConns": 0, "common_maxNativeConns": 0, "common_midstreamRenegotiations": 0, "common_nonHwAcceleratedConns": 0, "common_ocspFwdpClientssl_cachedResp": 0, "common_ocspFwdpClientssl_certStatusReq": 0, "common_ocspFwdpClientssl_invalidCertResp": 0, "common_ocspFwdpClientssl_respstatusErrResp": 0, "common_ocspFwdpClientssl_revokedResp": 0, "common_ocspFwdpClientssl_stapledResp": 0, "common_ocspFwdpClientssl_unknownResp": 0, "common_partiallyHwAcceleratedConns": 0, "common_peercertInvalid": 0, "common_peercertNone": 0, "common_peercertValid": 0, "common_prematureDisconnects": 0, "common_protocolUses_dtlsv1": 0, "common_protocolUses_sslv2": 0, "common_protocolUses_sslv3": 0, "common_protocolUses_tlsv1": 0, "common_protocolUses_tlsv1_1": 0, "common_protocolUses_tlsv1_2": 0, "common_recordsIn": 0, "common_recordsOut": 0, "common_renegotiationsRejected": 0, "common_secureHandshakes": 0, "common_sessCacheCurEntries": 0, "common_sessCacheHits": 0, "common_sessCacheInvalidations": 0, "common_sessCacheLookups": 0, "common_sessCacheOverflows": 0, "common_sessionMirroring_failure": 0, "common_sessionMirroring_success": 0, "common_sesstickUses_reuseFailed": 0, "common_sesstickUses_reused": 0, "common_sniRejects": 0, "common_totCompatConns": 0, "common_totNativeConns": 0, "dynamicRecord_x1": 0, "dynamicRecord_x10": 0, "dynamicRecord_x11": 0, "dynamicRecord_x12": 0, "dynamicRecord_x13": 0, "dynamicRecord_x14": 0, "dynamicRecord_x15": 0, "dynamicRecord_x16": 0, "dynamicRecord_x2": 0, "dynamicRecord_x3": 0, "dynamicRecord_x4": 0, "dynamicRecord_x5": 0, "dynamicRecord_x6": 0, "dynamicRecord_x7": 0, "dynamicRecord_x8": 0, "dynamicRecord_x9": 0 } }');
+
+      const getSslStatsStub = sinon.stub(bigStats, 'getSslStats')
+        .withArgs(sslStatsArg1).resolves(sslStatsArg1Res)
+        .withArgs(sslStatsArg2).resolves(sslStatsArg2Res)
+        .withArgs(sslStatsArg3).resolves(sslStatsArg3Res);
 
       const promise = bigStats.buildLargeStatsObject(vipResourceList.body);
-      promise.should.be.fulfilled.then(() => {
-        bigStats.stats.should.be.deep.equal(expectedStats);
-        sinon.assert.callCount(getVipStatsStub, 7);
-        sinon.assert.callCount(getPoolResourceStub, 7);
-        sinon.assert.callCount(getPoolMemberStatsStub, 10);
-        sinon.assert.callCount(utilStub.logDebug, 4);
-      }).should.notify(done);
-    });
-
-    it('should not return when getVipStats error occurs', function (done) {
-      getVipStatsStub.restore();
-      getVipStatsStub = sinon.stub(bigStats, 'getVipStats').rejects('something bad happened');
-
-      const promise = bigStats.buildLargeStatsObject(vipResourceList.body);
-      promise.should.be.rejected.then(() => {
-        sinon.assert.calledWith(utilStub.logError, 'buildLargeStatsObject(): something bad happened');
-        sinon.assert.callCount(getVipStatsStub, 7);
-      }).should.notify(done);
-    });
-
-    it('should not return when getPoolMemberStats error occurs', function (done) {
-      getPoolMemberStatsStub.restore();
-      getPoolMemberStatsStub = sinon.stub(bigStats, 'getPoolMemberStats').rejects('something bad happened');
-
-      const promise = bigStats.buildLargeStatsObject(vipResourceList.body);
-      promise.should.be.rejected.then(() => {
-        sinon.assert.calledWith(utilStub.logError, 'buildLargeStatsObject(): something bad happened');
-        sinon.assert.callCount(getVipStatsStub, 7);
+      promise.should.be.fulfilled.then((largeStatsObject) => {
+        largeStatsObject.should.be.deep.equal(expectedLargeStats.device.tenants);
+        sinon.assert.callCount(getMediumStatsObjStub, 1);
+        sinon.assert.callCount(getSslStatsStub, 1);
+        sinon.assert.callCount(utilStub.logDebug, 5);
       }).should.notify(done);
     });
   });
 
   describe('getPoolMemberStats', function () {
-    // TODO: modify the mocks to sequentially return different results about each pool member each time it is called
     it('should return stats for a specific pool member', function (done) {
       const expectedStats = JSON.parse('{"poolMemberResource": {"name": "10.1.20.17:80","path": "https://localhost/mgmt/tm/ltm/pool/~Common~myPool/members/~Common~10.1.20.17:80?ver=13.1.1"},"poolMemberStats":{"id": "10.1.20.17:80","monitorStatus": 0,"serverside_bitsIn": 0,"serverside_bitsOut": 0,"serverside_curConns": 0,"serverside_maxConns": 0,"serverside_pktsIn": 0,"serverside_pktsOut": 0}}');
       sendGetStub = sinon.stub(bigStats.restRequestSender, 'sendGet').resolves(poolMemberStats);
@@ -447,7 +414,6 @@ describe('BigStats', function () {
 
       const promise = bigStats.getVipStats(vipResourceList.body.items[0]);
       promise.should.be.fulfilled.then((stats) => {
-        console.log(`getVipStats promise stats: ${stats}`);
         stats.should.be.deep.equal(expectedStats);
         sinon.assert.calledOnce(sendGetStub);
       }).should.notify(done);
